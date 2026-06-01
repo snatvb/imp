@@ -1,0 +1,8 @@
+[package]
+name = "os-path"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+
+[dependencies]
+camino.workspace = true
