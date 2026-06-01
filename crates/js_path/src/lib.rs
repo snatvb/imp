@@ -132,8 +132,8 @@ impl ModuleDef for PathModule {
         ns.set("resolve", js_resolve)?;
         ns.set("join", js_join)?;
         ns.set("basename", js_basename)?;
-        ns.set("dirname", js_basename)?;
-        ns.set("extname", js_basename)?;
+        ns.set("dirname", js_dirname)?;
+        ns.set("extname", js_extname)?;
         ns.set("sep", SEPARATOR)?;
         ns.set("delimiter", DELIMITER)?;
         exports.export("default", ns)?;
