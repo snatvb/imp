@@ -1,6 +1,4 @@
-use std::path::Path;
-
-use rquickjs::{Object, function, module::ModuleDef, prelude::Rest};
+use rquickjs::{Object, function, module::ModuleDef};
 
 mod error;
 mod prelude;
@@ -9,56 +7,30 @@ mod utils;
 use error::PathError;
 
 use crate::prelude::*;
-use crate::utils::as_strings;
+use crate::utils::{as_strings, resolve_paths, to_ospath};
 
 #[function]
 pub fn resolve<'js>(
-    ctx: rquickjs::Ctx<'js>,
-    args: Rest<rquickjs::Value<'js>>,
-) -> rquickjs::Result<String> {
+    ctx: js::Ctx<'js>,
+    args: js::prelude::Rest<js::Value<'js>>,
+) -> js::Result<String> {
     let paths = as_strings(&ctx, args)?;
 
     let cwd = std::env::current_dir()
         .map_err(|e| PathError::from_io(e, "resolve").into_exception(&ctx))?;
 
-    let mut base = os_path::OsPathBuf::from_path_buf(cwd).map_err(|p| {
-        PathError::invalid_path(format!("current directory path is not valid UTF-8: {p:?}"))
-            .into_exception(&ctx)
-    })?;
+    let base = to_ospath(&ctx, cwd)?;
 
-    for arg in &paths {
-        if arg.is_empty() {
-            continue;
-        }
-        if Path::new(arg.as_str()).is_absolute() {
-            base = os_path::OsPathBuf::new(arg.as_str());
-        } else {
-            base.push(arg.as_str());
-        }
-    }
-
-    Ok(base.into_string())
+    Ok(resolve_paths(&paths, base).into_string())
 }
 
 #[function]
 pub fn join<'js>(
-    ctx: rquickjs::Ctx<'js>,
-    args: Rest<rquickjs::Value<'js>>,
-) -> rquickjs::Result<String> {
+    ctx: js::Ctx<'js>,
+    args: js::prelude::Rest<js::Value<'js>>,
+) -> js::Result<String> {
     let paths = as_strings(&ctx, args)?;
-    let mut base = os_path::OsPathBuf::new("");
-
-    for arg in &paths {
-        if arg.is_empty() {
-            continue;
-        }
-        if Path::new(arg.as_str()).is_absolute() {
-            base = os_path::OsPathBuf::new(arg.as_str());
-        } else {
-            base.push(arg.as_str());
-        }
-    }
-    Ok(base.into_string())
+    Ok(resolve_paths(&paths, os_path::OsPathBuf::new("")).into_string())
 }
 
 #[function]
@@ -68,14 +40,11 @@ pub fn basename<'js>(
     suffix: js::prelude::Opt<js::Value<'js>>,
 ) -> js::Result<String> {
     let path = String::coerce_js(&ctx, &path, "path")?;
-    let suffix = match &suffix.0 {
-        Some(suffix) => Some(String::coerce_js(&ctx, suffix, "suffix")?),
-        _ => None,
-    };
-    let ospath = os_path::OsPathBuf::from_path_buf(path.into()).map_err(|p| {
-        PathError::invalid_path(format!("current directory path is not valid UTF-8: {p:?}"))
-            .into_exception(&ctx)
-    })?;
+    let suffix = suffix
+        .0
+        .map(|s| String::coerce_js(&ctx, &s, "suffix"))
+        .transpose()?;
+    let ospath = to_ospath(&ctx, path)?;
     Ok(ospath
         .file_name()
         .map(|f| suffix.map(|s| f.trim_end_matches(&s)).unwrap_or(f))
@@ -86,20 +55,14 @@ pub fn basename<'js>(
 #[function]
 pub fn dirname<'js>(ctx: js::Ctx<'js>, path: js::Value<'js>) -> js::Result<String> {
     let path = String::coerce_js(&ctx, &path, "path")?;
-    let ospath = os_path::OsPathBuf::from_path_buf(path.into()).map_err(|p| {
-        PathError::invalid_path(format!("current directory path is not valid UTF-8: {p:?}"))
-            .into_exception(&ctx)
-    })?;
+    let ospath = to_ospath(&ctx, path)?;
     Ok(ospath.parent().map(|p| p.as_str()).unwrap_or(".").into())
 }
 
 #[function]
 pub fn extname<'js>(ctx: js::Ctx<'js>, path: js::Value<'js>) -> js::Result<String> {
     let path = String::coerce_js(&ctx, &path, "path")?;
-    let ospath = os_path::OsPathBuf::from_path_buf(path.into()).map_err(|p| {
-        PathError::invalid_path(format!("current directory path is not valid UTF-8: {p:?}"))
-            .into_exception(&ctx)
-    })?;
+    let ospath = to_ospath(&ctx, path)?;
     Ok(ospath.extension().unwrap_or("").into())
 }
 
