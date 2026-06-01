@@ -83,6 +83,26 @@ pub fn basename<'js>(
         .into())
 }
 
+#[function]
+pub fn dirname<'js>(ctx: js::Ctx<'js>, path: js::Value<'js>) -> js::Result<String> {
+    let path = String::coerce_js(&ctx, &path, "path")?;
+    let ospath = os_path::OsPathBuf::from_path_buf(path.into()).map_err(|p| {
+        PathError::invalid_path(format!("current directory path is not valid UTF-8: {p:?}"))
+            .into_exception(&ctx)
+    })?;
+    Ok(ospath.parent().map(|p| p.as_str()).unwrap_or("").into())
+}
+
+#[function]
+pub fn extname<'js>(ctx: js::Ctx<'js>, path: js::Value<'js>) -> js::Result<String> {
+    let path = String::coerce_js(&ctx, &path, "path")?;
+    let ospath = os_path::OsPathBuf::from_path_buf(path.into()).map_err(|p| {
+        PathError::invalid_path(format!("current directory path is not valid UTF-8: {p:?}"))
+            .into_exception(&ctx)
+    })?;
+    Ok(ospath.extension().unwrap_or("").into())
+}
+
 #[cfg(not(windows))]
 const SEPARATOR: &str = "/";
 #[cfg(windows)]
@@ -112,6 +132,8 @@ impl ModuleDef for PathModule {
         ns.set("resolve", js_resolve)?;
         ns.set("join", js_join)?;
         ns.set("basename", js_basename)?;
+        ns.set("dirname", js_basename)?;
+        ns.set("extname", js_basename)?;
         ns.set("sep", SEPARATOR)?;
         ns.set("delimiter", DELIMITER)?;
         exports.export("default", ns)?;
