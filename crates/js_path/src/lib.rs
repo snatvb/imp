@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use rquickjs::{function, module::ModuleDef, prelude::Rest};
+use rquickjs::{function, module::ModuleDef, prelude::Rest, Object};
 
 use js_core::coerce::JsCoerce;
 
@@ -43,15 +43,21 @@ pub struct PathModule;
 
 impl ModuleDef for PathModule {
     fn declare<'js>(decl: &rquickjs::module::Declarations<'js>) -> rquickjs::Result<()> {
+        decl.declare("default")?;
         decl.declare("resolve")?;
         Ok(())
     }
 
     fn evaluate<'js>(
-        _ctx: &rquickjs::Ctx<'js>,
+        ctx: &rquickjs::Ctx<'js>,
         exports: &rquickjs::module::Exports<'js>,
     ) -> rquickjs::Result<()> {
         exports.export("resolve", js_resolve)?;
+
+        let ns = Object::new(ctx.clone())?;
+        ns.set("resolve", js_resolve)?;
+        exports.export("default", ns)?;
+
         Ok(())
     }
 }
