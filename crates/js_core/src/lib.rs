@@ -1,5 +1,6 @@
 pub use rquickjs as js;
 
+pub mod coerce;
 pub mod error;
 pub mod loader;
 pub mod meta;

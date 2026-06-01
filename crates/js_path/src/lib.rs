@@ -2,12 +2,21 @@ use std::path::Path;
 
 use rquickjs::{function, module::ModuleDef, prelude::Rest};
 
+use js_core::coerce::JsCoerce;
+
 mod error;
 
 use error::PathError;
 
 #[function]
-pub fn resolve(ctx: rquickjs::Ctx<'_>, args: Rest<String>) -> rquickjs::Result<String> {
+pub fn resolve<'js>(ctx: rquickjs::Ctx<'js>, args: Rest<rquickjs::Value<'js>>) -> rquickjs::Result<String> {
+    let paths: Vec<String> = args
+        .iter()
+        .enumerate()
+        .map(|(i, v)| String::coerce_js(&ctx, v, &format!("paths[{i}]")))
+
+        .collect::<rquickjs::Result<Vec<_>>>()?;
+
     let cwd = std::env::current_dir()
         .map_err(|e| PathError::from_io(e, "resolve").into_exception(&ctx))?;
 
@@ -16,7 +25,7 @@ pub fn resolve(ctx: rquickjs::Ctx<'_>, args: Rest<String>) -> rquickjs::Result<S
             .into_exception(&ctx)
     })?;
 
-    for arg in args.iter() {
+    for arg in &paths {
         if arg.is_empty() {
             continue;
         }
