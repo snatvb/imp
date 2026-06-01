@@ -90,7 +90,7 @@ pub fn dirname<'js>(ctx: js::Ctx<'js>, path: js::Value<'js>) -> js::Result<Strin
         PathError::invalid_path(format!("current directory path is not valid UTF-8: {p:?}"))
             .into_exception(&ctx)
     })?;
-    Ok(ospath.parent().map(|p| p.as_str()).unwrap_or("").into())
+    Ok(ospath.parent().map(|p| p.as_str()).unwrap_or(".").into())
 }
 
 #[function]
