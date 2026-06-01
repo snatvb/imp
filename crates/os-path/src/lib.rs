@@ -4,7 +4,7 @@ use std::fmt;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
 
-fn os_normalize(s: &str) -> String {
+pub fn os_normalize(s: &str) -> String {
     if cfg!(windows) {
         s.replace('/', "\\")
     } else {
