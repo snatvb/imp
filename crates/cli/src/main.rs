@@ -14,7 +14,13 @@ struct Args {
 #[tokio::main]
 async fn main() {
     let args = Args::parse();
-    let code = tokio::fs::read_to_string(&args.filepath).await.unwrap();
+    let resolver = js_core::resolver::Resolver::default();
+    let Some(code) = resolver.resolve_entry(&args.filepath) else {
+        panic!(
+            "Can't find script by path {}",
+            args.filepath.to_string_lossy()
+        )
+    };
     let code = if typescript::is_ts_ext(&args.filepath) {
         typescript::strip_types_fast_default(&code).unwrap()
     } else {
@@ -41,6 +47,10 @@ async fn main() {
     .await;
 
     ctx.async_with(async |ctx| {
+        let globals = ctx.globals();
+        globals
+            .set("console", console::create(&ctx).unwrap())
+            .unwrap();
         let promise =
             js::Module::evaluate(ctx, args.filepath.to_string_lossy().as_ref(), code.as_str())
                 .unwrap();

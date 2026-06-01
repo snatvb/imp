@@ -9,4 +9,5 @@ tokio.workspace = true
 clap.workspace = true
 
 js_core.workspace = true
+console.workspace = true
 fs.workspace = true
