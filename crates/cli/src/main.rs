@@ -1,7 +1,7 @@
 use clap::Parser;
 
 mod prelude;
-use js_core::js::promise;
+use js_core::typescript;
 use prelude::*;
 
 #[derive(Debug, Parser)]
@@ -15,6 +15,11 @@ struct Args {
 async fn main() {
     let args = Args::parse();
     let code = tokio::fs::read_to_string(&args.filepath).await.unwrap();
+    let code = if typescript::is_ts_ext(&args.filepath) {
+        typescript::strip_types_fast_default(&code).unwrap()
+    } else {
+        code
+    };
 
     let rt = js::AsyncRuntime::new().unwrap();
     let ctx = js::AsyncContext::full(&rt).await.unwrap();
@@ -23,7 +28,10 @@ async fn main() {
     module_loader.add_module("fs/promises", fs::FsPromisesModule);
 
     rt.set_loader(
-        js::loader::BuiltinResolver::default(),
+        (
+            js_core::resolver::Resolver::default(),
+            js::loader::BuiltinResolver::default(),
+        ),
         (
             js_core::loader::TsLoader,
             js::loader::ScriptLoader::default(),

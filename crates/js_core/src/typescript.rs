@@ -50,3 +50,14 @@ pub fn strip_types_fast(ts_code: &str, ts_options: TypeScriptOptions) -> Result<
 pub fn strip_types_fast_default(ts_code: &str) -> Result<String, String> {
     strip_types_fast(ts_code, Default::default())
 }
+
+const EXTS: &[&str] = &[".ts", ".mts", ".cts", ".tsx"];
+
+pub fn is_ts_ext<P: AsRef<Path>>(filepath: P) -> bool {
+    filepath
+        .as_ref()
+        .extension()
+        .and_then(|ext| ext.to_str())
+        .map(|ext| EXTS.contains(&ext))
+        .unwrap_or(false)
+}

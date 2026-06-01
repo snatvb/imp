@@ -15,7 +15,17 @@ impl Default for Resolver {
 }
 
 impl Resolver {
-    fn dir_of(&self, base: &str) -> PathBuf {
+    pub fn resolve_entry(&self, path: &Path) -> Option<String> {
+        if path.is_dir() {
+            self.try_index(path)
+        } else if path.is_file() {
+            Some(path.to_string_lossy().to_string())
+        } else {
+            self.try_file(path)
+        }
+    }
+
+    pub fn dir_of(&self, base: &str) -> PathBuf {
         if base == "<eval>" || !base.contains('/') {
             return std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
         }
@@ -25,7 +35,7 @@ impl Resolver {
             .to_path_buf()
     }
 
-    fn try_file(&self, path: &Path) -> Option<String> {
+    pub fn try_file(&self, path: &Path) -> Option<String> {
         for ext in &self.extensions {
             let candidate = if ext.starts_with('.') {
                 let mut p = path.to_path_buf();
