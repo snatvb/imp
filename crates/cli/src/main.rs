@@ -50,14 +50,13 @@ async fn main() {
     let ctx = js::AsyncContext::full(&rt).await.unwrap();
     tracing::info!("runtime ready");
 
+    let mut builtin_resolver = js::loader::BuiltinResolver::default();
     let mut module_loader = js::loader::ModuleLoader::default();
     module_loader.add_module("fs/promises", fs::FsPromisesModule);
+    builtin_resolver.add_module("fs/promises");
 
     rt.set_loader(
-        (
-            js_core::resolver::Resolver::default(),
-            js::loader::BuiltinResolver::default(),
-        ),
+        (resolver, builtin_resolver),
         (
             js_core::loader::TsLoader,
             js::loader::ScriptLoader::default(),
