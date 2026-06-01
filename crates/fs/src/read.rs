@@ -11,11 +11,11 @@ pub async fn read(path: &str) -> std::io::Result<Vec<u8>> {
     fs::read(path).await
 }
 
-#[tracing::instrument(level = "debug", skip(ctx, path, encoding), fields(path = %path, encoding = ?encoding))]
+#[tracing::instrument(level = "debug", skip(ctx, path, encoding), fields(path = %path))]
 pub async fn read_file<'js>(
     ctx: js::Ctx<'js>,
     path: String,
-    encoding: Option<String>,
+    encoding: js::function::Opt<String>,
 ) -> js::Result<js::Value<'js>> {
     let encoding = Encoding::from_opt(encoding.as_deref()).map_err(|e| e.into_exception(&ctx))?;
     let raw = read(&path)
