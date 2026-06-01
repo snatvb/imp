@@ -15,13 +15,14 @@ struct Args {
 async fn main() {
     let args = Args::parse();
     let resolver = js_core::resolver::Resolver::default();
-    let Some(code) = resolver.resolve_entry(&args.filepath) else {
+    let Some(filepath) = resolver.resolve_entry(&args.filepath) else {
         panic!(
             "Can't find script by path {}",
             args.filepath.to_string_lossy()
         )
     };
-    let code = if typescript::is_ts_ext(&args.filepath) {
+    let code = tokio::fs::read_to_string(&filepath).await.unwrap();
+    let code = if typescript::is_ts_ext(&filepath) {
         typescript::strip_types_fast_default(&code).unwrap()
     } else {
         code
@@ -51,9 +52,7 @@ async fn main() {
         globals
             .set("console", console::create(&ctx).unwrap())
             .unwrap();
-        let promise =
-            js::Module::evaluate(ctx, args.filepath.to_string_lossy().as_ref(), code.as_str())
-                .unwrap();
+        let promise = js::Module::evaluate(ctx, filepath.as_str(), code.as_str()).unwrap();
         let _: js::Value<'_> = promise.into_future().await.unwrap();
     })
     .await;
