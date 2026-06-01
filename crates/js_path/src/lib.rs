@@ -1,21 +1,23 @@
 use std::path::Path;
 
-use rquickjs::{function, module::ModuleDef, prelude::Rest, Object};
+use rquickjs::{Object, function, module::ModuleDef, prelude::Rest};
 
 use js_core::coerce::JsCoerce;
 
 mod error;
+mod prelude;
+mod utils;
 
 use error::PathError;
 
-#[function]
-pub fn resolve<'js>(ctx: rquickjs::Ctx<'js>, args: Rest<rquickjs::Value<'js>>) -> rquickjs::Result<String> {
-    let paths: Vec<String> = args
-        .iter()
-        .enumerate()
-        .map(|(i, v)| String::coerce_js(&ctx, v, &format!("paths[{i}]")))
+use crate::utils::as_strings;
 
-        .collect::<rquickjs::Result<Vec<_>>>()?;
+#[function]
+pub fn resolve<'js>(
+    ctx: rquickjs::Ctx<'js>,
+    args: Rest<rquickjs::Value<'js>>,
+) -> rquickjs::Result<String> {
+    let paths = as_strings(&ctx, args)?;
 
     let cwd = std::env::current_dir()
         .map_err(|e| PathError::from_io(e, "resolve").into_exception(&ctx))?;
@@ -39,6 +41,32 @@ pub fn resolve<'js>(ctx: rquickjs::Ctx<'js>, args: Rest<rquickjs::Value<'js>>) -
     Ok(base.into_string())
 }
 
+#[function]
+pub fn join<'js>(
+    ctx: rquickjs::Ctx<'js>,
+    args: Rest<rquickjs::Value<'js>>,
+) -> rquickjs::Result<String> {
+    let paths = as_strings(&ctx, args)?;
+    let mut base = os_path::OsPathBuf::new("");
+
+    for arg in &paths {
+        if arg.is_empty() {
+            continue;
+        }
+        if Path::new(arg.as_str()).is_absolute() {
+            base = os_path::OsPathBuf::new(arg.as_str());
+        } else {
+            base.push(arg.as_str());
+        }
+    }
+    Ok(base.into_string())
+}
+
+#[cfg(not(windows))]
+const SEPARATOR: &str = "/";
+#[cfg(windows)]
+const SEPARATOR: &str = "\\";
+
 pub struct PathModule;
 
 impl ModuleDef for PathModule {
@@ -56,6 +84,8 @@ impl ModuleDef for PathModule {
 
         let ns = Object::new(ctx.clone())?;
         ns.set("resolve", js_resolve)?;
+        ns.set("join", js_join)?;
+        ns.set("sep", SEPARATOR)?;
         exports.export("default", ns)?;
 
         Ok(())
