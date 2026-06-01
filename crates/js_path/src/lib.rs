@@ -2,14 +2,13 @@ use std::path::Path;
 
 use rquickjs::{Object, function, module::ModuleDef, prelude::Rest};
 
-use js_core::coerce::JsCoerce;
-
 mod error;
 mod prelude;
 mod utils;
 
 use error::PathError;
 
+use crate::prelude::*;
 use crate::utils::as_strings;
 
 #[function]
@@ -62,10 +61,37 @@ pub fn join<'js>(
     Ok(base.into_string())
 }
 
+#[function]
+pub fn basename<'js>(
+    ctx: js::Ctx<'js>,
+    path: js::Value<'js>,
+    suffix: js::prelude::Opt<js::Value<'js>>,
+) -> js::Result<String> {
+    let path = String::coerce_js(&ctx, &path, "path")?;
+    let suffix = match &suffix.0 {
+        Some(suffix) => Some(String::coerce_js(&ctx, suffix, "suffix")?),
+        _ => None,
+    };
+    let ospath = os_path::OsPathBuf::from_path_buf(path.into()).map_err(|p| {
+        PathError::invalid_path(format!("current directory path is not valid UTF-8: {p:?}"))
+            .into_exception(&ctx)
+    })?;
+    Ok(ospath
+        .file_name()
+        .map(|f| suffix.map(|s| f.trim_end_matches(&s)).unwrap_or(f))
+        .unwrap_or("")
+        .into())
+}
+
 #[cfg(not(windows))]
 const SEPARATOR: &str = "/";
 #[cfg(windows)]
 const SEPARATOR: &str = "\\";
+
+#[cfg(not(windows))]
+const DELIMITER: &str = ":";
+#[cfg(windows)]
+const DELIMITER: &str = ";";
 
 pub struct PathModule;
 
@@ -85,7 +111,9 @@ impl ModuleDef for PathModule {
         let ns = Object::new(ctx.clone())?;
         ns.set("resolve", js_resolve)?;
         ns.set("join", js_join)?;
+        ns.set("basename", js_basename)?;
         ns.set("sep", SEPARATOR)?;
+        ns.set("delimiter", DELIMITER)?;
         exports.export("default", ns)?;
 
         Ok(())
