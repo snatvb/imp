@@ -6,6 +6,6 @@ pub fn as_strings<'js>(
 ) -> js::Result<Vec<String>> {
     args.iter()
         .enumerate()
-        .map(|(i, v)| String::coerce_js(ctx, v, &format!("paths[{i}]")))
+        .map(|(i, v)| String::coerce_js(ctx, v, format_args!("paths[{i}]")))
         .collect::<js::Result<Vec<_>>>()
 }

@@ -1,3 +1,5 @@
+use std::fmt;
+
 use rquickjs::{Constructor, Ctx, Object, Type, Value};
 
 #[derive(Debug, Clone, Copy)]
@@ -42,12 +44,12 @@ pub fn throw_type_error<'js>(ctx: &Ctx<'js>, code: &str, msg: &str) -> rquickjs:
     make().unwrap_or_else(|e| e)
 }
 
-pub trait JsCoerce: Sized {
+pub trait JsCoerce<'js>: Sized {
     fn js_type() -> &'static str;
 
-    fn coerce<'js>(val: &Value<'js>) -> Result<Self, CoerceError>;
+    fn coerce(val: &Value<'js>) -> Result<Self, CoerceError>;
 
-    fn coerce_js<'js>(ctx: &Ctx<'js>, val: &Value<'js>, name: &str) -> rquickjs::Result<Self> {
+    fn coerce_js(ctx: &Ctx<'js>, val: &Value<'js>, name: impl fmt::Display) -> rquickjs::Result<Self> {
         Self::coerce(val).map_err(|_| {
             let received = js_type_of(val);
             let msg = format!(
@@ -59,44 +61,54 @@ pub trait JsCoerce: Sized {
     }
 }
 
-impl JsCoerce for String {
+impl<'js> JsCoerce<'js> for String {
     fn js_type() -> &'static str {
         "string"
     }
 
-    fn coerce<'js>(val: &Value<'js>) -> Result<Self, CoerceError> {
+    fn coerce(val: &Value<'js>) -> Result<Self, CoerceError> {
         val.as_string()
             .and_then(|s| s.to_string().ok())
             .ok_or(CoerceError)
     }
 }
 
-impl JsCoerce for i32 {
+impl<'js> JsCoerce<'js> for i32 {
     fn js_type() -> &'static str {
         "number"
     }
 
-    fn coerce<'js>(val: &Value<'js>) -> Result<Self, CoerceError> {
+    fn coerce(val: &Value<'js>) -> Result<Self, CoerceError> {
         val.as_int().ok_or(CoerceError)
     }
 }
 
-impl JsCoerce for f64 {
+impl<'js> JsCoerce<'js> for f64 {
     fn js_type() -> &'static str {
         "number"
     }
 
-    fn coerce<'js>(val: &Value<'js>) -> Result<Self, CoerceError> {
+    fn coerce(val: &Value<'js>) -> Result<Self, CoerceError> {
         val.as_float().ok_or(CoerceError)
     }
 }
 
-impl JsCoerce for bool {
+impl<'js> JsCoerce<'js> for bool {
     fn js_type() -> &'static str {
         "boolean"
     }
 
-    fn coerce<'js>(val: &Value<'js>) -> Result<Self, CoerceError> {
+    fn coerce(val: &Value<'js>) -> Result<Self, CoerceError> {
         val.as_bool().ok_or(CoerceError)
+    }
+}
+
+impl<'js> JsCoerce<'js> for Object<'js> {
+    fn js_type() -> &'static str {
+        "object"
+    }
+
+    fn coerce(val: &Value<'js>) -> Result<Self, CoerceError> {
+        val.as_object().cloned().ok_or(CoerceError)
     }
 }

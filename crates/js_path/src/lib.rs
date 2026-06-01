@@ -104,10 +104,8 @@ pub fn extname<'js>(ctx: js::Ctx<'js>, path: js::Value<'js>) -> js::Result<Strin
 }
 
 #[function]
-pub fn format<'js>(_ctx: js::Ctx<'js>, arg: js::Value<'js>) -> js::Result<String> {
-    let obj = arg
-        .as_object()
-        .ok_or_else(|| js::Error::new_from_js("arg", "object"))?;
+pub fn format<'js>(ctx: js::Ctx<'js>, arg: js::Value<'js>) -> js::Result<String> {
+    let obj = js::Object::coerce_js(&ctx, &arg, "arg")?;
 
     let dir: Option<String> = obj.get("dir")?;
     let root: Option<String> = obj.get("root")?;
