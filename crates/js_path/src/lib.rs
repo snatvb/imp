@@ -103,6 +103,41 @@ pub fn extname<'js>(ctx: js::Ctx<'js>, path: js::Value<'js>) -> js::Result<Strin
     Ok(ospath.extension().unwrap_or("").into())
 }
 
+#[function]
+pub fn format<'js>(_ctx: js::Ctx<'js>, arg: js::Value<'js>) -> js::Result<String> {
+    let obj = arg
+        .as_object()
+        .ok_or_else(|| js::Error::new_from_js("arg", "object"))?;
+
+    let dir: Option<String> = obj.get("dir")?;
+    let root: Option<String> = obj.get("root")?;
+    let base: Option<String> = obj.get("base")?;
+    let name: Option<String> = obj.get("name")?;
+    let ext: Option<String> = obj.get("ext")?;
+
+    let base_val = match base {
+        Some(b) => b,
+        None => {
+            let n = name.unwrap_or_default();
+            let e = ext.unwrap_or_default();
+            let e = if !e.is_empty() && !e.starts_with('.') {
+                format!(".{e}")
+            } else {
+                e
+            };
+            format!("{n}{e}")
+        }
+    };
+
+    if let Some(d) = dir {
+        Ok(format!("{d}{SEPARATOR}{base_val}"))
+    } else if let Some(r) = root {
+        Ok(format!("{r}{base_val}"))
+    } else {
+        Ok(base_val)
+    }
+}
+
 #[cfg(not(windows))]
 const SEPARATOR: &str = "/";
 #[cfg(windows)]
@@ -134,6 +169,7 @@ impl ModuleDef for PathModule {
         ns.set("basename", js_basename)?;
         ns.set("dirname", js_dirname)?;
         ns.set("extname", js_extname)?;
+        ns.set("format", js_format)?;
         ns.set("sep", SEPARATOR)?;
         ns.set("delimiter", DELIMITER)?;
         exports.export("default", ns)?;
