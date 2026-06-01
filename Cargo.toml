@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/cli", "crates/js_core", "crates/fs", "crates/console"]
+members = ["crates/cli", "crates/js_core", "crates/fs", "crates/console", "crates/process"]
 resolver = "3"
 
 [workspace.package]
@@ -24,3 +24,4 @@ tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 js_core = { path = "crates/js_core" }
 console = { path = "crates/console" }
 fs = { path = "crates/fs" }
+process = { path = "crates/process" }

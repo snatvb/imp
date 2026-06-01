@@ -1,4 +1,5 @@
 use base64::Engine;
+use js_core::error::SystemError;
 use js_core::js::IntoJs;
 use tokio::fs;
 
@@ -20,7 +21,7 @@ pub async fn read_file<'js>(
     let encoding = Encoding::from_opt(encoding.as_deref()).map_err(|e| e.into_exception(&ctx))?;
     let raw = read(&path)
         .await
-        .map_err(|e| Error::from_io(e, "read", Some(path.clone())).into_exception(&ctx))?;
+        .map_err(|e| SystemError::from_io(e, "read", Some(path.clone())).into_exception(&ctx))?;
     tracing::debug!(bytes = raw.len(), "read_file raw bytes");
 
     let value = match encoding {
