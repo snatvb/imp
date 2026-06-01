@@ -1,5 +1,6 @@
 use clap::Parser;
 
+mod error;
 mod prelude;
 mod tracing_init;
 use js_core::typescript;
@@ -71,8 +72,13 @@ async fn main() {
             .set("console", console::create(&ctx).unwrap())
             .unwrap();
         tracing::info!(file = %filepath, "evaluating module");
-        let promise = js::Module::evaluate(ctx, filepath.as_str(), code.as_str()).unwrap();
-        let _: js::Value<'_> = promise.into_future().await.unwrap();
+        let promise = error::expect_js(
+            &ctx,
+            js::Module::evaluate(ctx.clone(), filepath.as_str(), code.as_str()),
+            "module evaluation failed",
+        );
+        let _: js::Value<'_> =
+            error::expect_js(&ctx, promise.into_future().await, "promise rejected");
         tracing::info!("module evaluated");
     })
     .await;
