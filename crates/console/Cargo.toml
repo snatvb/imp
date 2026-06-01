@@ -1,0 +1,10 @@
+[package]
+name = "console"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+
+[dependencies]
+rquickjs.workspace = true
+colored.workspace = true
+js_core.workspace = true

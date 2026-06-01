@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/cli", "crates/js_core", "crates/fs"]
+members = ["crates/cli", "crates/js_core", "crates/fs", "crates/console"]
 resolver = "3"
 
 [workspace.package]
@@ -17,6 +17,8 @@ tokio = { version = "1.52.3", features = [
   "macros",
 ] }
 thiserror = { version = "2.0.18", features = ["std"] }
+colored = { version = "3.1.1", features = ["no-color"] }
 
 js_core = { path = "crates/js_core" }
+console = { path = "crates/console" }
 fs = { path = "crates/fs" }
