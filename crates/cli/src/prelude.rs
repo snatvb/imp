@@ -1,2 +1,2 @@
 pub use js_core::js;
-pub use std::path::{Path, PathBuf};
+pub use std::path::PathBuf;

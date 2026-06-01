@@ -11,3 +11,5 @@ clap.workspace = true
 js_core.workspace = true
 console.workspace = true
 fs.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true

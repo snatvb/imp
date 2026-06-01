@@ -67,6 +67,7 @@ impl Timers {
     pub fn new() -> Self {
         Self::default()
     }
+    #[tracing::instrument(level = "trace", skip(self), fields(active = self.timers.len(), dt_ms = dt.as_millis() as u64))]
     pub fn tick(&mut self, dt: Duration) {
         let mut i = 0;
         while i < self.timers.len() {
@@ -80,23 +81,27 @@ impl Timers {
             match t.kind {
                 TimerKind::Once => {
                     let t = self.timers.swap_remove(i);
+                    tracing::debug!(id = u64::from(t.id), "timer fire (once)");
                     self.released.push_back(ReleasedTimer {
                         id: t.id,
                         cb: t.callback,
                     });
                 }
                 TimerKind::Repeating { interval } => {
+                    let id = t.id;
                     self.released.push_back(ReleasedTimer {
-                        id: t.id,
+                        id,
                         cb: t.callback.clone(),
                     });
                     t.remaining = interval;
+                    tracing::debug!(id = u64::from(id), interval_ms = interval.as_millis() as u64, "timer fire (repeat)");
                     i += 1;
                 }
             }
         }
     }
 
+    #[tracing::instrument(level = "debug", skip(self, ctx, callback), fields(delay_ms = delay.as_millis() as u64))]
     pub fn set_timeout<'js>(
         &mut self,
         ctx: &js::Ctx<'js>,
@@ -110,9 +115,11 @@ impl Timers {
             kind: TimerKind::Once,
             remaining: delay,
         });
+        tracing::debug!(id = u64::from(id), "set_timeout registered");
         id
     }
 
+    #[tracing::instrument(level = "debug", skip(self, ctx, callback), fields(delay_ms = delay.as_millis() as u64))]
     pub fn set_interval<'js>(
         &mut self,
         ctx: &js::Ctx<'js>,
@@ -126,17 +133,23 @@ impl Timers {
             kind: TimerKind::Repeating { interval: delay },
             remaining: delay,
         });
+        tracing::debug!(id = u64::from(id), "set_interval registered");
         id
     }
 
     pub fn remove(&mut self, id: TimerId) {
+        let before = self.timers.len() + self.released.len();
         self.timers.retain(|t| t.id != id);
         self.released.retain(|t| t.id != id);
+        let after = self.timers.len() + self.released.len();
+        tracing::debug!(id = u64::from(id), removed = before - after, "timer remove");
     }
 
     pub fn clear(&mut self) {
+        let n = self.timers.len() + self.released.len();
         self.timers.clear();
         self.released.clear();
+        tracing::debug!(cleared = n, "timers cleared");
     }
 
     pub fn pop_one(&mut self) -> Option<ReleasedTimer> {

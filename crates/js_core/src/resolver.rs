@@ -15,13 +15,20 @@ impl Default for Resolver {
 }
 
 impl Resolver {
+    #[tracing::instrument(level = "debug", skip(self), fields(path = %path.display()))]
     pub fn resolve_entry(&self, path: &Path) -> Option<String> {
         if path.is_dir() {
-            self.try_index(path)
+            let r = self.try_index(path);
+            tracing::debug!(?r, "resolve_entry: dir");
+            r
         } else if path.is_file() {
-            Some(path.to_string_lossy().to_string())
+            let s = path.to_string_lossy().to_string();
+            tracing::debug!(file = %s, "resolve_entry: direct file");
+            Some(s)
         } else {
-            self.try_file(path)
+            let r = self.try_file(path);
+            tracing::debug!(?r, "resolve_entry: try_file with extensions");
+            r
         }
     }
 
@@ -45,8 +52,10 @@ impl Resolver {
                 path.with_extension(ext)
             };
             if candidate.is_file() {
+                tracing::trace!(file = %candidate.display(), ext = %ext, "try_file: hit");
                 return Some(candidate.to_string_lossy().to_string());
             }
+            tracing::trace!(file = %candidate.display(), ext = %ext, "try_file: miss");
         }
         None
     }
@@ -57,8 +66,10 @@ impl Resolver {
                 .join("index")
                 .with_extension(ext.trim_start_matches('.'));
             if candidate.is_file() {
+                tracing::trace!(file = %candidate.display(), ext = %ext, "try_index: hit");
                 return Some(candidate.to_string_lossy().to_string());
             }
+            tracing::trace!(file = %candidate.display(), ext = %ext, "try_index: miss");
         }
         None
     }
@@ -95,19 +106,23 @@ impl Resolver {
         }
     }
 
+    #[tracing::instrument(level = "debug", skip(self), fields(name = %name, base = %base))]
     fn resolve_impl(&self, base: &str, name: &str) -> Result<String, String> {
         if name.starts_with("./") || name.starts_with("../") {
             let base_dir = self.dir_of(base);
             let path = self.push_rel(&base_dir, name);
+            tracing::debug!(resolved = %path.display(), "relative import");
             self.try_file(&path)
                 .or_else(|| self.try_index(&path))
                 .ok_or_else(|| "module not found".to_string())
         } else {
             let (pkg, subpath) = self.break_bare(name);
+            tracing::debug!(pkg = %pkg, subpath = %subpath, "bare import");
             let mut dir = self.dir_of(base);
             loop {
                 let pkg_dir = self.push_rel(&dir.join("node_modules"), &pkg);
                 if pkg_dir.is_dir() {
+                    let from_display = pkg_dir.display().to_string();
                     let sub_path = if subpath == "." {
                         pkg_dir
                     } else {
@@ -117,6 +132,7 @@ impl Resolver {
                         .try_file(&sub_path)
                         .or_else(|| self.try_index(&sub_path))
                     {
+                        tracing::debug!(found = %found, from = %from_display, "resolved from node_modules");
                         return Ok(found);
                     }
                 }

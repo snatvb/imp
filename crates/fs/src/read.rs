@@ -6,10 +6,12 @@ use crate::{encoding::Encoding, error::Error, prelude::*};
 
 // to have possibility to update
 #[inline(always)]
+#[tracing::instrument(level = "trace", skip(path), fields(path = %path))]
 pub async fn read(path: &str) -> std::io::Result<Vec<u8>> {
     fs::read(path).await
 }
 
+#[tracing::instrument(level = "debug", skip(ctx, path, encoding), fields(path = %path, encoding = ?encoding))]
 pub async fn read_file<'js>(
     ctx: js::Ctx<'js>,
     path: String,
@@ -19,6 +21,7 @@ pub async fn read_file<'js>(
     let raw = read(&path)
         .await
         .map_err(|e| Error::from_io(e, "read", Some(path.clone())).into_exception(&ctx))?;
+    tracing::debug!(bytes = raw.len(), "read_file raw bytes");
 
     let value = match encoding {
         Encoding::Buffer => js::ArrayBuffer::new(ctx.clone(), raw)?.into_value(),

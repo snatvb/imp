@@ -18,6 +18,8 @@ tokio = { version = "1.52.3", features = [
 ] }
 thiserror = { version = "2.0.18", features = ["std"] }
 colored = { version = "3.1.1", features = ["no-color"] }
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 
 js_core = { path = "crates/js_core" }
 console = { path = "crates/console" }

@@ -11,8 +11,9 @@ thread_local! {
     static ALOCATOR_POOL: RefCell<Allocator> = RefCell::new(Allocator::default());
 }
 
+#[tracing::instrument(level = "debug", skip_all, fields(input_len = ts_code.len()))]
 pub fn strip_types_fast(ts_code: &str, ts_options: TypeScriptOptions) -> Result<String, String> {
-    ALOCATOR_POOL.with(|allocator_cell| {
+    let result = ALOCATOR_POOL.with(|allocator_cell| {
         let mut allocator = allocator_cell.borrow_mut();
         allocator.reset();
 
@@ -25,13 +26,16 @@ pub fn strip_types_fast(ts_code: &str, ts_options: TypeScriptOptions) -> Result<
         let parsed = parser.parse();
 
         if !parsed.errors.is_empty() {
+            tracing::debug!(errors = parsed.errors.len(), "TS parse errors");
             return Err(format!("TS Syntax Errors: {:?}", parsed.errors));
         }
+        tracing::trace!("TS parsed");
 
         let mut program = parsed.program;
 
         let semantic_return = SemanticBuilder::new().with_cfg(false).build(&program);
         let scoping = semantic_return.semantic.into_scoping();
+        tracing::trace!("TS semantic built");
 
         let options = TransformOptions {
             typescript: ts_options,
@@ -40,11 +44,20 @@ pub fn strip_types_fast(ts_code: &str, ts_options: TypeScriptOptions) -> Result<
         let dummy_path = DUMMY_PATH.get_or_init(|| Path::new("mod.ts"));
         Transformer::new(&allocator, dummy_path, &options)
             .build_with_scoping(scoping, &mut program);
+        tracing::trace!("TS transformed");
 
         let codegen_return = Codegen::new().build(&program);
+        tracing::debug!(output_len = codegen_return.code.len(), "TS codegen done");
 
         Ok(codegen_return.code)
-    })
+    });
+
+    #[cfg(debug_assertions)]
+    if let Ok(ref out) = result {
+        tracing::info!(output_len = out.len(), "TS stripped");
+    }
+
+    result
 }
 
 pub fn strip_types_fast_default(ts_code: &str) -> Result<String, String> {
@@ -53,11 +66,15 @@ pub fn strip_types_fast_default(ts_code: &str) -> Result<String, String> {
 
 const EXTS: &[&str] = &[".ts", ".mts", ".cts", ".tsx"];
 
+#[tracing::instrument(level = "trace", skip(filepath), fields(path = %filepath.as_ref().display()))]
+#[inline(always)]
 pub fn is_ts_ext<P: AsRef<Path>>(filepath: P) -> bool {
-    filepath
+    let result = filepath
         .as_ref()
         .extension()
         .and_then(|ext| ext.to_str())
         .map(|ext| EXTS.contains(&ext))
-        .unwrap_or(false)
+        .unwrap_or(false);
+    tracing::trace!(is_ts = result, "ext check");
+    result
 }

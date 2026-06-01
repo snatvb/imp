@@ -8,3 +8,4 @@ authors.workspace = true
 rquickjs.workspace = true
 colored.workspace = true
 js_core.workspace = true
+tracing.workspace = true
