@@ -6,6 +6,7 @@ members = [
   "crates/console",
   "crates/process",
   "crates/os-path",
+  "crates/js_path",
 ]
 resolver = "3"
 
@@ -34,3 +35,4 @@ console = { path = "crates/console" }
 fs = { path = "crates/fs" }
 process = { path = "crates/process" }
 os-path = { path = "crates/os-path" }
+js_path = { path = "crates/js_path" }

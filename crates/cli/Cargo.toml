@@ -14,5 +14,6 @@ js_core.workspace = true
 os-path.workspace = true
 console.workspace = true
 process.workspace = true
+js_path.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true

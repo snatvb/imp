@@ -235,6 +235,7 @@ dependencies = [
  "console",
  "fs",
  "js_core",
+ "js_path",
  "os-path",
  "process",
  "tokio",
@@ -651,6 +652,17 @@ dependencies = [
  "oxc_span",
  "oxc_transformer",
  "rquickjs",
+ "tracing",
+]
+
+[[package]]
+name = "js_path"
+version = "0.1.0"
+dependencies = [
+ "js_core",
+ "os-path",
+ "rquickjs",
+ "thiserror",
  "tracing",
 ]
 

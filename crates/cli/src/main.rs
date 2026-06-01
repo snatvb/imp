@@ -7,7 +7,7 @@ use std::path::PathBuf;
 mod error;
 mod prelude;
 mod tracing_init;
-use js_core::{meta::with_meta, typescript};
+use js_core::{meta::with_meta, register_native_modules, typescript};
 use prelude::*;
 
 #[derive(Debug, Parser)]
@@ -59,8 +59,12 @@ async fn main() {
 
     let mut builtin_resolver = js::loader::BuiltinResolver::default();
     let mut module_loader = js::loader::ModuleLoader::default();
-    module_loader.add_module("fs/promises", fs::FsPromisesModule);
-    builtin_resolver.add_module("fs/promises");
+    register_native_modules!(
+        module_loader,
+        builtin_resolver,
+        ("fs/promises", fs::FsPromisesModule),
+        ("path", js_path::PathModule),
+    );
 
     rt.set_loader(
         (resolver, builtin_resolver),
