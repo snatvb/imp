@@ -13,3 +13,5 @@ oxc_transformer = "0.133.0"
 oxc_semantic = "0.133.0"
 rquickjs.workspace = true
 tracing.workspace = true
+camino.workspace = true
+os-path.workspace = true

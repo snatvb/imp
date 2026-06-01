@@ -64,7 +64,7 @@ pub fn strip_types_fast_default(ts_code: &str) -> Result<String, String> {
     strip_types_fast(ts_code, Default::default())
 }
 
-const EXTS: &[&str] = &[".ts", ".mts", ".cts", ".tsx"];
+const EXTS: &[&str] = &["ts", "mts", "cts", "tsx"];
 
 #[tracing::instrument(level = "trace", skip(filepath), fields(path = %filepath.as_ref().display()))]
 #[inline(always)]

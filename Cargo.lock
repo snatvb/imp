@@ -235,6 +235,7 @@ dependencies = [
  "console",
  "fs",
  "js_core",
+ "os-path",
  "process",
  "tokio",
  "tracing",
@@ -642,6 +643,7 @@ name = "js_core"
 version = "0.1.0"
 dependencies = [
  "camino",
+ "os-path",
  "oxc_allocator",
  "oxc_codegen",
  "oxc_parser",

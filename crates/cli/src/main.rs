@@ -1,9 +1,13 @@
+use std::env;
+
 use clap::Parser;
+use os_path::OsPathBuf;
+use std::path::PathBuf;
 
 mod error;
 mod prelude;
 mod tracing_init;
-use js_core::typescript;
+use js_core::{meta::with_meta, typescript};
 use prelude::*;
 
 #[derive(Debug, Parser)]
@@ -38,9 +42,12 @@ async fn main() {
     let code = tokio::fs::read_to_string(&filepath).await.unwrap();
     tracing::debug!(bytes = code.len(), "source loaded");
 
+    let cwd = OsPathBuf::from_path_buf(env::current_dir().unwrap()).unwrap();
     let code = if typescript::is_ts_ext(&filepath) {
         tracing::info!("stripping TS");
-        typescript::strip_types_fast_default(&code).unwrap()
+        typescript::strip_types_fast_default(&code)
+            .map(with_meta(&cwd, &filepath))
+            .unwrap()
     } else {
         code
     };
@@ -58,9 +65,9 @@ async fn main() {
     rt.set_loader(
         (resolver, builtin_resolver),
         (
-            js_core::loader::TsLoader,
-            js::loader::ScriptLoader::default(),
+            js_core::loader::ScriptLoader { cwd },
             module_loader,
+            js::loader::ScriptLoader::default(),
         ),
     )
     .await;
