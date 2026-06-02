@@ -2,28 +2,28 @@ use colored::*;
 use js_core::utils::*;
 use rquickjs as js;
 
-pub fn log(_ctx: js::Ctx<'_>, js::prelude::Rest(args): js::prelude::Rest<js::Value<'_>>) {
-    println!("{}", convert_to_string(args.as_slice()));
+pub fn log<'js>(ctx: js::Ctx<'js>, js::prelude::Rest(args): js::prelude::Rest<js::Value<'js>>) {
+    println!("{}", convert_to_string(&ctx, args.as_slice(), 3, false));
 }
 
-pub fn trace(ctx: js::Ctx<'_>, js::prelude::Rest(args): js::prelude::Rest<js::Value<'_>>) {
+pub fn trace<'js>(ctx: js::Ctx<'js>, js::prelude::Rest(args): js::prelude::Rest<js::Value<'js>>) {
     println!(
         "{}\n{}",
-        convert_to_string(args.as_slice()),
+        convert_to_string(&ctx, args.as_slice(), 3, false),
         extract_trace(&ctx)
     );
 }
 
-pub fn warn(ctx: js::Ctx<'_>, js::prelude::Rest(args): js::prelude::Rest<js::Value<'_>>) {
+pub fn warn<'js>(ctx: js::Ctx<'js>, js::prelude::Rest(args): js::prelude::Rest<js::Value<'js>>) {
     println!(
         "{}\n{}",
-        convert_to_string(args.as_slice()).yellow(),
+        convert_to_string(&ctx, args.as_slice(), 3, false).yellow(),
         extract_trace(&ctx)
     );
 }
 
-pub fn error(ctx: js::Ctx<'_>, js::prelude::Rest(args): js::prelude::Rest<js::Value<'_>>) {
-    let error_msg = convert_to_string(args.as_slice());
+pub fn error<'js>(ctx: js::Ctx<'js>, js::prelude::Rest(args): js::prelude::Rest<js::Value<'js>>) {
+    let error_msg = convert_to_string(&ctx, args.as_slice(), 3, false);
     let mut stack_trace = String::new();
 
     if let Some(js_stack) = args

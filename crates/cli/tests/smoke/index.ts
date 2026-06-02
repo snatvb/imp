@@ -38,5 +38,20 @@ console.log("format   ", "root+base           ", path.format({ root: '/', base: 
 console.log("format   ", "root+name+ext       ", path.format({ root: '/', name: 'file', ext: '.txt' }))
 console.log("format   ", "root+name+ext (no .)", path.format({ root: '/', name: 'file', ext: 'txt' }))
 
+console.log("=== objects ===")
+console.log({ a: 1, b: "hello", c: true, d: null, e: undefined })
+console.log({ nested: { foo: [1, 2, { bar: "baz" }] } })
+console.log({ date: new Date(), err: new Error("test") })
+
+console.log("=== Map ===")
+const m = new Map()
+m.set("x", 10)
+m.set("y", { z: 20 })
+console.log(m, "| size:", m.size)
+
+console.log("=== Set ===")
+const s = new Set([1, 2, 3, "four", { obj: true }])
+console.log(s, "| size:", s.size)
+
 console.log("=== fs ===")
 console.log("fs read  ", await fs.readFile(import.meta.dirname + "/text.txt", "utf8"))
