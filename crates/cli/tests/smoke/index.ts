@@ -12,7 +12,7 @@ console.log("resolve  ", "cwd/t.txt           ", path.resolve(import.meta.dirnam
 console.log("resolve  ", "/abs                ", path.resolve("/asd"))
 
 console.log("=== path.join ===")
-console.log("join     ", "cwd/t.txt, foo/bar/baz", path.join(import.meta.dirname, "text.txt"), path.join("foo", "bar", "baz"))
+console.log("join     ", "cwd/t.txt, foo/bar/baz", path.join(import.meta.dirname, "text.txt"), path.join("foo", "bar", "baz/file.txt"))
 
 console.log("=== path.sep / delimiter ===")
 console.log("sep/delim", path.sep, path.delimiter)

@@ -1,6 +1,6 @@
 use os_path::OsPathBuf;
 use rquickjs::{Object, function, module::ModuleDef};
-use std::path::MAIN_SEPARATOR as SEPARATOR;
+use std::path::MAIN_SEPARATOR_STR as SEPARATOR;
 
 mod error;
 mod prelude;
@@ -29,7 +29,8 @@ pub fn resolve<'js>(
 #[function]
 pub fn join<'js>(ctx: js::Ctx<'js>, args: js::prelude::Rest<js::Value<'js>>) -> js::Result<String> {
     let paths = as_strings(&ctx, args)?;
-    Ok(resolve_paths(&paths, os_path::OsPathBuf::new("")).into_string())
+    let joined = paths.join(SEPARATOR);
+    Ok(OsPathBuf::new(joined).normalize().into_string())
 }
 
 fn base<'a>(ospath: &'a OsPathBuf, suffix: Option<&str>) -> &'a str {
