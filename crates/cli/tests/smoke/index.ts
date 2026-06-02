@@ -21,8 +21,13 @@ console.log("=== path.basename ===")
 console.log("basename ", "filename            ", path.basename(import.meta.filename))
 console.log("basename ", "with suffix ts      ", path.basename(import.meta.filename, "ts"))
 
-console.log("=== path.isAbsolute ===")
+console.log("=== path.normalize ===")
 console.log("normalize", "/foo/bar//baz/asdf/quux/..", path.normalize("/foo/bar//baz/asdf/quux/.."))
+
+console.log("=== path.parse ===")
+console.log("prase    ", "C:\\path\\dir\\file.txt  ", path.parse('C:\\path\\dir\\file.txt'))
+
+console.log("=== path.isAbsolute ===")
 console.log("isAbs    ", "/foo/bar            ", path.isAbsolute("/foo/bar"))
 console.log("isAbs    ", "/baz/..             ", path.isAbsolute("/baz/.."))
 console.log("isAbs    ", "//server            ", path.isAbsolute("//server"))
@@ -32,6 +37,7 @@ console.log("isAbs    ", "qux/                ", path.isAbsolute("qux/"))
 console.log("isAbs    ", "bar\\baz             ", path.isAbsolute("bar\\baz"))
 console.log("isAbs    ", ".                   ", path.isAbsolute("."))
 console.log("isAbs    ", "(empty)             ", path.isAbsolute(""))
+
 
 console.log("=== path.format ===")
 console.log("format   ", "dir+base            ", path.format({ root: '/ignored', dir: '/home/user/dir', base: 'file.txt' }))

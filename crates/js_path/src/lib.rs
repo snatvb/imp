@@ -1,4 +1,6 @@
+use os_path::OsPathBuf;
 use rquickjs::{Object, function, module::ModuleDef};
+use std::path::MAIN_SEPARATOR as SEPARATOR;
 
 mod error;
 mod prelude;
@@ -30,6 +32,13 @@ pub fn join<'js>(ctx: js::Ctx<'js>, args: js::prelude::Rest<js::Value<'js>>) -> 
     Ok(resolve_paths(&paths, os_path::OsPathBuf::new("")).into_string())
 }
 
+fn base<'a>(ospath: &'a OsPathBuf, suffix: Option<&str>) -> &'a str {
+    ospath
+        .file_name()
+        .map(|f| suffix.map(|s| f.trim_end_matches(&s)).unwrap_or(f))
+        .unwrap_or("")
+}
+
 #[function]
 pub fn basename<'js>(
     ctx: js::Ctx<'js>,
@@ -42,18 +51,18 @@ pub fn basename<'js>(
         .map(|s| String::coerce_js(&ctx, &s, "suffix"))
         .transpose()?;
     let ospath = to_ospath(&ctx, path)?;
-    Ok(ospath
-        .file_name()
-        .map(|f| suffix.map(|s| f.trim_end_matches(&s)).unwrap_or(f))
-        .unwrap_or("")
-        .into())
+    Ok(base(&ospath, suffix.as_deref()).into())
+}
+
+fn dir(ospath: &OsPathBuf) -> &str {
+    ospath.parent().map(|p| p.as_str()).unwrap_or(".")
 }
 
 #[function]
 pub fn dirname<'js>(ctx: js::Ctx<'js>, path: js::Value<'js>) -> js::Result<String> {
     let path = String::coerce_js(&ctx, &path, "path")?;
     let ospath = to_ospath(&ctx, path)?;
-    Ok(ospath.parent().map(|p| p.as_str()).unwrap_or(".").into())
+    Ok(dir(&ospath).into())
 }
 
 #[function]
@@ -124,7 +133,38 @@ pub fn format<'js>(ctx: js::Ctx<'js>, arg: js::Value<'js>) -> js::Result<String>
     }
 }
 
-const SEPARATOR: &str = if cfg!(windows) { "\\" } else { "/" };
+#[function]
+pub fn parse<'js>(ctx: js::Ctx<'js>, path: js::Value<'js>) -> js::Result<js::Object<'js>> {
+    let path_str = String::coerce_js(&ctx, &path, "path")?;
+
+    let ospath = os_path::OsPathBuf::new(&path_str);
+
+    let root = ospath.root().to_string();
+    let base = ospath.file_name().unwrap_or("").to_string();
+    let ext = ospath
+        .extension()
+        .map(|e| format!(".{e}"))
+        .unwrap_or_default();
+    let name = if ext.is_empty() {
+        base.clone()
+    } else {
+        base[..base.len() - ext.len()].to_string()
+    };
+    let dir = match ospath.parent() {
+        Some(p) => p.as_str().to_string(),
+        None => root.clone(),
+    };
+
+    let res = Object::new(ctx.clone())?;
+    res.set("root", &root)?;
+    res.set("dir", &dir)?;
+    res.set("base", &base)?;
+    res.set("name", &name)?;
+    res.set("ext", &ext)?;
+
+    Ok(res)
+}
+
 const DELIMITER: &str = if cfg!(windows) { ";" } else { ":" };
 
 pub struct PathModule;
@@ -152,6 +192,7 @@ impl ModuleDef for PathModule {
         ns.set("format", js_format)?;
         ns.set("normalize", js_normalize)?;
         ns.set("isAbsolute", js_is_absolute)?;
+        ns.set("parse", js_parse)?;
         ns.set("sep", SEPARATOR)?;
         ns.set("delimiter", DELIMITER)?;
         exports.export("default", ns)?;

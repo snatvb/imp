@@ -1,3 +1,4 @@
+use camino::Utf8Component;
 use camino::Utf8PathBuf;
 use std::borrow::Borrow;
 use std::fmt;
@@ -39,7 +40,6 @@ impl OsPathBuf {
     }
 
     pub fn normalize(&self) -> Self {
-        use camino::Utf8Component;
         use std::path::MAIN_SEPARATOR;
 
         let s = self.0.as_str();
@@ -202,6 +202,19 @@ impl OsPath {
 
     pub fn extension(&self) -> Option<&str> {
         self.0.extension()
+    }
+
+    pub fn root(&self) -> &str {
+        let s = self.0.as_str();
+        let mut end = 0;
+        for comp in self.0.components() {
+            match comp {
+                Utf8Component::Prefix(p) => end = p.as_str().len(),
+                Utf8Component::RootDir => end += 1,
+                _ => break,
+            }
+        }
+        &s[..end]
     }
 
     pub fn to_os_path_buf(&self) -> OsPathBuf {
@@ -627,6 +640,68 @@ mod tests {
     fn ospath_file_name() {
         let op = OsPath::new("a/b/c.ts");
         assert_eq!(op.file_name(), Some("c.ts"));
+    }
+
+    // --- root ---
+
+    #[test]
+    fn root_posix_absolute() {
+        let op = OsPath::new("/foo/bar");
+        assert_eq!(op.root(), "/");
+    }
+
+    #[test]
+    fn root_posix_relative() {
+        let op = OsPath::new("foo/bar");
+        assert_eq!(op.root(), "");
+    }
+
+    #[test]
+    fn root_posix_root_only() {
+        let op = OsPath::new("/");
+        assert_eq!(op.root(), "/");
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn root_windows_drive_root() {
+        let op = OsPath::new("C:\\foo\\bar");
+        assert_eq!(op.root(), "C:\\");
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn root_windows_drive_relative() {
+        let op = OsPath::new("C:foo");
+        assert_eq!(op.root(), "C:");
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn root_windows_drive_only() {
+        let op = OsPath::new("C:");
+        assert_eq!(op.root(), "C:");
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn root_windows_unc() {
+        let op = OsPath::new("\\\\server\\share\\foo");
+        assert_eq!(op.root(), "\\\\server\\share\\");
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn root_windows_backslash_only() {
+        let op = OsPath::new("\\foo");
+        assert_eq!(op.root(), "\\");
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn root_windows_relative() {
+        let op = OsPath::new("foo\\bar");
+        assert_eq!(op.root(), "");
     }
 
     // --- roundtrip equality ---
