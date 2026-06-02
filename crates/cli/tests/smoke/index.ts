@@ -3,59 +3,40 @@ import fs from "fs/promises"
 import path from "path"
 console.log("hello folks!")
 
+console.log("=== meta ===")
 console.log("Running from", process.cwd())
 console.log("meta", Object.keys(import.meta), import.meta.dirname)
-console.log("Path resolve", path.resolve(import.meta.dirname, "text.txt"), path.resolve("asd"))
-console.log("Path join", path.join(import.meta.dirname, "text.txt"), path.join("foo", "bar", 'baz'))
-console.log("Path separator, delimiter", path.sep, path.delimiter)
-console.log("Path basename", path.basename(import.meta.filename), path.basename(import.meta.filename, "ts"))
-console.log("Path isAbsolute")
-console.log("  /foo/bar    ", path.isAbsolute("/foo/bar"))
-console.log("  /baz/..     ", path.isAbsolute("/baz/.."))
-console.log("  //server    ", path.isAbsolute("//server"))
-console.log("  C:/foo/..   ", path.isAbsolute("C:/foo/.."))
-console.log("  C:\\foo\\..  ", path.isAbsolute("C:\\foo\\.."))
-console.log("  qux/        ", path.isAbsolute("qux/"))
-console.log("  bar\\baz     ", path.isAbsolute("bar\\baz"))
-console.log("  .           ", path.isAbsolute("."))
-console.log("  (empty)     ", path.isAbsolute(""))
-console.log("=====")
-console.log(
-  path.format({
-    root: '/ignored',
-    dir: '/home/user/dir',
-    base: 'file.txt',
-  }))
-// Returns: '/home/user/dir/file.txt'
 
-console.log(
-  path.format({
-    root: '/',
-    base: 'file.txt',
-    ext: 'ignored',
-  })
-)
-// Returns: '/file.txt'
+console.log("=== path.resolve ===")
+console.log("resolve  ", "cwd/t.txt           ", path.resolve(import.meta.dirname, "text.txt"))
+console.log("resolve  ", "/abs                ", path.resolve("/asd"))
 
-// `name` + `ext` will be used if `base` is not specified.
-console.log(
-  path.format({
-    root: '/',
-    name: 'file',
-    ext: '.txt',
-  })
-)
-// Returns: '/file.txt'
+console.log("=== path.join ===")
+console.log("join     ", "cwd/t.txt, foo/bar/baz", path.join(import.meta.dirname, "text.txt"), path.join("foo", "bar", "baz"))
 
-// The dot will be added if it is not specified in `ext`.
-console.log(
-  path.format({
-    root: '/',
-    name: 'file',
-    ext: 'txt',
-  })
-)
-// Returns: '/file.txt'
-console.log("=====")
-console.log("File content:", await fs.readFile(import.meta.dirname + "/text.txt", "utf8"))
+console.log("=== path.sep / delimiter ===")
+console.log("sep/delim", path.sep, path.delimiter)
 
+console.log("=== path.basename ===")
+console.log("basename ", "filename            ", path.basename(import.meta.filename))
+console.log("basename ", "with suffix ts      ", path.basename(import.meta.filename, "ts"))
+
+console.log("=== path.isAbsolute ===")
+console.log("isAbs    ", "/foo/bar            ", path.isAbsolute("/foo/bar"))
+console.log("isAbs    ", "/baz/..             ", path.isAbsolute("/baz/.."))
+console.log("isAbs    ", "//server            ", path.isAbsolute("//server"))
+console.log("isAbs    ", "C:/foo/..           ", path.isAbsolute("C:/foo/.."))
+console.log("isAbs    ", "C:\\foo\\..           ", path.isAbsolute("C:\\foo\\.."))
+console.log("isAbs    ", "qux/                ", path.isAbsolute("qux/"))
+console.log("isAbs    ", "bar\\baz             ", path.isAbsolute("bar\\baz"))
+console.log("isAbs    ", ".                   ", path.isAbsolute("."))
+console.log("isAbs    ", "(empty)             ", path.isAbsolute(""))
+
+console.log("=== path.format ===")
+console.log("format   ", "dir+base            ", path.format({ root: '/ignored', dir: '/home/user/dir', base: 'file.txt' }))
+console.log("format   ", "root+base           ", path.format({ root: '/', base: 'file.txt', ext: 'ignored' }))
+console.log("format   ", "root+name+ext       ", path.format({ root: '/', name: 'file', ext: '.txt' }))
+console.log("format   ", "root+name+ext (no .)", path.format({ root: '/', name: 'file', ext: 'txt' }))
+
+console.log("=== fs ===")
+console.log("fs read  ", await fs.readFile(import.meta.dirname + "/text.txt", "utf8"))
