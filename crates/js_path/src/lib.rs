@@ -23,7 +23,7 @@ pub fn resolve<'js>(
 
     let base = to_ospath(&ctx, cwd)?;
 
-    Ok(resolve_paths(&paths, base).into_string())
+    Ok(resolve_paths(&paths, base).normalize().into_string())
 }
 
 #[function]
