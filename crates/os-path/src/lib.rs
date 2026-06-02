@@ -1,17 +1,17 @@
 use camino::Utf8Component;
 use camino::Utf8PathBuf;
-use std::borrow::Borrow;
+use std::borrow::{Borrow, Cow};
 use std::fmt;
 use std::ops::Deref;
-use std::path::{Path, PathBuf};
+use std::path::{MAIN_SEPARATOR_STR as SEPARATOR, Path, PathBuf};
 
 pub use camino::Utf8Path;
 
-pub fn os_normalize(s: &str) -> String {
-    if cfg!(windows) {
-        s.replace('/', "\\")
+pub fn os_normalize<'a>(s: &'a str) -> Cow<'a, str> {
+    if cfg!(windows) && s.contains('/') {
+        s.replace('/', "\\").into()
     } else {
-        s.to_string()
+        Cow::Borrowed(s)
     }
 }
 
@@ -19,29 +19,32 @@ pub fn os_normalize(s: &str) -> String {
 pub struct OsPathBuf(Utf8PathBuf);
 
 impl OsPathBuf {
+    #[inline]
     pub fn new(s: impl AsRef<str>) -> Self {
-        Self(Utf8PathBuf::from(os_normalize(s.as_ref())))
+        Self(Utf8PathBuf::from(os_normalize(s.as_ref()).as_ref()))
     }
 
     pub fn from_path_buf(p: PathBuf) -> Result<Self, PathBuf> {
-        Utf8PathBuf::from_path_buf(p).map(|u| Self(Utf8PathBuf::from(os_normalize(u.as_str()))))
+        Utf8PathBuf::from_path_buf(p)
+            .map(|u| Self(Utf8PathBuf::from(os_normalize(u.as_str()).as_ref())))
     }
 
+    #[inline]
     pub fn push(&mut self, s: impl AsRef<str>) {
-        self.0.push(os_normalize(s.as_ref()));
+        self.0.push(os_normalize(s.as_ref()).as_ref());
     }
 
+    #[inline]
     pub fn join(&self, s: impl AsRef<str>) -> Self {
-        Self(self.0.join(os_normalize(s.as_ref())))
+        Self(self.0.join(os_normalize(s.as_ref()).as_ref()))
     }
 
+    #[inline]
     pub fn into_string(self) -> String {
         self.0.into_string()
     }
 
     pub fn normalize(&self) -> Self {
-        use std::path::MAIN_SEPARATOR;
-
         let s = self.0.as_str();
         if s.is_empty() {
             return Self(Utf8PathBuf::from("."));
@@ -79,29 +82,64 @@ impl OsPathBuf {
             }
         }
 
-        let sep = MAIN_SEPARATOR;
-        let body = stack.join(&sep.to_string());
+        let body = stack.join(SEPARATOR);
 
         let mut result = match (prefix, rooted, body.is_empty()) {
-            (Some(p), true, true) => format!("{p}{sep}"),
-            (Some(p), true, false) => format!("{p}{sep}{body}"),
+            (Some(p), true, true) => format!("{p}{SEPARATOR}"),
+            (Some(p), true, false) => format!("{p}{SEPARATOR}{body}"),
             (Some(p), false, _) => format!("{p}{body}"),
-            (None, true, _) => format!("{sep}{body}"),
+            (None, true, _) => format!("{SEPARATOR}{body}"),
             (None, false, true) => ".".into(),
             (None, false, false) => body,
         };
 
-        if trailing && result != "." && result != ".." && !result.ends_with(sep) {
-            result.push(sep);
-        }
-
-        if cfg!(windows) {
-            result = result.replace('/', "\\");
+        if trailing && result != "." && result != ".." && !result.ends_with(SEPARATOR) {
+            result.push_str(SEPARATOR);
         }
 
         Self(Utf8PathBuf::from(result))
     }
 
+    pub fn resolve(&self, arg: &str) -> Self {
+        if arg.is_empty() {
+            return self.clone();
+        }
+        if Utf8Path::new(arg).is_absolute() {
+            Self::new(arg).normalize()
+        } else {
+            self.join(arg).normalize()
+        }
+    }
+
+    pub fn relative_to(&self, other: &Self) -> Self {
+        let a = self.normalize();
+        let b = other.normalize();
+        if a == b {
+            return Self::new("");
+        }
+
+        let (a_root, a_parts) = a.root_and_normal_parts();
+        let (b_root, b_parts) = b.root_and_normal_parts();
+
+        if a_root != b_root {
+            return b;
+        }
+
+        let common = a_parts
+            .iter()
+            .zip(&b_parts)
+            .take_while(|(x, y)| x == y)
+            .count();
+
+        let rel: Vec<&str> = (0..a_parts.len() - common)
+            .map(|_| "..")
+            .chain(b_parts[common..].iter().copied())
+            .collect();
+
+        Self::new(rel.join(SEPARATOR))
+    }
+
+    #[inline]
     pub fn as_path(&self) -> &OsPath {
         let u: &Utf8Path = self.0.as_ref();
         // SAFETY: OsPath is #[repr(transparent)] over Utf8Path
@@ -111,62 +149,72 @@ impl OsPathBuf {
 
 impl Deref for OsPathBuf {
     type Target = OsPath;
+    #[inline]
     fn deref(&self) -> &OsPath {
         self.as_path()
     }
 }
 
 impl Borrow<OsPath> for OsPathBuf {
+    #[inline]
     fn borrow(&self) -> &OsPath {
         self.as_path()
     }
 }
 
 impl AsRef<str> for OsPathBuf {
+    #[inline]
     fn as_ref(&self) -> &str {
         self.0.as_str()
     }
 }
 
 impl AsRef<Utf8Path> for OsPathBuf {
+    #[inline]
     fn as_ref(&self) -> &Utf8Path {
         &self.0
     }
 }
 
 impl AsRef<OsPath> for OsPathBuf {
+    #[inline]
     fn as_ref(&self) -> &OsPath {
         self.as_path()
     }
 }
 
 impl AsRef<Path> for OsPathBuf {
+    #[inline]
     fn as_ref(&self) -> &Path {
         self.0.as_ref()
     }
 }
 
 impl fmt::Display for OsPathBuf {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.0.fmt(f)
     }
 }
 
 impl From<String> for OsPathBuf {
+    #[inline]
     fn from(s: String) -> Self {
         Self::new(s)
     }
 }
 
 impl From<&str> for OsPathBuf {
+    #[inline]
     fn from(s: &str) -> Self {
         Self::new(s)
     }
 }
 
 impl From<Utf8PathBuf> for OsPathBuf {
+    #[inline]
     fn from(p: Utf8PathBuf) -> Self {
-        Self(Utf8PathBuf::from(os_normalize(p.as_str())))
+        Self(Utf8PathBuf::from(os_normalize(p.as_str()).as_ref()))
     }
 }
 
@@ -175,20 +223,24 @@ impl From<Utf8PathBuf> for OsPathBuf {
 pub struct OsPath(Utf8Path);
 
 impl OsPath {
+    #[inline]
     pub fn new(s: &(impl AsRef<str> + ?Sized)) -> &Self {
         let path = Path::new(s.as_ref());
         // SAFETY: s is valid UTF-8 str, Path is just [u8], OsPath is transparent over Utf8Path
         unsafe { &*(path as *const Path as *const Self) }
     }
 
+    #[inline]
     pub fn as_str(&self) -> &str {
         self.0.as_str()
     }
 
+    #[inline]
     pub fn is_absolute(&self) -> bool {
         self.0.is_absolute()
     }
 
+    #[inline]
     pub fn parent(&self) -> Option<&OsPath> {
         self.0.parent().map(|p| {
             // SAFETY: same repr
@@ -196,14 +248,17 @@ impl OsPath {
         })
     }
 
+    #[inline]
     pub fn file_name(&self) -> Option<&str> {
         self.0.file_name()
     }
 
+    #[inline]
     pub fn extension(&self) -> Option<&str> {
         self.0.extension()
     }
 
+    #[inline]
     pub fn root(&self) -> &str {
         let s = self.0.as_str();
         let mut end = 0;
@@ -217,6 +272,22 @@ impl OsPath {
         &s[..end]
     }
 
+    pub fn root_and_normal_parts(&self) -> (&str, Vec<&str>) {
+        let s = self.0.as_str();
+        let mut end = 0;
+        let mut parts = Vec::new();
+        for comp in self.0.components() {
+            match comp {
+                Utf8Component::Prefix(p) => end = p.as_str().len(),
+                Utf8Component::RootDir => end += 1,
+                Utf8Component::Normal(n) => parts.push(n),
+                _ => {}
+            }
+        }
+        (&s[..end], parts)
+    }
+
+    #[inline]
     pub fn to_os_path_buf(&self) -> OsPathBuf {
         OsPathBuf(self.0.to_path_buf())
     }
@@ -224,30 +295,35 @@ impl OsPath {
 
 impl ToOwned for OsPath {
     type Owned = OsPathBuf;
+    #[inline]
     fn to_owned(&self) -> OsPathBuf {
         self.to_os_path_buf()
     }
 }
 
 impl AsRef<str> for OsPath {
+    #[inline]
     fn as_ref(&self) -> &str {
         self.0.as_str()
     }
 }
 
 impl AsRef<Utf8Path> for OsPath {
+    #[inline]
     fn as_ref(&self) -> &Utf8Path {
         &self.0
     }
 }
 
 impl AsRef<Path> for OsPath {
+    #[inline]
     fn as_ref(&self) -> &Path {
         self.0.as_ref()
     }
 }
 
 impl fmt::Display for OsPath {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.0.fmt(f)
     }
@@ -783,5 +859,97 @@ mod tests {
         let op = OsPath::new("a/b/c.ts");
         let owned = op.to_os_path_buf();
         assert_eq!(owned.as_str(), "a/b/c.ts");
+    }
+
+    // --- resolve ---
+
+    #[test]
+    fn resolve_relative_joins() {
+        let base = OsPathBuf::new("/a/b");
+        let r = base.resolve("c/d");
+        assert_eq!(r.into_string(), posix("/a/b/c/d"));
+    }
+
+    #[test]
+    fn resolve_absolute_replaces() {
+        let base = OsPathBuf::new("/a/b");
+        let r = base.resolve("/c/d");
+        assert_eq!(r.into_string(), posix("/c/d"));
+    }
+
+    #[test]
+    fn resolve_empty_returns_self() {
+        let base = OsPathBuf::new("/a/b");
+        let r = base.resolve("");
+        assert_eq!(r.into_string(), posix("/a/b"));
+    }
+
+    #[test]
+    fn resolve_dotdot_normalizes() {
+        let base = OsPathBuf::new("/a/b");
+        let r = base.resolve("../c");
+        assert_eq!(r.into_string(), posix("/a/c"));
+    }
+
+    // --- relative_to ---
+
+    #[test]
+    fn relative_to_same_returns_empty() {
+        let a = OsPathBuf::new("/a/b/c");
+        let b = OsPathBuf::new("/a/b/c");
+        assert_eq!(a.relative_to(&b).into_string(), "");
+    }
+
+    #[test]
+    fn relative_to_posix_example() {
+        let from = OsPathBuf::new("/data/orandea/test/aaa");
+        let to = OsPathBuf::new("/data/orandea/impl/bbb");
+        assert_eq!(from.relative_to(&to).into_string(), posix("../../impl/bbb"));
+    }
+
+    #[test]
+    fn relative_to_subdir() {
+        let from = OsPathBuf::new("/a/b/c");
+        let to = OsPathBuf::new("/a/b/c/d");
+        assert_eq!(from.relative_to(&to).into_string(), "d");
+    }
+
+    #[test]
+    fn relative_to_parent() {
+        let from = OsPathBuf::new("/a/b/c");
+        let to = OsPathBuf::new("/a/b");
+        assert_eq!(from.relative_to(&to).into_string(), "..");
+    }
+
+    #[test]
+    fn relative_to_sibling() {
+        let from = OsPathBuf::new("/a/b/c");
+        let to = OsPathBuf::new("/a/b/d");
+        assert_eq!(from.relative_to(&to).into_string(), posix("../d"));
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn relative_to_absolute_if_different_root() {
+        // different drives → relative_to returns absolute `to`
+        let from = OsPathBuf::new("C:\\a\\b");
+        let to = OsPathBuf::new("D:\\c\\d");
+        assert_eq!(from.relative_to(&to).into_string(), "D:\\c\\d");
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn relative_to_windows_example() {
+        let from = OsPathBuf::new("C:\\orandea\\test\\aaa");
+        let to = OsPathBuf::new("C:\\orandea\\impl\\bbb");
+        assert_eq!(from.relative_to(&to).into_string(), "..\\..\\impl\\bbb");
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn relative_to_windows_different_drives() {
+        let from = OsPathBuf::new("C:\\foo");
+        let to = OsPathBuf::new("D:\\bar");
+        assert_eq!(from.relative_to(&to).into_string(), "D:\\bar");
     }
 }

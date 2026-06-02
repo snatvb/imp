@@ -166,6 +166,25 @@ pub fn parse<'js>(ctx: js::Ctx<'js>, path: js::Value<'js>) -> js::Result<js::Obj
     Ok(res)
 }
 
+#[function]
+pub fn relative<'js>(
+    ctx: js::Ctx<'js>,
+    from: js::Value<'js>,
+    to: js::Value<'js>,
+) -> js::Result<String> {
+    let from_str = String::coerce_js(&ctx, &from, "from")?;
+    let to_str = String::coerce_js(&ctx, &to, "to")?;
+
+    let cwd = std::env::current_dir()
+        .map_err(|e| PathError::from_io(e, "resolve").into_exception(&ctx))?;
+    let base = to_ospath(&ctx, cwd)?;
+
+    let from_resolved = resolve_paths(&[from_str], base.clone());
+    let to_resolved = resolve_paths(&[to_str], base);
+
+    Ok(from_resolved.relative_to(&to_resolved).into_string())
+}
+
 const DELIMITER: &str = if cfg!(windows) { ";" } else { ":" };
 
 pub struct PathModule;
@@ -194,6 +213,7 @@ impl ModuleDef for PathModule {
         ns.set("normalize", js_normalize)?;
         ns.set("isAbsolute", js_is_absolute)?;
         ns.set("parse", js_parse)?;
+        ns.set("relative", js_relative)?;
         ns.set("sep", SEPARATOR)?;
         ns.set("delimiter", DELIMITER)?;
         exports.export("default", ns)?;

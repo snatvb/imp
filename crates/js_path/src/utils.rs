@@ -1,7 +1,5 @@
-use std::path::Path;
-
-use crate::prelude::*;
 use crate::error::PathError;
+use crate::prelude::*;
 
 pub fn as_strings<'js>(
     ctx: &js::Ctx<'js>,
@@ -14,18 +12,7 @@ pub fn as_strings<'js>(
 }
 
 pub fn resolve_paths(paths: &[String], base: os_path::OsPathBuf) -> os_path::OsPathBuf {
-    let mut result = base;
-    for arg in paths {
-        if arg.is_empty() {
-            continue;
-        }
-        if Path::new(arg.as_str()).is_absolute() {
-            result = os_path::OsPathBuf::new(arg.as_str());
-        } else {
-            result.push(arg.as_str());
-        }
-    }
-    result
+    paths.iter().fold(base, |acc, p| acc.resolve(p))
 }
 
 pub fn to_ospath<'js>(
