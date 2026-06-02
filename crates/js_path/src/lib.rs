@@ -25,10 +25,7 @@ pub fn resolve<'js>(
 }
 
 #[function]
-pub fn join<'js>(
-    ctx: js::Ctx<'js>,
-    args: js::prelude::Rest<js::Value<'js>>,
-) -> js::Result<String> {
+pub fn join<'js>(ctx: js::Ctx<'js>, args: js::prelude::Rest<js::Value<'js>>) -> js::Result<String> {
     let paths = as_strings(&ctx, args)?;
     Ok(resolve_paths(&paths, os_path::OsPathBuf::new("")).into_string())
 }
@@ -64,6 +61,13 @@ pub fn extname<'js>(ctx: js::Ctx<'js>, path: js::Value<'js>) -> js::Result<Strin
     let path = String::coerce_js(&ctx, &path, "path")?;
     let ospath = to_ospath(&ctx, path)?;
     Ok(ospath.extension().unwrap_or("").into())
+}
+
+#[function]
+pub fn normalize<'js>(ctx: js::Ctx<'js>, path: js::Value<'js>) -> js::Result<String> {
+    let path = String::coerce_js(&ctx, &path, "path")?;
+    let ospath = os_path::OsPathBuf::new(path);
+    Ok(ospath.normalize().into_string())
 }
 
 #[function]
@@ -120,15 +124,8 @@ pub fn format<'js>(ctx: js::Ctx<'js>, arg: js::Value<'js>) -> js::Result<String>
     }
 }
 
-#[cfg(not(windows))]
-const SEPARATOR: &str = "/";
-#[cfg(windows)]
-const SEPARATOR: &str = "\\";
-
-#[cfg(not(windows))]
-const DELIMITER: &str = ":";
-#[cfg(windows)]
-const DELIMITER: &str = ";";
+const SEPARATOR: &str = if cfg!(windows) { "\\" } else { "/" };
+const DELIMITER: &str = if cfg!(windows) { ";" } else { ":" };
 
 pub struct PathModule;
 
@@ -153,6 +150,7 @@ impl ModuleDef for PathModule {
         ns.set("dirname", js_dirname)?;
         ns.set("extname", js_extname)?;
         ns.set("format", js_format)?;
+        ns.set("normalize", js_normalize)?;
         ns.set("isAbsolute", js_is_absolute)?;
         ns.set("sep", SEPARATOR)?;
         ns.set("delimiter", DELIMITER)?;

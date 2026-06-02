@@ -38,6 +38,70 @@ impl OsPathBuf {
         self.0.into_string()
     }
 
+    pub fn normalize(&self) -> Self {
+        use camino::Utf8Component;
+        use std::path::MAIN_SEPARATOR;
+
+        let s = self.0.as_str();
+        if s.is_empty() {
+            return Self(Utf8PathBuf::from("."));
+        }
+
+        let trailing = s.ends_with('/') || s.ends_with('\\');
+
+        let mut prefix = None;
+        let mut rooted = false;
+        let mut stack: Vec<&str> = Vec::new();
+
+        for c in self.0.components() {
+            match c {
+                Utf8Component::Prefix(p) => {
+                    prefix = Some(p.as_str());
+                    stack.clear();
+                }
+                Utf8Component::RootDir => {
+                    rooted = true;
+                }
+                Utf8Component::CurDir => {}
+                Utf8Component::ParentDir => {
+                    if stack.is_empty() && rooted {
+                        continue;
+                    }
+                    if stack.last() == Some(&"..") {
+                        stack.push("..");
+                    } else if !stack.is_empty() {
+                        stack.pop();
+                    } else {
+                        stack.push("..");
+                    }
+                }
+                Utf8Component::Normal(n) => stack.push(n),
+            }
+        }
+
+        let sep = MAIN_SEPARATOR;
+        let body = stack.join(&sep.to_string());
+
+        let mut result = match (prefix, rooted, body.is_empty()) {
+            (Some(p), true, true) => format!("{p}{sep}"),
+            (Some(p), true, false) => format!("{p}{sep}{body}"),
+            (Some(p), false, _) => format!("{p}{body}"),
+            (None, true, _) => format!("{sep}{body}"),
+            (None, false, true) => ".".into(),
+            (None, false, false) => body,
+        };
+
+        if trailing && result != "." && result != ".." && !result.ends_with(sep) {
+            result.push(sep);
+        }
+
+        if cfg!(windows) {
+            result = result.replace('/', "\\");
+        }
+
+        Self(Utf8PathBuf::from(result))
+    }
+
     pub fn as_path(&self) -> &OsPath {
         let u: &Utf8Path = self.0.as_ref();
         // SAFETY: OsPath is #[repr(transparent)] over Utf8Path
@@ -179,6 +243,127 @@ impl fmt::Display for OsPath {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // --- normalize ---
+
+    #[test]
+    fn normalize_empty_returns_dot() {
+        assert_eq!(OsPathBuf::new("").normalize().into_string(), ".");
+    }
+
+    #[test]
+    fn normalize_dot_returns_dot() {
+        assert_eq!(OsPathBuf::new(".").normalize().into_string(), ".");
+    }
+
+    fn posix(s: &str) -> String {
+        if cfg!(windows) {
+            s.replace('/', "\\")
+        } else {
+            s.to_string()
+        }
+    }
+
+    #[test]
+    fn normalize_collapses_multiple_separators() {
+        let p = OsPathBuf::new("/foo//bar///baz").normalize();
+        assert_eq!(p.into_string(), posix("/foo/bar/baz"));
+    }
+
+    #[test]
+    fn normalize_resolves_double_dot() {
+        let p = OsPathBuf::new("/foo/bar/../baz").normalize();
+        assert_eq!(p.into_string(), posix("/foo/baz"));
+    }
+
+    #[test]
+    fn normalize_resolves_dot() {
+        let p = OsPathBuf::new("/foo/./bar/./baz").normalize();
+        assert_eq!(p.into_string(), posix("/foo/bar/baz"));
+    }
+
+    #[test]
+    fn normalize_trailing_separator_preserved() {
+        let p = OsPathBuf::new("/foo/bar/").normalize();
+        assert_eq!(p.into_string(), posix("/foo/bar/"));
+    }
+
+    #[test]
+    fn normalize_cannot_go_above_root() {
+        let p = OsPathBuf::new("/../../foo").normalize();
+        assert_eq!(p.into_string(), posix("/foo"));
+    }
+
+    #[test]
+    fn normalize_relative_double_dot() {
+        let p = OsPathBuf::new("a/../../b").normalize();
+        assert_eq!(p.into_string(), posix("../b"));
+    }
+
+    #[test]
+    fn normalize_foo_dot_dot_returns_dot() {
+        let p = OsPathBuf::new("foo/..").normalize();
+        assert_eq!(p.into_string(), ".");
+    }
+
+    #[test]
+    fn normalize_up_from_dot() {
+        let p = OsPathBuf::new("../a/../b").normalize();
+        assert_eq!(p.into_string(), posix("../b"));
+    }
+
+    #[test]
+    fn normalize_nodejs_posix_example() {
+        let p = OsPathBuf::new("/foo/bar//baz/asdf/quux/..").normalize();
+        assert_eq!(p.into_string(), posix("/foo/bar/baz/asdf"));
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn normalize_nodejs_windows_example() {
+        let p = OsPathBuf::new("C:\\temp\\\\foo\\bar\\..\\").normalize();
+        assert_eq!(p.into_string(), "C:\\temp\\foo\\");
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn normalize_nodejs_windows_mixed_separators() {
+        let p = OsPathBuf::new("C:////temp\\\\/\\/\\/foo/bar").normalize();
+        assert_eq!(p.into_string(), "C:\\temp\\foo\\bar");
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn normalize_windows_drive_relative() {
+        let p = OsPathBuf::new("C:foo\\..\\bar").normalize();
+        assert_eq!(p.into_string(), "C:bar");
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn normalize_windows_just_drive() {
+        let p = OsPathBuf::new("C:").normalize();
+        assert_eq!(p.into_string(), "C:");
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn normalize_windows_drive_root() {
+        let p = OsPathBuf::new("C:\\").normalize();
+        assert_eq!(p.into_string(), "C:\\");
+    }
+
+    #[test]
+    fn normalize_leading_dot_slash() {
+        let p = OsPathBuf::new("./").normalize();
+        assert_eq!(p.into_string(), ".");
+    }
+
+    #[test]
+    fn normalize_double_dot_above_root() {
+        let p = OsPathBuf::new("/a/../../../b").normalize();
+        assert_eq!(p.into_string(), posix("/b"));
+    }
 
     // --- OsPathBuf construction ---
 

@@ -22,6 +22,7 @@ console.log("basename ", "filename            ", path.basename(import.meta.filen
 console.log("basename ", "with suffix ts      ", path.basename(import.meta.filename, "ts"))
 
 console.log("=== path.isAbsolute ===")
+console.log("normalize", "/foo/bar//baz/asdf/quux/..", path.normalize("/foo/bar//baz/asdf/quux/.."))
 console.log("isAbs    ", "/foo/bar            ", path.isAbsolute("/foo/bar"))
 console.log("isAbs    ", "/baz/..             ", path.isAbsolute("/baz/.."))
 console.log("isAbs    ", "//server            ", path.isAbsolute("//server"))
