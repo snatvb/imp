@@ -1,8 +1,10 @@
-use camino::{Utf8Path, Utf8PathBuf};
+use camino::Utf8PathBuf;
 use std::borrow::Borrow;
 use std::fmt;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
+
+pub use camino::Utf8Path;
 
 pub fn os_normalize(s: &str) -> String {
     if cfg!(windows) {
@@ -117,6 +119,10 @@ impl OsPath {
 
     pub fn as_str(&self) -> &str {
         self.0.as_str()
+    }
+
+    pub fn is_absolute(&self) -> bool {
+        self.0.is_absolute()
     }
 
     pub fn parent(&self) -> Option<&OsPath> {

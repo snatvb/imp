@@ -67,6 +67,27 @@ pub fn extname<'js>(ctx: js::Ctx<'js>, path: js::Value<'js>) -> js::Result<Strin
 }
 
 #[function]
+pub fn is_absolute<'js>(ctx: js::Ctx<'js>, path: js::Value<'js>) -> js::Result<bool> {
+    let path = String::coerce_js(&ctx, &path, "path")?;
+    let ospath = os_path::OsPathBuf::new(path);
+
+    if ospath.is_absolute() {
+        return Ok(true);
+    }
+
+    #[cfg(windows)]
+    {
+        // Node: path starting with \ is absolute (UNC, \foo)
+        let s = ospath.as_str();
+        if s.starts_with('\\') {
+            return Ok(true);
+        }
+    }
+
+    Ok(false)
+}
+
+#[function]
 pub fn format<'js>(ctx: js::Ctx<'js>, arg: js::Value<'js>) -> js::Result<String> {
     let obj = js::Object::coerce_js(&ctx, &arg, "arg")?;
 
@@ -115,6 +136,7 @@ impl ModuleDef for PathModule {
     fn declare<'js>(decl: &rquickjs::module::Declarations<'js>) -> rquickjs::Result<()> {
         decl.declare("default")?;
         decl.declare("resolve")?;
+        decl.declare("isAbsolute")?;
         Ok(())
     }
 
@@ -131,6 +153,7 @@ impl ModuleDef for PathModule {
         ns.set("dirname", js_dirname)?;
         ns.set("extname", js_extname)?;
         ns.set("format", js_format)?;
+        ns.set("isAbsolute", js_is_absolute)?;
         ns.set("sep", SEPARATOR)?;
         ns.set("delimiter", DELIMITER)?;
         exports.export("default", ns)?;
