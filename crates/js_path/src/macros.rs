@@ -56,6 +56,14 @@ macro_rules! make_path_wrappers {
         }
 
         #[function]
+        pub fn to_namespaced_path<'js>(
+            ctx: js::Ctx<'js>,
+            path: js::Value<'js>,
+        ) -> js::Result<String> {
+            crate::path_impl::to_namespaced_path::<$B>(&ctx, path)
+        }
+
+        #[function]
         pub fn relative<'js>(
             ctx: js::Ctx<'js>,
             from: js::Value<'js>,
@@ -75,6 +83,7 @@ macro_rules! make_path_wrappers {
             ns.set("format", js_format)?;
             ns.set("parse", js_parse)?;
             ns.set("relative", js_relative)?;
+            ns.set("toNamespacedPath", js_to_namespaced_path)?;
             ns.set("sep", $sep)?;
             ns.set("delimiter", $delim)?;
             Ok(())

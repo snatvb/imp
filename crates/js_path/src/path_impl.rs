@@ -1,3 +1,5 @@
+use std::any::TypeId;
+
 use os_path::{PathBackend, PlatformPathBuf};
 
 use crate::error::PathError;
@@ -93,6 +95,7 @@ pub fn is_absolute<'js, B: PathBackend>(
     Ok(PlatformPathBuf::<B>::new(path_str).is_absolute())
 }
 
+#[allow(clippy::extra_unused_type_parameters)]
 pub fn format<'js, B: PathBackend>(
     ctx: &js::Ctx<'js>,
     arg: js::Value<'js>,
@@ -159,6 +162,40 @@ pub fn parse<'js, B: PathBackend>(
     Ok(res)
 }
 
+#[allow(clippy::extra_unused_type_parameters)]
+pub fn to_namespaced_path<'js, B: PathBackend>(
+    ctx: &js::Ctx<'js>,
+    path: js::Value<'js>,
+) -> js::Result<String> {
+    let s = String::coerce_js(ctx, &path, "path")?;
+
+    if TypeId::of::<B>() == TypeId::of::<os_path::Posix>() {
+        return Ok(s);
+    }
+
+    if s.starts_with(r"\\?\") || s.starts_with(r"\\.\") {
+        return Ok(s);
+    }
+
+    let s = s.replace('/', "\\");
+
+    if s.starts_with("\\\\") && !s.starts_with(r"\\?\") {
+        return Ok(format!(r"\\?\UNC\{}", &s[2..]));
+    }
+
+    if s.len() >= 2 && s.as_bytes()[0].is_ascii_alphabetic() && s.as_bytes()[1] == b':' {
+        let (drive, rest) = s.split_at(2);
+        let rest = if rest.is_empty() || !rest.starts_with('\\') {
+            format!("\\{}", rest)
+        } else {
+            rest.to_string()
+        };
+        return Ok(format!(r"\\?\{}", drive) + &rest);
+    }
+
+    Ok(s)
+}
+
 pub fn relative<'js, B: PathBackend>(
     ctx: &js::Ctx<'js>,
     from: js::Value<'js>,
@@ -176,4 +213,101 @@ pub fn relative<'js, B: PathBackend>(
     let to_resolved = resolve_paths_inner(&[to_str], base);
 
     Ok(from_resolved.relative_to(&to_resolved).into_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use os_path::{Posix, Win32};
+
+    fn win32_path(s: &str) -> String {
+        to_namespaced_path_impl::<Win32>(s)
+    }
+
+    fn posix_path(s: &str) -> String {
+        to_namespaced_path_impl::<Posix>(s)
+    }
+
+    fn to_namespaced_path_impl<B: PathBackend>(s: &str) -> String {
+        let s = String::from(s);
+        if TypeId::of::<B>() == TypeId::of::<Posix>() {
+            return s;
+        }
+
+        if s.starts_with(r"\\?\") || s.starts_with(r"\\.\") {
+            return s;
+        }
+
+        let s = s.replace('/', "\\");
+
+        if s.starts_with("\\\\") && !s.starts_with(r"\\?\") {
+            return format!(r"\\?\UNC\{}", &s[2..]);
+        }
+
+        if s.len() >= 2 && s.as_bytes()[0].is_ascii_alphabetic() && s.as_bytes()[1] == b':' {
+            let (drive, rest) = s.split_at(2);
+            let rest = if rest.is_empty() || !rest.starts_with('\\') {
+                format!("\\{}", rest)
+            } else {
+                rest.to_string()
+            };
+            return format!(r"\\?\{}", drive) + &rest;
+        }
+
+        s
+    }
+
+    #[test]
+    fn posix_noop() {
+        assert_eq!(posix_path("/foo/bar"), "/foo/bar");
+        assert_eq!(posix_path("C:\\foo"), "C:\\foo");
+        assert_eq!(posix_path("\\\\server\\share"), "\\\\server\\share");
+    }
+
+    #[test]
+    fn win32_already_namespaced() {
+        assert_eq!(win32_path(r"\\?\C:\foo"), r"\\?\C:\foo");
+        assert_eq!(win32_path(r"\\?\UNC\server\share"), r"\\?\UNC\server\share");
+        assert_eq!(win32_path(r"\\.\PhysicalDrive0"), r"\\.\PhysicalDrive0");
+    }
+
+    #[test]
+    fn win32_unc() {
+        assert_eq!(
+            win32_path(r"\\server\share\foo"),
+            r"\\?\UNC\server\share\foo"
+        );
+        assert_eq!(win32_path(r"\\server\share"), r"\\?\UNC\server\share");
+    }
+
+    #[test]
+    fn win32_drive_path() {
+        assert_eq!(win32_path(r"C:\foo"), r"\\?\C:\foo");
+        assert_eq!(win32_path(r"D:\bar\baz"), r"\\?\D:\bar\baz");
+    }
+
+    #[test]
+    fn win32_forward_slash() {
+        assert_eq!(win32_path("C:/foo"), r"\\?\C:\foo");
+        assert_eq!(win32_path("C:/foo/bar"), r"\\?\C:\foo\bar");
+    }
+
+    #[test]
+    fn win32_drive_only() {
+        assert_eq!(win32_path("C:"), r"\\?\C:\");
+        assert_eq!(win32_path("C:foo"), r"\\?\C:\foo");
+    }
+
+    #[test]
+    fn win32_relative() {
+        assert_eq!(win32_path(r"foo\bar"), r"foo\bar");
+        assert_eq!(win32_path("foo"), "foo");
+        assert_eq!(win32_path("."), ".");
+        assert_eq!(win32_path(".."), "..");
+    }
+
+    #[test]
+    fn win32_empty() {
+        assert_eq!(win32_path(""), "");
+    }
 }
