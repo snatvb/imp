@@ -1,6 +1,6 @@
+use super::string::JsString;
 use crate::js::{Array, Ctx, JsIterator, Object, Type, Value};
 use crate::object::ObjectMethodExt;
-use super::string::JsString;
 
 pub fn convert_to_string<'js>(
     ctx: &Ctx<'js>,
@@ -69,12 +69,7 @@ fn format_string(js_str: &crate::js::String<'_>, quote_str: bool, out: &mut Stri
     }
 }
 
-fn format_array<'js>(
-    ctx: &Ctx<'js>,
-    arr: &Array<'js>,
-    depth: usize,
-    out: &mut String,
-) {
+fn format_array<'js>(ctx: &Ctx<'js>, arr: &Array<'js>, depth: usize, out: &mut String) {
     if depth == 0 {
         out.push_str("[ ... ]");
         return;
@@ -91,12 +86,7 @@ fn format_array<'js>(
     out.push_str(" ]");
 }
 
-fn format_object<'js>(
-    ctx: &Ctx<'js>,
-    obj: &Object<'js>,
-    depth: usize,
-    out: &mut String,
-) {
+fn format_object<'js>(ctx: &Ctx<'js>, obj: &Object<'js>, depth: usize, out: &mut String) {
     if let Ok(map_ctor) = ctx.globals().get::<_, Object>("Map")
         && obj.is_instance_of(&map_ctor)
     {
@@ -124,12 +114,7 @@ fn format_object<'js>(
     format_plain(ctx, obj, depth, out);
 }
 
-fn format_map<'js>(
-    ctx: &Ctx<'js>,
-    obj: &Object<'js>,
-    depth: usize,
-    out: &mut String,
-) {
+fn format_map<'js>(ctx: &Ctx<'js>, obj: &Object<'js>, depth: usize, out: &mut String) {
     let size: u32 = obj.get("size").unwrap_or(0);
     out.push_str(&format!("Map({})", size));
     if depth == 0 {
@@ -154,12 +139,7 @@ fn format_map<'js>(
     out.push_str(" }");
 }
 
-fn format_set<'js>(
-    ctx: &Ctx<'js>,
-    obj: &Object<'js>,
-    depth: usize,
-    out: &mut String,
-) {
+fn format_set<'js>(ctx: &Ctx<'js>, obj: &Object<'js>, depth: usize, out: &mut String) {
     let size: u32 = obj.get("size").unwrap_or(0);
     out.push_str(&format!("Set({})", size));
     if depth == 0 {
@@ -196,12 +176,7 @@ fn format_error(obj: &Object<'_>, out: &mut String) {
     }
 }
 
-fn format_plain<'js>(
-    ctx: &Ctx<'js>,
-    obj: &Object<'js>,
-    depth: usize,
-    out: &mut String,
-) {
+fn format_plain<'js>(ctx: &Ctx<'js>, obj: &Object<'js>, depth: usize, out: &mut String) {
     if depth == 0 {
         out.push_str("{ ... }");
         return;

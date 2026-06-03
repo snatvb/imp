@@ -1,65 +1,81 @@
-use crate::normalize::os_normalize;
-use crate::path::OsPath;
-use camino::Utf8Component;
-use camino::Utf8Path;
-use camino::Utf8PathBuf;
 use std::borrow::Borrow;
 use std::fmt;
+use std::hash::{Hash, Hasher};
 use std::ops::Deref;
-use std::path::{MAIN_SEPARATOR_STR as SEPARATOR, Path, PathBuf};
+use std::path::{Path, PathBuf};
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct OsPathBuf(pub(crate) Utf8PathBuf);
+use crate::backend::{Component, PathBackend};
+use crate::path::PlatformPath;
 
-impl OsPathBuf {
-    #[inline]
+pub struct PlatformPathBuf<B: PathBackend>(
+    pub(crate) String,
+    pub(crate) std::marker::PhantomData<B>,
+);
+
+impl<B: PathBackend> PlatformPathBuf<B> {
     pub fn new(s: impl AsRef<str>) -> Self {
-        Self(Utf8PathBuf::from(os_normalize(s.as_ref()).as_ref()))
+        let n = B::normalize_separators(s.as_ref());
+        Self(n.into_owned(), std::marker::PhantomData)
     }
 
     pub fn from_path_buf(p: PathBuf) -> Result<Self, PathBuf> {
-        Utf8PathBuf::from_path_buf(p)
-            .map(|u| Self(Utf8PathBuf::from(os_normalize(u.as_str()).as_ref())))
+        match p.into_os_string().into_string() {
+            Ok(s) => Ok(Self::new(s)),
+            Err(os) => match os.to_str() {
+                Some(valid) => Ok(Self::new(valid)),
+                None => Err(PathBuf::from(os)),
+            },
+        }
     }
 
-    #[inline]
     pub fn push(&mut self, s: impl AsRef<str>) {
-        self.0.push(os_normalize(s.as_ref()).as_ref());
+        let normalized = B::normalize_separators(s.as_ref());
+        let normalized = normalized.as_ref();
+        if self.0.is_empty() || B::is_absolute(normalized) {
+            self.0 = normalized.to_string();
+        } else {
+            if !self.0.ends_with(B::SEP) {
+                self.0.push(B::SEP);
+            }
+            self.0.push_str(normalized);
+        }
     }
 
-    #[inline]
     pub fn join(&self, s: impl AsRef<str>) -> Self {
-        Self(self.0.join(os_normalize(s.as_ref()).as_ref()))
+        let mut result = self.clone();
+        result.push(s);
+        result
     }
 
-    #[inline]
     pub fn into_string(self) -> String {
-        self.0.into_string()
+        self.0
     }
 
     pub fn normalize(&self) -> Self {
-        let s = self.0.as_str();
+        let s = &self.0;
         if s.is_empty() {
-            return Self(Utf8PathBuf::from("."));
+            return Self(".".to_string(), std::marker::PhantomData);
         }
 
-        let trailing = s.ends_with('/') || s.ends_with('\\');
+        let trailing = s.ends_with(B::SEP);
 
-        let mut prefix = None;
+        let components = B::parse_components(s);
+
+        let mut prefix: Option<&str> = None;
         let mut rooted = false;
         let mut stack: Vec<&str> = Vec::new();
 
-        for c in self.0.components() {
+        for c in components {
             match c {
-                Utf8Component::Prefix(p) => {
-                    prefix = Some(p.as_str());
+                Component::Prefix(p) => {
+                    prefix = Some(p);
                     stack.clear();
                 }
-                Utf8Component::RootDir => {
+                Component::RootDir => {
                     rooted = true;
                 }
-                Utf8Component::CurDir => {}
-                Utf8Component::ParentDir => {
+                Component::CurDir => {}
+                Component::ParentDir => {
                     if stack.is_empty() && rooted {
                         continue;
                     }
@@ -71,36 +87,40 @@ impl OsPathBuf {
                         stack.push("..");
                     }
                 }
-                Utf8Component::Normal(n) => stack.push(n),
+                Component::Normal(n) => stack.push(n),
             }
         }
 
-        let body = stack.join(SEPARATOR);
+        let body = stack.join(B::SEP_STR);
 
         let mut result = match (prefix, rooted, body.is_empty()) {
-            (Some(p), true, true) => format!("{p}{SEPARATOR}"),
-            (Some(p), true, false) => format!("{p}{SEPARATOR}{body}"),
+            (Some(p), true, true) => format!("{p}{}", B::SEP_STR),
+            (Some(p), true, false) => format!("{p}{}{}", B::SEP_STR, body),
             (Some(p), false, _) => format!("{p}{body}"),
-            (None, true, _) => format!("{SEPARATOR}{body}"),
+            (None, true, _) => format!("{}{body}", B::SEP_STR),
             (None, false, true) => ".".into(),
             (None, false, false) => body,
         };
 
-        if trailing && result != "." && result != ".." && !result.ends_with(SEPARATOR) {
-            result.push_str(SEPARATOR);
+        if trailing && result != "." && result != ".." && !result.ends_with(B::SEP_STR) {
+            result.push_str(B::SEP_STR);
         }
 
-        Self(Utf8PathBuf::from(result))
+        Self(result, std::marker::PhantomData)
     }
 
     pub fn resolve(&self, arg: &str) -> Self {
         if arg.is_empty() {
             return self.clone();
         }
-        if Utf8Path::new(arg).is_absolute() {
-            Self::new(arg).normalize()
+
+        let normalized = B::normalize_separators(arg);
+        let normalized_ref = normalized.as_ref();
+
+        if B::is_absolute(normalized_ref) {
+            Self::new(normalized_ref).normalize()
         } else {
-            self.join(arg).normalize()
+            self.join(normalized_ref).normalize()
         }
     }
 
@@ -129,84 +149,80 @@ impl OsPathBuf {
             .chain(b_parts[common..].iter().copied())
             .collect();
 
-        Self::new(rel.join(SEPARATOR))
+        Self::new(rel.join(B::SEP_STR))
     }
 
-    #[inline]
-    pub fn as_path(&self) -> &OsPath {
-        let u: &Utf8Path = self.0.as_ref();
-        // SAFETY: OsPath is #[repr(transparent)] over Utf8Path
-        unsafe { &*(u as *const Utf8Path as *const OsPath) }
+    pub fn as_path(&self) -> &PlatformPath<B> {
+        PlatformPath::<B>::new(&self.0)
     }
 }
 
-impl Deref for OsPathBuf {
-    type Target = OsPath;
-    #[inline]
-    fn deref(&self) -> &OsPath {
+impl<B: PathBackend> Clone for PlatformPathBuf<B> {
+    fn clone(&self) -> Self {
+        Self(self.0.clone(), std::marker::PhantomData)
+    }
+}
+
+impl<B: PathBackend> Deref for PlatformPathBuf<B> {
+    type Target = PlatformPath<B>;
+
+    fn deref(&self) -> &PlatformPath<B> {
         self.as_path()
     }
 }
 
-impl Borrow<OsPath> for OsPathBuf {
-    #[inline]
-    fn borrow(&self) -> &OsPath {
+impl<B: PathBackend> Borrow<PlatformPath<B>> for PlatformPathBuf<B> {
+    fn borrow(&self) -> &PlatformPath<B> {
         self.as_path()
     }
 }
 
-impl AsRef<str> for OsPathBuf {
-    #[inline]
+impl<B: PathBackend> AsRef<str> for PlatformPathBuf<B> {
     fn as_ref(&self) -> &str {
-        self.0.as_str()
-    }
-}
-
-impl AsRef<Utf8Path> for OsPathBuf {
-    #[inline]
-    fn as_ref(&self) -> &Utf8Path {
         &self.0
     }
 }
 
-impl AsRef<OsPath> for OsPathBuf {
-    #[inline]
-    fn as_ref(&self) -> &OsPath {
-        self.as_path()
-    }
-}
-
-impl AsRef<Path> for OsPathBuf {
-    #[inline]
+impl<B: PathBackend> AsRef<Path> for PlatformPathBuf<B> {
     fn as_ref(&self) -> &Path {
-        self.0.as_ref()
+        Path::new(&self.0)
     }
 }
 
-impl fmt::Display for OsPathBuf {
-    #[inline]
+impl<B: PathBackend> fmt::Debug for PlatformPathBuf<B> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_tuple("PlatformPathBuf").field(&self.0).finish()
+    }
+}
+
+impl<B: PathBackend> fmt::Display for PlatformPathBuf<B> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.0.fmt(f)
     }
 }
 
-impl From<String> for OsPathBuf {
-    #[inline]
+impl<B: PathBackend> PartialEq for PlatformPathBuf<B> {
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0
+    }
+}
+
+impl<B: PathBackend> Eq for PlatformPathBuf<B> {}
+
+impl<B: PathBackend> Hash for PlatformPathBuf<B> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.0.hash(state);
+    }
+}
+
+impl<B: PathBackend> From<String> for PlatformPathBuf<B> {
     fn from(s: String) -> Self {
         Self::new(s)
     }
 }
 
-impl From<&str> for OsPathBuf {
-    #[inline]
+impl<B: PathBackend> From<&str> for PlatformPathBuf<B> {
     fn from(s: &str) -> Self {
         Self::new(s)
-    }
-}
-
-impl From<Utf8PathBuf> for OsPathBuf {
-    #[inline]
-    fn from(p: Utf8PathBuf) -> Self {
-        Self(Utf8PathBuf::from(os_normalize(p.as_str()).as_ref()))
     }
 }

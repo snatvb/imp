@@ -11,8 +11,7 @@ impl ModuleDef for FsPromisesModule {
     }
 
     fn evaluate<'js>(ctx: &js::Ctx<'js>, exports: &js::module::Exports<'js>) -> js::Result<()> {
-        let readfile =
-            js::Function::new(ctx.clone(), js::function::Async(read::read_file))?;
+        let readfile = js::Function::new(ctx.clone(), js::function::Async(read::read_file))?;
 
         exports.export("readFile", readfile.clone())?;
 

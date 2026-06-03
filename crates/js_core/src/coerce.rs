@@ -49,7 +49,11 @@ pub trait JsCoerce<'js>: Sized {
 
     fn coerce(val: &Value<'js>) -> Result<Self, CoerceError>;
 
-    fn coerce_js(ctx: &Ctx<'js>, val: &Value<'js>, name: impl fmt::Display) -> rquickjs::Result<Self> {
+    fn coerce_js(
+        ctx: &Ctx<'js>,
+        val: &Value<'js>,
+        name: impl fmt::Display,
+    ) -> rquickjs::Result<Self> {
         Self::coerce(val).map_err(|_| {
             let received = js_type_of(val);
             let msg = format!(

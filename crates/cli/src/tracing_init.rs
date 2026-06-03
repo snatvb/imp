@@ -1,6 +1,6 @@
 #[cfg(debug_assertions)]
 pub fn init() {
-    use tracing_subscriber::{fmt, EnvFilter};
+    use tracing_subscriber::{EnvFilter, fmt};
     let filter = EnvFilter::try_from_default_env()
         .unwrap_or_else(|_| EnvFilter::new("cli=debug,js_core=trace,fs=debug"));
     fmt()

@@ -13,9 +13,7 @@ impl<'a> Meta<'a> {
     }
 
     pub fn get_filename(&self) -> Option<OsPathBuf> {
-        OsPath::new(self.filepath)
-            .file_name()
-            .map(OsPathBuf::from)
+        OsPath::new(self.filepath).file_name().map(OsPathBuf::from)
     }
 
     pub fn filename(&self) -> String {
@@ -46,10 +44,7 @@ import.meta.dirname="{dirname}";
     }
 }
 
-pub fn with_meta<'a>(
-    cwd: &'a OsPathBuf,
-    filepath: &'a str,
-) -> impl FnOnce(String) -> String + 'a {
+pub fn with_meta<'a>(cwd: &'a OsPathBuf, filepath: &'a str) -> impl FnOnce(String) -> String + 'a {
     let meta = Meta::new(cwd, filepath).into_define();
     move |code: String| format!("{meta}\n{code}")
 }

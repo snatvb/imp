@@ -94,7 +94,11 @@ impl Timers {
                         cb: t.callback.clone(),
                     });
                     t.remaining = interval;
-                    tracing::debug!(id = u64::from(id), interval_ms = interval.as_millis() as u64, "timer fire (repeat)");
+                    tracing::debug!(
+                        id = u64::from(id),
+                        interval_ms = interval.as_millis() as u64,
+                        "timer fire (repeat)"
+                    );
                     i += 1;
                 }
             }
