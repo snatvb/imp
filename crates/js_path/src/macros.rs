@@ -59,7 +59,7 @@ macro_rules! make_path_wrappers {
         pub fn to_namespaced_path<'js>(
             ctx: js::Ctx<'js>,
             path: js::Value<'js>,
-        ) -> js::Result<String> {
+        ) -> js::Result<js::Value<'js>> {
             crate::path_impl::to_namespaced_path::<$B>(&ctx, path)
         }
 

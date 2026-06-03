@@ -166,34 +166,35 @@ pub fn parse<'js, B: PathBackend>(
 pub fn to_namespaced_path<'js, B: PathBackend>(
     ctx: &js::Ctx<'js>,
     path: js::Value<'js>,
-) -> js::Result<String> {
-    let s = String::coerce_js(ctx, &path, "path")?;
+) -> js::Result<js::Value<'js>> {
+    let Some(s) = path.as_string() else {
+        return Ok(path);
+    };
+    let s = s.to_string()?;
 
-    if TypeId::of::<B>() == TypeId::of::<os_path::Posix>() {
-        return Ok(s);
-    }
-
-    if s.starts_with(r"\\?\") || s.starts_with(r"\\.\") {
-        return Ok(s);
-    }
-
-    let s = s.replace('/', "\\");
-
-    if s.starts_with("\\\\") && !s.starts_with(r"\\?\") {
-        return Ok(format!(r"\\?\UNC\{}", &s[2..]));
-    }
-
-    if s.len() >= 2 && s.as_bytes()[0].is_ascii_alphabetic() && s.as_bytes()[1] == b':' {
-        let (drive, rest) = s.split_at(2);
-        let rest = if rest.is_empty() || !rest.starts_with('\\') {
-            format!("\\{}", rest)
+    let result: String = if TypeId::of::<B>() == TypeId::of::<os_path::Posix>()
+        || s.starts_with(r"\\?\")
+        || s.starts_with(r"\\.\")
+    {
+        s
+    } else {
+        let s = s.replace('/', "\\");
+        if s.starts_with("\\\\") && !s.starts_with(r"\\?\") {
+            format!(r"\\?\UNC\{}", &s[2..])
+        } else if s.len() >= 2 && s.as_bytes()[0].is_ascii_alphabetic() && s.as_bytes()[1] == b':' {
+            let (drive, rest) = s.split_at(2);
+            let rest = if rest.is_empty() || !rest.starts_with('\\') {
+                format!("\\{}", rest)
+            } else {
+                rest.to_string()
+            };
+            format!(r"\\?\{}", drive) + &rest
         } else {
-            rest.to_string()
-        };
-        return Ok(format!(r"\\?\{}", drive) + &rest);
-    }
+            s
+        }
+    };
 
-    Ok(s)
+    Ok(js::String::from_str(ctx.clone(), &result)?.into())
 }
 
 pub fn relative<'js, B: PathBackend>(
