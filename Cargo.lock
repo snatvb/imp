@@ -505,6 +505,7 @@ dependencies = [
  "encoding_rs",
  "hex",
  "js_core",
+ "rquickjs",
  "thiserror",
  "tokio",
  "tracing",

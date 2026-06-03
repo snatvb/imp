@@ -1,6 +1,7 @@
 use base64::Engine;
 use js_core::error::SystemError;
 use js_core::js::IntoJs;
+use js_core::js::function;
 use tokio::fs;
 
 use crate::{encoding::Encoding, error::Error, prelude::*};
@@ -12,11 +13,12 @@ pub async fn read(path: &str) -> std::io::Result<Vec<u8>> {
     fs::read(path).await
 }
 
+#[function]
 #[tracing::instrument(level = "debug", skip(ctx, path, encoding), fields(path = %path))]
 pub async fn read_file<'js>(
     ctx: js::Ctx<'js>,
     path: String,
-    encoding: js::function::Opt<String>,
+    encoding: function::Opt<String>,
 ) -> js::Result<js::Value<'js>> {
     let encoding = Encoding::from_opt(encoding.as_deref()).map_err(|e| e.into_exception(&ctx))?;
     let raw = read(&path)

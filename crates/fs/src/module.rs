@@ -1,5 +1,6 @@
 use crate::{prelude::*, read};
 use js::module::ModuleDef;
+use js::IntoJs;
 
 pub struct FsPromisesModule;
 
@@ -11,14 +12,9 @@ impl ModuleDef for FsPromisesModule {
     }
 
     fn evaluate<'js>(ctx: &js::Ctx<'js>, exports: &js::module::Exports<'js>) -> js::Result<()> {
-        let readfile = js::Function::new(ctx.clone(), js::function::Async(read::read_file))?;
-
-        exports.export("readFile", readfile.clone())?;
-
-        let ns = js::Object::new(ctx.clone())?;
-        ns.set("readFile", readfile)?;
-        exports.export("default", ns)?;
-
-        Ok(())
+        let read_file = read::js_read_file.into_js(ctx)?;
+        js_core::modules::export_ns(ctx, exports, &[
+            ("readFile", read_file),
+        ])
     }
 }

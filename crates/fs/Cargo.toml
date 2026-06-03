@@ -11,5 +11,6 @@ hex = "0.4.3"
 
 tokio.workspace = true
 js_core.workspace = true
+rquickjs.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
