@@ -657,8 +657,7 @@ fn from_string_impl<'js>(ctx: Ctx<'js>, v: Opt<Value<'js>>) -> Result<Class<'js,
 }
 
 pub fn init_rs_string<'js>(ctx: &Ctx<'js>) -> Result<()> {
-    let proto = Class::<RsString>::prototype(ctx)?
-        .expect("RsString prototype should exist");
+    let proto = Class::<RsString>::prototype(ctx)?.expect("RsString prototype should exist");
 
     let ctor: Function = Function::new(ctx.clone(), || -> Result<js::Value<'js>> {
         Err(js::Error::new_from_js("constructor", "RsString"))

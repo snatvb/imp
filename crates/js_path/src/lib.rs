@@ -16,9 +16,19 @@ const DELIMITER: &str = if cfg!(windows) { ";" } else { ":" };
 make_path_wrappers!(os_path::Native, std::path::MAIN_SEPARATOR_STR, DELIMITER);
 
 const EXPORT_NAMES: &[&str] = &[
-    "resolve", "join", "basename", "dirname", "extname",
-    "normalize", "format", "parse", "relative", "isAbsolute",
-    "toNamespacedPath", "sep", "delimiter",
+    "resolve",
+    "join",
+    "basename",
+    "dirname",
+    "extname",
+    "normalize",
+    "format",
+    "parse",
+    "relative",
+    "isAbsolute",
+    "toNamespacedPath",
+    "sep",
+    "delimiter",
 ];
 
 pub struct PathModule;

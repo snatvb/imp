@@ -79,10 +79,17 @@ async fn main() {
 
     ctx.async_with(async |ctx| {
         match js_core::rs_string::init_rs_string(&ctx) {
-            Ok(()) => {},
+            Ok(()) => {}
             Err(e) => {
                 tracing::error!("init_rs_string error: {}", e);
                 panic!("init_rs_string failed: {}", e);
+            }
+        }
+        match js_core::byte_buffer::init(&ctx) {
+            Ok(()) => {}
+            Err(e) => {
+                tracing::error!("byte_buffer::init error: {}", e);
+                panic!("byte_buffer::init failed: {}", e);
             }
         }
         let globals = ctx.globals();

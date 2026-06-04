@@ -1,8 +1,8 @@
 use base64::Engine;
-use js_core::error::SystemError;
-use js_core::js::function;
-use js_core::js::Class;
 use js_core::RsString;
+use js_core::error::SystemError;
+use js_core::js::Class;
+use js_core::js::function;
 use tokio::fs;
 
 use crate::{encoding::Encoding, error::Error, prelude::*};

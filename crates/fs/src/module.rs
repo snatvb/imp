@@ -1,6 +1,6 @@
 use crate::{prelude::*, read};
-use js::module::ModuleDef;
 use js::IntoJs;
+use js::module::ModuleDef;
 
 pub struct FsPromisesModule;
 
@@ -13,8 +13,6 @@ impl ModuleDef for FsPromisesModule {
 
     fn evaluate<'js>(ctx: &js::Ctx<'js>, exports: &js::module::Exports<'js>) -> js::Result<()> {
         let read_file = read::js_read_file.into_js(ctx)?;
-        js_core::modules::export_ns(ctx, exports, &[
-            ("readFile", read_file),
-        ])
+        js_core::modules::export_ns(ctx, exports, &[("readFile", read_file)])
     }
 }

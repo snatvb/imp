@@ -1,5 +1,6 @@
 pub use rquickjs as js;
 
+pub mod byte_buffer;
 pub mod coerce;
 pub mod error;
 pub mod loader;
@@ -13,4 +14,5 @@ pub mod timers;
 pub mod typescript;
 pub mod utils;
 
+pub use byte_buffer::*;
 pub use rs_string::*;

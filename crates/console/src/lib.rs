@@ -42,7 +42,11 @@ pub fn error<'js>(ctx: js::Ctx<'js>, js::prelude::Rest(args): js::prelude::Rest<
     eprintln!("Error: {}\n{}", error_msg, stack_trace);
 }
 
-pub fn assert<'js>(ctx: js::Ctx<'js>, condition: bool, js::prelude::Rest(args): js::prelude::Rest<js::Value<'js>>) {
+pub fn assert<'js>(
+    ctx: js::Ctx<'js>,
+    condition: bool,
+    js::prelude::Rest(args): js::prelude::Rest<js::Value<'js>>,
+) {
     if !condition {
         let msg = if args.is_empty() {
             "console.assert".to_string()

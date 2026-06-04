@@ -1,9 +1,10 @@
 use std::marker::PhantomData;
 
-use rquickjs::{ArrayBuffer, Ctx, Result, class::Class};
+use rquickjs::{Ctx, Result, class::Class};
 use tokio::io::{AsyncReadExt, AsyncSeekExt, SeekFrom};
 
 use crate::error::Error;
+use js_core::ByteBuffer;
 use js_core::error::SystemError;
 
 #[derive(rquickjs::class::Trace, rquickjs::JsLifetime)]
@@ -40,7 +41,7 @@ pub async fn open<'js>(ctx: Ctx<'js>, path: String, chunk_size: usize) -> Result
 #[rquickjs::methods]
 impl<'js> FileHandle<'js> {
     #[qjs()]
-    async fn read(&mut self, ctx: Ctx<'js>) -> Result<Option<ArrayBuffer<'js>>> {
+    async fn read(&mut self, ctx: Ctx<'js>) -> Result<Option<Class<'js, ByteBuffer>>> {
         let file = self
             .file
             .as_mut()
@@ -56,9 +57,9 @@ impl<'js> FileHandle<'js> {
 
         self.buf.truncate(n);
         let old_buf = std::mem::replace(&mut self.buf, vec![0u8; self.chunk_size]);
-        let ab = ArrayBuffer::from_source(ctx.clone(), old_buf)?;
+        let bb = ByteBuffer::new(old_buf);
 
-        Ok(Some(ab))
+        Class::instance(ctx, bb).map(Some)
     }
 
     #[qjs()]
