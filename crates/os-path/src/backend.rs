@@ -22,7 +22,7 @@ pub trait PathBackend: Sized + 'static {
 
     fn is_absolute(s: &str) -> bool;
     fn parse_components(s: &str) -> Vec<Component<'_>>;
-    fn split_root<'a>(s: &'a str) -> (&'a str, &'a str);
+    fn split_root(s: &str) -> (&str, &str);
     fn normalize_separators<'a>(s: &'a str) -> Cow<'a, str>;
 }
 
@@ -71,16 +71,14 @@ impl PathBackend for Posix {
         components
     }
 
-    fn split_root<'a>(s: &'a str) -> (&'a str, &'a str) {
+    fn split_root(s: &str) -> (&str, &str) {
         if s.is_empty() {
             return ("", "");
         }
-        if s.as_bytes()[0] == b'/' {
-            let end = 1;
-            (&s[..end], &s[end..])
-        } else {
-            ("", s)
+        if s.len() == 1 && s.as_bytes()[0] == b'/' {
+            return ("/", "");
         }
+        (s, "")
     }
 
     fn normalize_separators<'a>(s: &'a str) -> Cow<'a, str> {
@@ -170,11 +168,8 @@ impl PathBackend for Win32 {
             i = prefix_len;
         }
 
-        // RootDir after prefix
+        // RootDir after prefix (or at start with no prefix)
         if i < len && bytes[i] == b'\\' {
-            components.push(Component::RootDir);
-            i += 1;
-        } else if prefix_len == 0 && i < len && bytes[i] == b'\\' {
             components.push(Component::RootDir);
             i += 1;
         }
@@ -206,7 +201,7 @@ impl PathBackend for Win32 {
         components
     }
 
-    fn split_root<'a>(s: &'a str) -> (&'a str, &'a str) {
+    fn split_root(s: &str) -> (&str, &str) {
         if s.is_empty() {
             return ("", "");
         }
