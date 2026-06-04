@@ -92,6 +92,9 @@ async fn main() {
         globals
             .set("process", process::create(&ctx).unwrap())
             .unwrap();
+        globals
+            .set("performance", js_core::performance::create(&ctx).unwrap())
+            .unwrap();
         tracing::info!(file = %filepath, "evaluating module");
         let promise = error::expect_js(
             &ctx,
