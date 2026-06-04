@@ -64,6 +64,7 @@ async fn main() {
         builtin_resolver,
         ("fs/promises", fs::FsPromisesModule),
         ("path", js_path::PathModule),
+        ("imp:fs", fs::imp::ImpFsModule),
     );
 
     rt.set_loader(
