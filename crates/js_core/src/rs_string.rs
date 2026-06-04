@@ -28,7 +28,7 @@ impl RsString {
         self.end - self.start
     }
 
-    fn owned(s: String) -> Self {
+    pub fn owned(s: String) -> Self {
         let len = s.len();
         RsString {
             inner: Arc::from(s.into_boxed_str()),
@@ -657,12 +657,12 @@ fn from_string_impl<'js>(ctx: Ctx<'js>, v: Opt<Value<'js>>) -> Result<Class<'js,
 }
 
 pub fn init_rs_string<'js>(ctx: &Ctx<'js>) -> Result<()> {
-    Class::<RsString>::define(&ctx.globals())?;
+    let proto = Class::<RsString>::prototype(ctx)?
+        .expect("RsString prototype should exist");
 
-    let proto =
-        Class::<RsString>::prototype(ctx)?.expect("RsString prototype should exist after define");
-
-    let ctor = Object::new(ctx.clone())?;
+    let ctor: Function = Function::new(ctx.clone(), || -> Result<js::Value<'js>> {
+        Err(js::Error::new_from_js("constructor", "RsString"))
+    })?;
     ctor.set("prototype", proto)?;
     ctor.set("fromString", js_from_string_impl)?;
     ctor.set("fromCharCode", js_from_char_code)?;

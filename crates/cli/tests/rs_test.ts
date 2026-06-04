@@ -12,6 +12,9 @@ const s = RsString.fromString("Hello World")
 console.assert(s.length === 11, "length")
 console.assert(s.toString() === "Hello World", "toString")
 console.assert(typeof s.valueOf() === "string", "valueOf type")
+console.assert(s instanceof RsString, "instance of RsString")
+console.assert(!(s instanceof String), "instance of not String")
+console.assert(!(s instanceof Number), "instance of not Number")
 
 // slice methods
 console.assert(s.at(0).toString() === "H", "at(0)")
@@ -71,7 +74,7 @@ console.assert(RsString.fromCodePoint(128169).toString() === "\u{1F4A9}", "fromC
 // iterator
 let iterCount = 0
 for (const ch of RsString.fromString("ABC")) {
-    iterCount++
+  iterCount++
 }
 console.assert(iterCount === 3, "iterator yield count")
 
