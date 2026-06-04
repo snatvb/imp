@@ -46,7 +46,7 @@ async function main() {
   console.log("=== FileHandle Benchmark ===");
   console.log("");
 
-  const total = 11;
+  const total = 17;
 
   // [1] readFile baseline (1MB) — референс
   {
@@ -175,6 +175,84 @@ async function main() {
       await fh.close();
     });
     printResult(11, total, "ByteBuffer.length access", iters, Math.floor(iters / 10), r);
+  }
+
+  // === readInto tests (JS-side allocation) ===
+
+  // [12] readInto small 11B, 5B buffer
+  {
+    const iters = 10000;
+    const r = await bench("readInto small 11B, 5B buffer", iters, async () => {
+      const fh = await open(fixture("hello.txt"), 5);
+      const buf = new ByteBuffer(5);
+      while ((await fh.readInto(buf)) !== undefined) {}
+      await fh.close();
+    });
+    printResult(12, total, "readInto small 11B, 5B buffer", iters, Math.floor(iters / 10), r);
+  }
+
+  // [13] readInto large 1MB, 128B buffer
+  {
+    const iters = 100;
+    const r = await bench("readInto large 1MB, 128B buffer", iters, async () => {
+      const fh = await open(fixture("large_test.bin"), 128);
+      const buf = new ByteBuffer(128);
+      while ((await fh.readInto(buf)) !== undefined) {}
+      await fh.close();
+    });
+    printResult(13, total, "readInto large 1MB, 128B buffer", iters, Math.floor(iters / 10), r);
+  }
+
+  // [14] readInto large 1MB, 4KB buffer
+  {
+    const iters = 1000;
+    const r = await bench("readInto large 1MB, 4KB buffer", iters, async () => {
+      const fh = await open(fixture("large_test.bin"), 4096);
+      const buf = new ByteBuffer(4096);
+      while ((await fh.readInto(buf)) !== undefined) {}
+      await fh.close();
+    });
+    printResult(14, total, "readInto large 1MB, 4KB buffer", iters, Math.floor(iters / 10), r);
+  }
+
+  // [15] readInto large 1MB, 64KB buffer
+  {
+    const iters = 1000;
+    const r = await bench("readInto large 1MB, 64KB buffer", iters, async () => {
+      const fh = await open(fixture("large_test.bin"), 65536);
+      const buf = new ByteBuffer(65536);
+      while ((await fh.readInto(buf)) !== undefined) {}
+      await fh.close();
+    });
+    printResult(15, total, "readInto large 1MB, 64KB buffer", iters, Math.floor(iters / 10), r);
+  }
+
+  // [16] readInto + ByteBuffer.toString() (4KB buffer)
+  {
+    const iters = 100;
+    const r = await bench("readInto + ByteBuffer.toString() 4KB", iters, async () => {
+      const fh = await open(fixture("large_test.bin"), 4096);
+      const buf = new ByteBuffer(4096);
+      while ((await fh.readInto(buf)) !== undefined) {
+        buf.toString();
+      }
+      await fh.close();
+    });
+    printResult(16, total, "readInto + ByteBuffer.toString() 4KB", iters, Math.floor(iters / 10), r);
+  }
+
+  // [17] readInto + ByteBuffer.toStr() (4KB buffer)
+  {
+    const iters = 100;
+    const r = await bench("readInto + ByteBuffer.toStr() 4KB", iters, async () => {
+      const fh = await open(fixture("large_test.bin"), 4096);
+      const buf = new ByteBuffer(4096);
+      while ((await fh.readInto(buf)) !== undefined) {
+        buf.toStr();
+      }
+      await fh.close();
+    });
+    printResult(17, total, "readInto + ByteBuffer.toStr() 4KB", iters, Math.floor(iters / 10), r);
   }
 
   console.log("=== Done ===");

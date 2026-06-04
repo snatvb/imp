@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
 use rquickjs::{Ctx, Result, class::Class};
-use tokio::io::{AsyncReadExt, AsyncSeekExt, SeekFrom};
+use tokio::io::{AsyncReadExt, AsyncSeekExt, BufReader, SeekFrom};
 
 use crate::error::Error;
 use js_core::ByteBuffer;
@@ -11,11 +11,11 @@ use js_core::error::SystemError;
 #[rquickjs::class]
 pub struct FileHandle<'js> {
     #[qjs(skip_trace)]
-    file: Option<tokio::fs::File>,
+    file: Option<BufReader<tokio::fs::File>>,
     #[qjs(skip_trace)]
     buf: Vec<u8>,
     #[qjs(skip_trace)]
-    chunk_size: usize,
+    pending_seek: Option<SeekFrom>,
     #[qjs(skip_trace)]
     _marker: PhantomData<&'js ()>,
 }
@@ -29,11 +29,12 @@ pub async fn open<'js>(ctx: Ctx<'js>, path: String, chunk_size: usize) -> Result
     let file = tokio::fs::File::open(&path).await.map_err(|e| {
         Error::System(SystemError::from_io(e, "open", Some(path.clone()))).into_exception(&ctx)
     })?;
+    let reader = BufReader::with_capacity(chunk_size.max(8192), file);
     let buf = vec![0u8; chunk_size];
     Ok(FileHandle {
-        file: Some(file),
+        file: Some(reader),
         buf,
-        chunk_size,
+        pending_seek: None,
         _marker: PhantomData,
     })
 }
@@ -42,12 +43,18 @@ pub async fn open<'js>(ctx: Ctx<'js>, path: String, chunk_size: usize) -> Result
 impl<'js> FileHandle<'js> {
     #[qjs()]
     async fn read(&mut self, ctx: Ctx<'js>) -> Result<Option<Class<'js, ByteBuffer>>> {
-        let file = self
+        let reader = self
             .file
             .as_mut()
             .ok_or_else(|| rquickjs::Error::new_from_js("string", "file is closed"))?;
 
-        let n = file.read(&mut self.buf).await.map_err(|e| {
+        if let Some(seek_from) = self.pending_seek.take() {
+            reader.seek(seek_from).await.map_err(|e| {
+                Error::System(SystemError::from_io(e, "seek", None::<String>)).into_exception(&ctx)
+            })?;
+        }
+
+        let n = reader.read(&mut self.buf).await.map_err(|e| {
             Error::System(SystemError::from_io(e, "read", None::<String>)).into_exception(&ctx)
         })?;
 
@@ -55,19 +62,46 @@ impl<'js> FileHandle<'js> {
             return Ok(None);
         }
 
-        self.buf.truncate(n);
-        let old_buf = std::mem::replace(&mut self.buf, vec![0u8; self.chunk_size]);
-        let bb = ByteBuffer::new(old_buf);
-
+        let bb = ByteBuffer::new(self.buf[..n].to_vec());
         Class::instance(ctx, bb).map(Some)
     }
 
-    #[qjs()]
-    async fn seek(&mut self, ctx: Ctx<'js>, offset: i64, whence: String) -> Result<u64> {
-        let file = self
+    #[qjs(rename = "readInto")]
+    async fn read_into(
+        &mut self,
+        ctx: Ctx<'js>,
+        buffer: Class<'js, ByteBuffer>,
+    ) -> Result<Option<usize>> {
+        let reader = self
             .file
             .as_mut()
             .ok_or_else(|| rquickjs::Error::new_from_js("string", "file is closed"))?;
+
+        if let Some(seek_from) = self.pending_seek.take() {
+            reader.seek(seek_from).await.map_err(|e| {
+                Error::System(SystemError::from_io(e, "seek", None::<String>)).into_exception(&ctx)
+            })?;
+        }
+
+        let mut bb = buffer.borrow_mut();
+        let slice = bb.as_mut_slice();
+
+        let n = reader.read(slice).await.map_err(|e| {
+            Error::System(SystemError::from_io(e, "read", None::<String>)).into_exception(&ctx)
+        })?;
+
+        if n == 0 {
+            return Ok(None);
+        }
+
+        Ok(Some(n))
+    }
+
+    #[qjs()]
+    async fn seek(&mut self, _ctx: Ctx<'js>, offset: i64, whence: String) -> Result<u64> {
+        if self.file.is_none() {
+            return Err(rquickjs::Error::new_from_js("string", "file is closed"));
+        }
 
         let pos = match whence.as_str() {
             "start" => SeekFrom::Start(offset as u64),
@@ -81,9 +115,8 @@ impl<'js> FileHandle<'js> {
             }
         };
 
-        file.seek(pos).await.map_err(|e| {
-            Error::System(SystemError::from_io(e, "seek", None::<String>)).into_exception(&ctx)
-        })
+        self.pending_seek = Some(pos);
+        Ok(0)
     }
 
     #[qjs()]

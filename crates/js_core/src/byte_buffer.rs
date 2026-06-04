@@ -20,13 +20,31 @@ impl ByteBuffer {
     pub fn new(data: Vec<u8>) -> Self {
         ByteBuffer { inner: data }
     }
+
+    pub fn as_mut_slice(&mut self) -> &mut [u8] {
+        &mut self.inner
+    }
 }
 
 #[js::methods]
 impl ByteBuffer {
+    #[qjs(constructor)]
+    fn construct(size: usize) -> ByteBuffer {
+        ByteBuffer {
+            inner: vec![0u8; size],
+        }
+    }
+
     #[qjs(get, rename = "length")]
     fn length(&self) -> usize {
         self.inner.len()
+    }
+
+    #[qjs(static)]
+    fn alloc(size: usize) -> ByteBuffer {
+        ByteBuffer {
+            inner: vec![0u8; size],
+        }
     }
 
     #[qjs(rename = "toString")]
