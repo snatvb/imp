@@ -15,3 +15,4 @@ rquickjs.workspace = true
 tracing.workspace = true
 camino.workspace = true
 os-path.workspace = true
+unicode-normalization = "0.1.25"

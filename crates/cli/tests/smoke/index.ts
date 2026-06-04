@@ -1,12 +1,24 @@
 import "./some_module"
-import fs from "fs/promises"
-import path from "path"
+import fs, { readFile } from "fs/promises"
+import path, { join, resolve, isAbsolute, relative, format, parse, normalize, basename, dirname, extname, toNamespacedPath, sep, delimiter, win32, posix } from "path"
 console.log("hello folks!")
 
 console.log("=== meta ===")
 console.log("Running from", process.cwd())
 console.log("meta", Object.keys(import.meta), import.meta.dirname)
 
+console.log("=== path named imports ===")
+console.log("join     ", join("/foo", "bar"))
+console.log("resolve  ", resolve("/foo", "bar"))
+console.log("isAbs    ", isAbsolute("/abs"))
+console.log("sep/delim", sep, delimiter)
+console.log("basename ", basename("/foo/bar.txt"))
+console.log("dirname  ", dirname("/foo/bar.txt"))
+console.log("extname  ", extname("/foo/bar.txt"))
+console.log("normalize", normalize("/foo/bar/../baz"))
+console.log("win32    ", typeof win32.resolve, typeof posix.resolve)
+
+console.log("")
 console.log("=== path.toNamespacedPath ===")
 
 console.log("toNamesp  ", "C:\\foo               ", path.toNamespacedPath("C:\\foo"))
@@ -120,3 +132,4 @@ console.log(s, "| size:", s.size)
 
 console.log("=== fs ===")
 console.log("fs read  ", await fs.readFile(import.meta.dirname + "/text.txt", "utf8"))
+console.log("fs read  ", readFile(import.meta.dirname + "/text.txt", "utf8"))

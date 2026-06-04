@@ -77,6 +77,13 @@ async fn main() {
     .await;
 
     ctx.async_with(async |ctx| {
+        match js_core::rs_string::init_rs_string(&ctx) {
+            Ok(()) => {},
+            Err(e) => {
+                tracing::error!("init_rs_string error: {}", e);
+                panic!("init_rs_string failed: {}", e);
+            }
+        }
         let globals = ctx.globals();
         globals
             .set("console", console::create(&ctx).unwrap())
