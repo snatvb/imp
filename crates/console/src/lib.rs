@@ -42,10 +42,22 @@ pub fn error<'js>(ctx: js::Ctx<'js>, js::prelude::Rest(args): js::prelude::Rest<
     eprintln!("Error: {}\n{}", error_msg, stack_trace);
 }
 
+pub fn assert<'js>(ctx: js::Ctx<'js>, condition: bool, js::prelude::Rest(args): js::prelude::Rest<js::Value<'js>>) {
+    if !condition {
+        let msg = if args.is_empty() {
+            "console.assert".to_string()
+        } else {
+            convert_to_string(&ctx, args.as_slice(), 3, false)
+        };
+        println!("{}", msg.yellow());
+    }
+}
+
 pub fn create<'a>(ctx: &js::Ctx<'a>) -> js::Result<js::Object<'a>> {
     let console_obj = js::Object::new(ctx.clone())?;
     console_obj.set("log", js::Function::new(ctx.clone(), log)?)?;
     console_obj.set("trace", js::Function::new(ctx.clone(), trace)?)?;
     console_obj.set("error", js::Function::new(ctx.clone(), error)?)?;
+    console_obj.set("assert", js::Function::new(ctx.clone(), assert)?)?;
     Ok(console_obj)
 }
