@@ -697,3 +697,10 @@ pub fn init_rs_string<'js>(ctx: &Ctx<'js>) -> Result<()> {
     tracing::info!("RsString class defined");
     Ok(())
 }
+
+pub fn init_rs_string_or_panic<'js>(ctx: &Ctx<'js>) {
+    if let Err(e) = init_rs_string(ctx) {
+        tracing::error!("init_rs_string error: {}", e);
+        panic!("init_rs_string failed: {}", e);
+    }
+}

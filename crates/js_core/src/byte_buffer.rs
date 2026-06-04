@@ -67,3 +67,10 @@ impl ByteBuffer {
 pub fn init<'js>(ctx: &Ctx<'js>) -> Result<()> {
     Class::<ByteBuffer>::define(&ctx.globals())
 }
+
+pub fn init_or_panic<'js>(ctx: &Ctx<'js>) {
+    if let Err(e) = init(ctx) {
+        tracing::error!("byte_buffer::init error: {}", e);
+        panic!("byte_buffer::init failed: {}", e);
+    }
+}

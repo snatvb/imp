@@ -78,20 +78,8 @@ async fn main() {
     .await;
 
     ctx.async_with(async |ctx| {
-        match js_core::rs_string::init_rs_string(&ctx) {
-            Ok(()) => {}
-            Err(e) => {
-                tracing::error!("init_rs_string error: {}", e);
-                panic!("init_rs_string failed: {}", e);
-            }
-        }
-        match js_core::byte_buffer::init(&ctx) {
-            Ok(()) => {}
-            Err(e) => {
-                tracing::error!("byte_buffer::init error: {}", e);
-                panic!("byte_buffer::init failed: {}", e);
-            }
-        }
+        js_core::rs_string::init_rs_string_or_panic(&ctx);
+        js_core::byte_buffer::init_or_panic(&ctx);
         let globals = ctx.globals();
         globals
             .set("console", console::create(&ctx).unwrap())
