@@ -23,11 +23,12 @@ impl<'a> Meta<'a> {
     }
 
     pub fn dir(&self) -> OsPathBuf {
-        self.cwd.join(
-            OsPath::new(self.filepath)
-                .parent()
-                .unwrap_or(OsPath::new(".")),
-        )
+        let mut full = self.cwd.clone();
+        full.push(self.filepath);
+        OsPath::new(full.as_str())
+            .parent()
+            .map(|p| OsPathBuf::from(p.as_str()))
+            .unwrap_or_else(|| OsPathBuf::from("."))
     }
 
     #[tracing::instrument(level = "debug", skip(self))]
