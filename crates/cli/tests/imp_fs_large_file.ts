@@ -18,7 +18,7 @@ const pattern = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   while ((chunk = await fh.read()) !== undefined) {
     chunkCount++;
     totalRead += chunk.length;
-    const str = chunk.toStr();
+    const str = chunk.toString();
     for (let i = 0; i < str.length; i++) {
       const expected = pattern[(totalRead - chunk.length + i) % pattern.length];
       if (str[i] !== expected) {
@@ -87,7 +87,7 @@ const pattern = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   console.assert(chunk !== undefined, "Should read chunk after seek");
   console.assert(chunk.length === 4096, `Expected 4096 bytes, got ${chunk.length}`);
 
-  const str = chunk.toStr();
+  const str = chunk.toString();
   for (let i = 0; i < str.length; i++) {
     const expected = pattern[(midPoint + i) % pattern.length];
     if (str[i] !== expected) {
@@ -114,7 +114,7 @@ const pattern = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   }
 
   for (let i = 0; i < chunks.length; i++) {
-    const str = chunks[i].toStr();
+    const str = chunks[i].toString();
     const offset = i * chunkSize;
     for (let j = 0; j < str.length; j++) {
       const expected = pattern[(offset + j) % pattern.length];

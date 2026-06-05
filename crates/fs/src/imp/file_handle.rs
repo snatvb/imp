@@ -15,8 +15,6 @@ pub struct FileHandle<'js> {
     #[qjs(skip_trace)]
     buf: Vec<u8>,
     #[qjs(skip_trace)]
-    pending_seek: Option<SeekFrom>,
-    #[qjs(skip_trace)]
     _marker: PhantomData<&'js ()>,
 }
 
@@ -34,7 +32,6 @@ pub async fn open<'js>(ctx: Ctx<'js>, path: String, chunk_size: usize) -> Result
     Ok(FileHandle {
         file: Some(reader),
         buf,
-        pending_seek: None,
         _marker: PhantomData,
     })
 }
@@ -47,12 +44,6 @@ impl<'js> FileHandle<'js> {
             .file
             .as_mut()
             .ok_or_else(|| rquickjs::Error::new_from_js("string", "file is closed"))?;
-
-        if let Some(seek_from) = self.pending_seek.take() {
-            reader.seek(seek_from).await.map_err(|e| {
-                Error::System(SystemError::from_io(e, "seek", None::<String>)).into_exception(&ctx)
-            })?;
-        }
 
         let n = reader.read(&mut self.buf).await.map_err(|e| {
             Error::System(SystemError::from_io(e, "read", None::<String>)).into_exception(&ctx)
@@ -77,12 +68,6 @@ impl<'js> FileHandle<'js> {
             .as_mut()
             .ok_or_else(|| rquickjs::Error::new_from_js("string", "file is closed"))?;
 
-        if let Some(seek_from) = self.pending_seek.take() {
-            reader.seek(seek_from).await.map_err(|e| {
-                Error::System(SystemError::from_io(e, "seek", None::<String>)).into_exception(&ctx)
-            })?;
-        }
-
         let mut bb = buffer.borrow_mut();
         let slice = bb.as_mut_slice();
 
@@ -98,10 +83,11 @@ impl<'js> FileHandle<'js> {
     }
 
     #[qjs()]
-    async fn seek(&mut self, _ctx: Ctx<'js>, offset: i64, whence: String) -> Result<u64> {
-        if self.file.is_none() {
-            return Err(rquickjs::Error::new_from_js("string", "file is closed"));
-        }
+    async fn seek(&mut self, ctx: Ctx<'js>, offset: i64, whence: String) -> Result<u64> {
+        let reader = self
+            .file
+            .as_mut()
+            .ok_or_else(|| rquickjs::Error::new_from_js("string", "file is closed"))?;
 
         let pos = match whence.as_str() {
             "start" => SeekFrom::Start(offset as u64),
@@ -115,8 +101,9 @@ impl<'js> FileHandle<'js> {
             }
         };
 
-        self.pending_seek = Some(pos);
-        Ok(0)
+        reader.seek(pos).await.map_err(|e| {
+            Error::System(SystemError::from_io(e, "seek", None::<String>)).into_exception(&ctx)
+        })
     }
 
     #[qjs()]

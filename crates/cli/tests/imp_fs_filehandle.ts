@@ -9,17 +9,18 @@ const fixture = (name: string) => resolve(import.meta.dirname, "fixtures", name)
   const chunk = await fh.read();
   console.assert(chunk !== undefined, "read returns chunk");
   console.assert(chunk.length === 11, `chunk size is 11, got ${chunk.length}`);
-  const text = chunk.toStr();
+  const text = chunk.toString();
   console.assert(text === "hello world", `content: "${text}"`);
 
   const eof = await fh.read();
   console.assert(eof === undefined, "read returns undefined at EOF");
   
   await fh.close();
-  console.log("PASS: basic read");
+  console.log("PASS: basic read");
 
-
-// --- test: multiple reads (buffer reuse) ---
+}
+
+// --- test: multiple reads (buffer reuse) ---
 {
   const fh = await open(fixture("hello.txt"), 5);
   const c1 = await fh.read();
@@ -37,7 +38,7 @@ const fixture = (name: string) => resolve(import.meta.dirname, "fixtures", name)
   const eof = await fh.read();
   console.assert(eof === undefined, "EOF after all chunks");
   
-  const full = c1.toStr() + c2.toStr() + c3.toStr();
+  const full = c1.toString() + c2.toString() + c3.toString();
   console.assert(full === "hello world", `reassembled: "${full}"`);
 
   await fh.close();
@@ -50,8 +51,8 @@ const fixture = (name: string) => resolve(import.meta.dirname, "fixtures", name)
 const c1 = await fh.read();
   const c2 = await fh.read();
   
-  const t1 = c1.toStr();
-  const t2 = c2.toStr();
+  const t1 = c1.toString();
+  const t2 = c2.toString();
   console.assert(t1 === "hello", `first: "${t1}"`);
   console.assert(t2 === " worl", `second: "${t2}"`);
   
@@ -66,7 +67,7 @@ const fh = await open(fixture("hello.txt"), 64);
   console.assert(pos === 6, `seek start returns 6, got ${pos}`);
   
   const chunk = await fh.read();
-  const text = chunk.toStr();
+  const text = chunk.toString();
 console.assert(text === "world", `after seek: "${text}"`);
   
   await fh.close();
@@ -81,7 +82,7 @@ console.assert(text === "world", `after seek: "${text}"`);
   console.assert(pos === 5, `seek current returns 5, got ${pos}`);
   
   const chunk = await fh.read();
-  const text = chunk.toStr();
+  const text = chunk.toString();
   console.assert(text === " world", `after seek current: "${text}"`);
   
   await fh.close();
@@ -97,7 +98,7 @@ console.assert(text === "world", `after seek: "${text}"`);
   console.log("PASS: close idempotent");
 }
 
- --- test: read after close errors ---
+// --- test: read after close errors ---
 {
   const fh = await open(fixture("hello.txt"), 64);
   await fh.close();
@@ -125,7 +126,7 @@ console.assert(text === "world", `after seek: "${text}"`);
   console.log("PASS: seek after close");
 }
 
- --- test: open non-existent file ---
+// --- test: open non-existent file ---
 {
   let threw = false;
   try {
@@ -144,7 +145,7 @@ console.assert(text === "world", `after seek: "${text}"`);
   console.assert(pos === 6, `seek end returns 6, got ${pos}`);
   
   const chunk = await fh.read();
-  const text = chunk.toStr();
+  const text = chunk.toString();
   console.assert(text === "world", `after seek end: "${text}"`);
   
 await fh.close();
@@ -157,7 +158,7 @@ await fh.close();
   let all = "";
 let chunk;
   while ((chunk = await fh.read()) !== undefined) {
-    all += chunk.toStr();
+    all += chunk.toString();
   }
   console.assert(all === "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz\n", `larger file: "${all}"`);
   await fh.close();
@@ -178,16 +179,25 @@ let chunk;
   console.log("PASS: invalid whence");
 }
 
-// --- test: ByteBuffer.toString() returns RsString ---
-{
-  const fh = await open(fixture("hello.txt"), 64);
-  const chunk = await fh.read();
-  const rs = chunk.toString();
-  console.assert(rs.length === 11, `RsString length 11, got ${rs.length}`);
-  console.assert(rs === "hello world", `RsString content: "${rs}"`);
-  await fh.close();
-  console.log("PASS: ByteBuffer.toString()");
-}
+// --- test: ByteBuffer.toStr() returns RsString ---
+
+{
+
+  const fh = await open(fixture("hello.txt"), 64);
+
+  const chunk = await fh.read();
+
+  const rs = chunk.toStr();
+
+  console.assert(rs.length === 11, `RsString length 11, got ${rs.length}`);
+
+  console.assert(rs === "hello world", `RsString content: "${rs}"`);
+
+  await fh.close();
+
+  console.log("PASS: ByteBuffer.toStr()");
+
+}
 
 // --- test: ByteBuffer.toArrayBuffer() ---
 {
@@ -206,7 +216,7 @@ let chunk;
   const chunk = await fh.read();
   const sliced = chunk.slice(0, 5);
   console.assert(sliced.length === 5, `sliced length 5, got ${sliced.length}`);
-  console.assert(sliced.toStr() === "hello", `sliced content: "${sliced.toStr()}"`);
+  console.assert(sliced.toString() === "hello", `sliced content: "${sliced.toString()}"`);
   await fh.close();
   console.log("PASS: ByteBuffer.slice()");
 }

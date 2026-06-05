@@ -48,15 +48,15 @@ impl ByteBuffer {
     }
 
     #[qjs(rename = "toString")]
-    fn to_string_rs<'js>(&self, ctx: Ctx<'js>) -> Result<Class<'js, RsString>> {
-        let s = String::from_utf8_lossy(&self.inner).into_owned();
-        Class::instance(ctx, RsString::owned(s))
+    fn to_string_js<'js>(&self, ctx: Ctx<'js>) -> Result<js::String<'js>> {
+        let s = String::from_utf8_lossy(&self.inner);
+        js::String::from_str(ctx, &s)
     }
 
     #[qjs(rename = "toStr")]
-    fn to_str_js<'js>(&self, ctx: Ctx<'js>) -> Result<js::String<'js>> {
-        let s = String::from_utf8_lossy(&self.inner);
-        js::String::from_str(ctx, &s)
+    fn to_str_rs<'js>(&self, ctx: Ctx<'js>) -> Result<Class<'js, RsString>> {
+        let s = String::from_utf8_lossy(&self.inner).into_owned();
+        Class::instance(ctx, RsString::owned(s))
     }
 
     #[qjs(rename = "toArrayBuffer")]
