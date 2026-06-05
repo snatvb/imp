@@ -191,7 +191,7 @@ let chunk;
 
   console.assert(rs.length === 11, `RsString length 11, got ${rs.length}`);
 
-  console.assert(rs === "hello world", `RsString content: "${rs}"`);
+  console.assert(rs.toString() === "hello world", `RsString content: "${rs}"`);
 
   await fh.close();
 

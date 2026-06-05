@@ -144,3 +144,5 @@ console.log("fs read  ", readFile(import.meta.dirname + "/text.txt", "utf8"))
   console.log("impfs metadata lfjsdklfj  ", metadata.lfjsdklfj)
   console.log("impfs remove and check", await impfs.remove(dir), await impfs.exists(dir))
 }
+
+

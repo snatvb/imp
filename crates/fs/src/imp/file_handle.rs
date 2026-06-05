@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use rquickjs::{Ctx, Result, class::Class};
+use rquickjs::{Ctx, Result, Value, class::Class};
 use tokio::io::{AsyncReadExt, AsyncSeekExt, BufReader, SeekFrom};
 
 use crate::error::Error;
@@ -39,7 +39,7 @@ pub async fn open<'js>(ctx: Ctx<'js>, path: String, chunk_size: usize) -> Result
 #[rquickjs::methods]
 impl<'js> FileHandle<'js> {
     #[qjs()]
-    async fn read(&mut self, ctx: Ctx<'js>) -> Result<Option<Class<'js, ByteBuffer>>> {
+    async fn read(&mut self, ctx: Ctx<'js>) -> Result<Value<'js>> {
         let reader = self
             .file
             .as_mut()
@@ -50,11 +50,11 @@ impl<'js> FileHandle<'js> {
         })?;
 
         if n == 0 {
-            return Ok(None);
+            return Ok(Value::new_undefined(ctx.clone()));
         }
 
         let bb = ByteBuffer::new(self.buf[..n].to_vec());
-        Class::instance(ctx, bb).map(Some)
+        Class::instance(ctx, bb).map(|v| v.into_value())
     }
 
     #[qjs(rename = "readInto")]
@@ -62,7 +62,7 @@ impl<'js> FileHandle<'js> {
         &mut self,
         ctx: Ctx<'js>,
         buffer: Class<'js, ByteBuffer>,
-    ) -> Result<Option<usize>> {
+    ) -> Result<Value<'js>> {
         let reader = self
             .file
             .as_mut()
@@ -76,10 +76,10 @@ impl<'js> FileHandle<'js> {
         })?;
 
         if n == 0 {
-            return Ok(None);
+            return Ok(Value::new_undefined(ctx.clone()));
         }
 
-        Ok(Some(n))
+        Ok(Value::new_int(ctx, n as i32))
     }
 
     #[qjs()]
