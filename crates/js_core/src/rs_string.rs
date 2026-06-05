@@ -20,7 +20,7 @@ impl<'js> Trace<'js> for RsString {
 }
 
 impl RsString {
-    fn get_slice(&self) -> &str {
+    pub fn get_slice(&self) -> &str {
         &self.inner[self.start..self.end]
     }
 
