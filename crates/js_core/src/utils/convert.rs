@@ -1,5 +1,5 @@
 use super::string::JsString;
-use crate::js::{Array, Ctx, JsIterator, Object, Type, Value};
+use crate::js::{Array, Ctx, JsIterator, Object, Promise, Type, Value};
 use crate::object::ObjectMethodExt;
 
 pub fn convert_to_string<'js>(
@@ -111,6 +111,12 @@ fn format_object<'js>(ctx: &Ctx<'js>, obj: &Object<'js>, depth: usize, out: &mut
         format_error(obj, out);
         return;
     }
+    if let Ok(promise_ctor) = ctx.globals().get::<_, Object>("Promise")
+        && obj.is_instance_of(&promise_ctor)
+    {
+        format_promise(ctx, obj, depth, out);
+        return;
+    }
     format_plain(ctx, obj, depth, out);
 }
 
@@ -173,6 +179,45 @@ fn format_error(obj: &Object<'_>, out: &mut String) {
         out.push_str(&msg);
     } else {
         out.push_str("Error");
+    }
+}
+
+fn format_promise<'js>(ctx: &Ctx<'js>, obj: &Object<'js>, depth: usize, out: &mut String) {
+    let promise = match Promise::from_value(obj.clone().into_value()) {
+        Ok(p) => p,
+        Err(_) => {
+            out.push_str("Promise { }");
+            return;
+        }
+    };
+
+    match promise.state() {
+        crate::js::promise::PromiseState::Pending => {
+            out.push_str("Promise { 'pending' }");
+        }
+        crate::js::promise::PromiseState::Resolved => {
+            if depth == 0 {
+                out.push_str("Promise { ... }");
+            } else if let Some(Ok(val)) = promise.result::<Value>() {
+                out.push_str("Promise { ");
+                format_one(ctx, &val, depth - 1, true, out);
+                out.push_str(" }");
+            } else {
+                out.push_str("Promise { }");
+            }
+        }
+        crate::js::promise::PromiseState::Rejected => {
+            if depth == 0 {
+                out.push_str("Promise { ... }");
+            } else if promise.result::<Value>().is_some() {
+                out.push_str("Promise { <rejected> ");
+                let reason = ctx.catch();
+                format_one(ctx, &reason, depth - 1, true, out);
+                out.push_str(" }");
+            } else {
+                out.push_str("Promise { <rejected> }");
+            }
+        }
     }
 }
 
