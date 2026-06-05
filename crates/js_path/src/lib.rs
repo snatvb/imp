@@ -1,6 +1,5 @@
 use crate::macros::make_path_wrappers;
 use js_core::js;
-use js_core::js::module::ModuleDef;
 use rquickjs::function;
 
 mod error;
@@ -31,28 +30,22 @@ const EXPORT_NAMES: &[&str] = &[
     "delimiter",
 ];
 
-pub struct PathModule;
-
-impl ModuleDef for PathModule {
-    fn declare<'js>(decl: &js::module::Declarations<'js>) -> js::Result<()> {
-        for name in EXPORT_NAMES {
-            decl.declare(*name)?;
-        }
-        decl.declare("default")?;
+js_core::impl_module!(PathModule,
+    declare: |decl, declare_all| {
+        declare_all(decl)?;
         decl.declare("win32")?;
         decl.declare("posix")?;
         Ok(())
-    }
+    },
+    evaluate: |ctx, exports, export_all| {
+        let ns = export_all(ctx, exports)?;
 
-    fn evaluate<'js>(ctx: &js::Ctx<'js>, exports: &js::module::Exports<'js>) -> js::Result<()> {
         let win32_ns = js::Object::new(ctx.clone())?;
         win32_mod::populate(&win32_ns)?;
 
         let posix_ns = js::Object::new(ctx.clone())?;
         posix_mod::populate(&posix_ns)?;
 
-        let ns = js::Object::new(ctx.clone())?;
-        populate(&ns)?;
         ns.set("win32", win32_ns.clone())?;
         ns.set("posix", posix_ns.clone())?;
 
@@ -64,5 +57,5 @@ impl ModuleDef for PathModule {
         exports.export("default", ns)?;
 
         Ok(())
-    }
-}
+    },
+);

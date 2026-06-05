@@ -21,12 +21,15 @@ impl StringArg {
 pub trait JsStringArg<'js>: Sized {
     fn to_string_arg(self, ctx: &Ctx<'js>) -> js::Result<StringArg>;
 
-    fn coerce_js(ctx: &Ctx<'js>, val: &Value<'js>, name: impl fmt::Display) -> js::Result<StringArg> {
+    fn coerce_js(
+        ctx: &Ctx<'js>,
+        val: &Value<'js>,
+        name: impl fmt::Display,
+    ) -> js::Result<StringArg> {
         val.clone().to_string_arg(ctx).map_err(|_| {
             let received = js_type_of(val);
-            let msg = format!(
-                "The \"{name}\" argument must be of type string. Received {received}"
-            );
+            let msg =
+                format!("The \"{name}\" argument must be of type string. Received {received}");
             throw_type_error(ctx, "ERR_INVALID_ARG_TYPE", &msg)
         })
     }
@@ -48,7 +51,11 @@ impl<'js> JsStringArg<'js> for Class<'js, RsString> {
 impl<'js> JsStringArg<'js> for Value<'js> {
     fn to_string_arg(self, ctx: &Ctx<'js>) -> js::Result<StringArg> {
         match self.type_of() {
-            Type::String => self.as_string().unwrap().to_string().map(StringArg::JsString),
+            Type::String => self
+                .as_string()
+                .unwrap()
+                .to_string()
+                .map(StringArg::JsString),
             Type::Object | Type::Constructor | Type::Promise | Type::Proxy => {
                 if let Ok(class) = Class::<RsString>::from_js(ctx, self) {
                     let rs = class.borrow();
