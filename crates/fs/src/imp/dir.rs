@@ -9,13 +9,60 @@ use crate::prelude::*;
 
 use super::fs_stats::FsStats;
 
+fn make_err(
+    ctx: &js::Ctx<'_>,
+    text: &'static str,
+    path: &str,
+) -> impl Fn(std::io::Error) -> js::Error {
+    move |e| SystemError::from_io(e, text, Some(path.to_string())).into_exception(ctx)
+}
+
 #[js::function]
 pub async fn mkdir<'js>(ctx: js::Ctx<'js>, path: js::Value<'js>) -> js::Result<()> {
     let path_arg = StringArg::coerce_js(&ctx, &path, "path")?;
     let path_str = path_arg.as_str();
-    fs::create_dir_all(path_str).await.map_err(|e| {
-        SystemError::from_io(e, "mkdir", Some(path_str.to_string())).into_exception(&ctx)
-    })?;
+    fs::create_dir_all(path_str)
+        .await
+        .map_err(make_err(&ctx, "mkdir", path_str))?;
+    Ok(())
+}
+
+async fn remove_path<'js>(ctx: &js::Ctx<'js>, path_arg: StringArg) -> js::Result<()> {
+    let path_str = path_arg.as_str();
+    let err_map = make_err(ctx, "remove", path_str);
+    let meta = fs::metadata(path_str).await.map_err(&err_map)?;
+
+    if meta.is_dir() {
+        fs::remove_dir_all(path_str).await.map_err(err_map)?;
+    } else {
+        fs::remove_file(path_str).await.map_err(err_map)?;
+    }
+
+    Ok(())
+}
+
+#[js::function]
+pub async fn remove<'js>(ctx: js::Ctx<'js>, path: js::Value<'js>) -> js::Result<()> {
+    let path_arg = StringArg::coerce_js(&ctx, &path, "path")?;
+    remove_path(&ctx, path_arg).await
+}
+
+#[js::function(rename = "removeAll")]
+pub async fn remove_all<'js>(ctx: js::Ctx<'js>, paths: js::Array<'js>) -> js::Result<()> {
+    let path_args: Vec<StringArg> = paths
+        .iter::<js::Value>()
+        .map(|p| {
+            let p = p?;
+            StringArg::coerce_js(&ctx, &p, "path")
+        })
+        .collect::<js::Result<_>>()?;
+
+    let futures: Vec<_> = path_args
+        .into_iter()
+        .map(|path_arg| remove_path(&ctx, path_arg))
+        .collect();
+
+    futures::future::join_all(futures).await;
     Ok(())
 }
 
@@ -23,9 +70,9 @@ pub async fn mkdir<'js>(ctx: js::Ctx<'js>, path: js::Value<'js>) -> js::Result<(
 pub async fn exists<'js>(ctx: js::Ctx<'js>, path: js::Value<'js>) -> js::Result<bool> {
     let path_arg = StringArg::coerce_js(&ctx, &path, "path")?;
     let path_str = path_arg.as_str();
-    fs::try_exists(path_str).await.map_err(|e| {
-        SystemError::from_io(e, "exists", Some(path_str.to_string())).into_exception(&ctx)
-    })
+    fs::try_exists(path_str)
+        .await
+        .map_err(make_err(&ctx, "exists", path_str))
 }
 
 #[inline(always)]

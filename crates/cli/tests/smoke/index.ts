@@ -136,8 +136,11 @@ console.log("fs read  ", await fs.readFile(import.meta.dirname + "/text.txt", "u
 console.log("fs read  ", readFile(import.meta.dirname + "/text.txt", "utf8"))
 
 {
-  console.log("=== impfs.mdkir ===")
+  console.log("=== impfs ===" ) 
   const dir = import.meta.dirname + "/some/dir"
   console.log("impfs mkdir  ", await impfs.mkdir(dir))
-  console.log("impfs metadata  ", (await impfs.metadata(dir)).isDirectory)
+  const metadata = await impfs.metadata(dir)
+  console.log("impfs metadata  ", metadata.isDirectory)
+  console.log("impfs metadata lfjsdklfj  ", metadata.lfjsdklfj)
+  console.log("impfs remove and check", await impfs.remove(dir), await impfs.exists(dir))
 }

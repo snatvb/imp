@@ -21,6 +21,9 @@ impl ModuleDef for ImpFsModule {
         decl.declare("mkdir")?;
         decl.declare("metadata")?;
         decl.declare("metadataBatch")?;
+        decl.declare("exists")?;
+        decl.declare("remove")?;
+        decl.declare("removeAll")?;
         Ok(())
     }
 
@@ -32,6 +35,9 @@ impl ModuleDef for ImpFsModule {
         let mkdir = dir::js_mkdir.into_js(ctx)?;
         let metadata = dir::js_metadata.into_js(ctx)?;
         let metadata_batch = dir::js_metadata_batch.into_js(ctx)?;
+        let remove = dir::js_remove.into_js(ctx)?;
+        let remove_all = dir::js_remove_all.into_js(ctx)?;
+        let exists = dir::js_exists.into_js(ctx)?;
         js_core::modules::export_ns(
             ctx,
             exports,
@@ -41,6 +47,9 @@ impl ModuleDef for ImpFsModule {
                 ("mkdir", mkdir),
                 ("metadata", metadata),
                 ("metadataBatch", metadata_batch),
+                ("remove", remove),
+                ("removeAll", remove_all),
+                ("exists", exists),
             ],
         )
     }
