@@ -18,6 +18,11 @@ interface Performance {
   now(): number;
 }
 
+declare function setTimeout(callback: () => void, delay?: number): number;
+declare function clearTimeout(id: number): void;
+declare function setInterval(callback: () => void, delay?: number): number;
+declare function clearInterval(id: number): void;
+
 declare const console: Console;
 declare const process: Process;
 declare const performance: Performance;
