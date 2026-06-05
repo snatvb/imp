@@ -60,9 +60,8 @@ impl ByteBuffer {
     }
 
     #[qjs(rename = "toArrayBuffer")]
-    fn to_array_buffer_method<'js>(&mut self, ctx: Ctx<'js>) -> Result<ArrayBuffer<'js>> {
-        let data = std::mem::replace(&mut self.inner, Vec::new());
-        ArrayBuffer::from_source(ctx, data)
+    fn to_array_buffer_method<'js>(&self, ctx: Ctx<'js>) -> Result<ArrayBuffer<'js>> {
+        ArrayBuffer::from_source(ctx, self.inner.clone())
     }
 
     fn slice(&self, start: usize, end: Opt<usize>) -> ByteBuffer {
