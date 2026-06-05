@@ -91,13 +91,18 @@ async fn main() {
             .set("performance", js_core::performance::create(&ctx).unwrap())
             .unwrap();
         tracing::info!(file = %filepath, "evaluating module");
-        let promise = error::expect_js(
+        let Some(promise) = error::try_js(
             &ctx,
             js::Module::evaluate(ctx.clone(), filepath.as_str(), code.as_str()),
             "module evaluation failed",
+        ) else {
+            return;
+        };
+        error::try_js(
+            &ctx,
+            promise.into_future::<js::Value<'_>>().await,
+            "promise rejected",
         );
-        let _: js::Value<'_> =
-            error::expect_js(&ctx, promise.into_future().await, "promise rejected");
         tracing::info!("module evaluated");
     })
     .await;

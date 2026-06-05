@@ -1,5 +1,6 @@
 import "./some_module"
 import fs, { readFile } from "fs/promises"
+import impfs from "imp:fs"
 import path, { join, resolve, isAbsolute, relative, format, parse, normalize, basename, dirname, extname, toNamespacedPath, sep, delimiter, win32, posix } from "path"
 console.log("hello folks!")
 
@@ -133,3 +134,10 @@ console.log(s, "| size:", s.size)
 console.log("=== fs ===")
 console.log("fs read  ", await fs.readFile(import.meta.dirname + "/text.txt", "utf8"))
 console.log("fs read  ", readFile(import.meta.dirname + "/text.txt", "utf8"))
+
+{
+  console.log("=== impfs.mdkir ===")
+  const dir = import.meta.dirname + "/some/dir"
+  console.log("impfs mkdir  ", await impfs.mkdir(dir))
+  console.log("impfs metadata  ", (await impfs.metadata(dir)).isDirectory)
+}

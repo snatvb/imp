@@ -10,6 +10,7 @@ encoding_rs = "0.8.35"
 hex = "0.4.3"
 
 tokio.workspace = true
+futures.workspace = true
 js_core.workspace = true
 rquickjs.workspace = true
 thiserror.workspace = true
