@@ -1,0 +1,76 @@
+use std::sync::Arc;
+
+use globset::{Glob, GlobSetBuilder};
+use js_core::utils::{JsStringArg, StringArg};
+use os_path::OsPathBuf;
+use rquickjs::{Ctx, Object};
+
+use crate::error::IntoJsResult;
+use crate::imp::walk::{WalkIterator, WalkOptions, create_iterator};
+use crate::prelude::*;
+
+#[js::function]
+pub async fn glob<'js>(
+    ctx: Ctx<'js>,
+    dir: js::Value<'js>,
+    pattern: js::Value<'js>,
+    options: Option<Object<'js>>,
+) -> js::Result<js::Array<'js>> {
+    let dir_str = StringArg::coerce_js(&ctx, &dir, "dir")?;
+    let dir_buf = OsPathBuf::new(dir_str.as_str());
+
+    let pattern_str = StringArg::coerce_js(&ctx, &pattern, "pattern")?;
+    let glob_set = Arc::new(
+        GlobSetBuilder::new()
+            .add(Glob::new(pattern_str.as_str()).into_js(&ctx)?)
+            .build()
+            .into_js(&ctx)?,
+    );
+
+    let mut opts = WalkOptions::from_js(&ctx, options)?;
+    opts.pattern = Some(glob_set);
+
+    let mut iterator = create_iterator(ctx.clone(), dir_buf, opts)?;
+
+    let result = js::Array::new(ctx.clone())?;
+    let mut i = 0;
+
+    loop {
+        let next_obj = iterator.next(ctx.clone()).await?;
+        let done: bool = next_obj.get("done")?;
+
+        if done {
+            break;
+        }
+
+        let value: js::Value = next_obj.get("value")?;
+        result.set(i, value)?;
+        i += 1;
+    }
+
+    Ok(result)
+}
+
+#[js::function(rename = "globStream")]
+pub async fn glob_stream<'js>(
+    ctx: Ctx<'js>,
+    dir: js::Value<'js>,
+    pattern: js::Value<'js>,
+    options: Option<Object<'js>>,
+) -> js::Result<WalkIterator<'js>> {
+    let dir_str = StringArg::coerce_js(&ctx, &dir, "dir")?;
+    let dir_buf = OsPathBuf::new(dir_str.as_str());
+
+    let pattern_str = StringArg::coerce_js(&ctx, &pattern, "pattern")?;
+    let glob_set = Arc::new(
+        GlobSetBuilder::new()
+            .add(Glob::new(pattern_str.as_str()).into_js(&ctx)?)
+            .build()
+            .into_js(&ctx)?,
+    );
+
+    let mut opts = WalkOptions::from_js(&ctx, options)?;
+    opts.pattern = Some(glob_set);
+
+    create_iterator(ctx, dir_buf, opts)
+}

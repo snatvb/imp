@@ -1,7 +1,9 @@
 pub mod dir;
 pub mod file_handle;
 pub mod fs_stats;
+pub mod glob;
 pub mod read;
+pub mod walk;
 pub mod write;
 
 pub use file_handle::FileHandle;
@@ -11,6 +13,7 @@ js_core::impl_module!(ImpFsModule,
     evaluate: |ctx, exports, export_all| {
         file_handle::init(ctx)?;
         fs_stats::init(ctx)?;
+        walk::init(ctx)?;
         let ns = export_all(ctx, exports)?;
         exports.export("default", ns)?;
         Ok(())
@@ -23,4 +26,7 @@ js_core::impl_module!(ImpFsModule,
     "remove" => dir::js_remove,
     "removeAll" => dir::js_remove_all,
     "exists" => dir::js_exists,
+    "glob" => glob::js_glob,
+    "globStream" => glob::js_glob_stream,
+    "walk" => walk::js_walk,
 );
