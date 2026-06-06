@@ -253,10 +253,12 @@ declare module "path" {
 
 declare module "fs/promises" {
   function readFile(path: string, encoding?: string): Promise<ArrayBuffer | string>;
+  function glob(pattern: string, options?: { cwd?: string }): AsyncIterableIterator<string>;
 
   const _default: {
     readFile: typeof readFile;
+    glob: typeof glob;
   };
   export default _default;
-  export { readFile };
+  export { readFile, glob };
 }

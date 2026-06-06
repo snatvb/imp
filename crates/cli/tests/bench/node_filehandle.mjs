@@ -1,9 +1,5 @@
 import { readFile as fsReadFile, open as fsOpen } from "fs/promises";
-import { resolve, dirname } from "path";
-import { fileURLToPath } from "url";
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const fixture = (name) => resolve(__dirname, "fixtures", name);
+import { bench, printResult, fixture } from "./harness.mjs";
 
 function bufferToStr(buf) {
   let s = "";
@@ -13,32 +9,12 @@ function bufferToStr(buf) {
   return s;
 }
 
-async function bench(label, iterations, fn) {
-  const warmup = Math.floor(iterations / 10);
-  for (let i = 0; i < warmup; i++) await fn();
-
-  const start = performance.now();
-  for (let i = 0; i < iterations; i++) await fn();
-  const elapsed = performance.now() - start;
-
-  const avg = elapsed / iterations;
-  const ops = iterations / (elapsed / 1000);
-  return { avg, ops, elapsed };
-}
-
-function printResult(index, total, name, iterations, warmup, r) {
-  console.log(`[${index}/${total}] ${name} (${iterations} iters, ${warmup} warmup)`);
-  console.log(`  avg: ${r.avg.toFixed(3)}ms | ops/sec: ${r.ops.toFixed(0)} | total: ${r.elapsed.toFixed(1)}ms`);
-  console.log("");
-}
-
 async function main() {
   console.log("=== FileHandle Benchmark (Node.js) ===");
   console.log("");
 
   const total = 11;
 
-  // [1] readFile baseline (1MB)
   {
     const iters = 100;
     const r = await bench("readFile 1MB (baseline)", iters, async () => {
@@ -47,7 +23,6 @@ async function main() {
     printResult(1, total, "readFile 1MB (baseline)", iters, Math.floor(iters / 10), r);
   }
 
-  // [2] open + close
   {
     const iters = 1000;
     const r = await bench("open + close", iters, async () => {
@@ -57,7 +32,6 @@ async function main() {
     printResult(2, total, "open + close", iters, Math.floor(iters / 10), r);
   }
 
-  // [3] read small file (11B, 5B chunks)
   {
     const iters = 1000;
     const r = await bench("read small 11B, 5B chunks", iters, async () => {
@@ -72,7 +46,6 @@ async function main() {
     printResult(3, total, "read small 11B, 5B chunks", iters, Math.floor(iters / 10), r);
   }
 
-  // [4] read large (1MB, 128B chunks)
   {
     const iters = 100;
     const r = await bench("read large 1MB, 128B chunks", iters, async () => {
@@ -87,7 +60,6 @@ async function main() {
     printResult(4, total, "read large 1MB, 128B chunks", iters, Math.floor(iters / 10), r);
   }
 
-  // [5] read large (1MB, 4KB chunks)
   {
     const iters = 1000;
     const r = await bench("read large 1MB, 4KB chunks", iters, async () => {
@@ -102,7 +74,6 @@ async function main() {
     printResult(5, total, "read large 1MB, 4KB chunks", iters, Math.floor(iters / 10), r);
   }
 
-  // [6] read large (1MB, 64KB chunks)
   {
     const iters = 1000;
     const r = await bench("read large 1MB, 64KB chunks", iters, async () => {
@@ -117,7 +88,6 @@ async function main() {
     printResult(6, total, "read large 1MB, 64KB chunks", iters, Math.floor(iters / 10), r);
   }
 
-  // [7] seek (start, current, end)
   {
     const iters = 1000;
     const r = await bench("seek start/current/end", iters, async () => {
@@ -126,11 +96,8 @@ async function main() {
       const size = stat.size;
       const dummy = Buffer.alloc(0);
 
-      // seek(0, "start")
       await fh.read(dummy, 0, 0, 0);
-      // seek(3, "current")
       await fh.read(dummy, 0, 0, 3);
-      // seek(-3, "end")
       await fh.read(dummy, 0, 0, size - 3);
 
       await fh.close();
@@ -138,7 +105,6 @@ async function main() {
     printResult(7, total, "seek start/current/end", iters, Math.floor(iters / 10), r);
   }
 
-  // [8] read + Buffer.toString() (4KB chunks)
   {
     const iters = 100;
     const r = await bench("read + Buffer.toString() 4KB", iters, async () => {
@@ -154,7 +120,6 @@ async function main() {
     printResult(8, total, "read + Buffer.toString() 4KB", iters, Math.floor(iters / 10), r);
   }
 
-  // [9] read + bufferToStr() (4KB chunks) — JS String
   {
     const iters = 100;
     const r = await bench("read + bufferToStr() 4KB", iters, async () => {
@@ -170,7 +135,6 @@ async function main() {
     printResult(9, total, "read + bufferToStr() 4KB", iters, Math.floor(iters / 10), r);
   }
 
-  // [10] read + close цикл (много коротких файлов)
   {
     const iters = 1000;
     const r = await bench("read + close цикл", iters, async () => {
@@ -182,7 +146,6 @@ async function main() {
     printResult(10, total, "read + close цикл", iters, Math.floor(iters / 10), r);
   }
 
-  // [11] buffer.length access
   {
     const iters = 1000;
     const r = await bench("buffer.length access", iters, async () => {

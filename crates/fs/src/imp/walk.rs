@@ -169,7 +169,9 @@ pub async fn walk_dir(
             let is_dir = entity.file_type().await?.is_dir();
 
             if is_dir {
-                if opts.filter.matches(true) && tx.send((WalkResType::Dir, path.clone())).await.is_err() {
+                if opts.filter.matches(true)
+                    && tx.send((WalkResType::Dir, path.clone())).await.is_err()
+                {
                     return Ok(());
                 }
                 Box::pin(walk_dir(path, base.clone(), opts.clone(), tx.clone())).await?;
