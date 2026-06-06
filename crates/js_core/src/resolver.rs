@@ -33,7 +33,7 @@ impl Resolver {
     }
 
     pub fn dir_of(&self, base: &str) -> PathBuf {
-        if base == "<eval>" || !base.contains('/') {
+        if base == "<eval>" || (!base.contains('/') && !base.contains('\\')) {
             return std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
         }
         Path::new(base)
@@ -43,6 +43,9 @@ impl Resolver {
     }
 
     pub fn try_file(&self, path: &Path) -> Option<String> {
+        if path.is_file() {
+            return Some(path.to_string_lossy().to_string());
+        }
         for ext in &self.extensions {
             let candidate = if ext.starts_with('.') {
                 let mut p = path.to_path_buf();
