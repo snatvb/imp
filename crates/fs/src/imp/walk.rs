@@ -1,5 +1,7 @@
+use std::cell::RefCell;
 use std::marker::PhantomData;
 use std::path::Path;
+use std::rc::Rc;
 use std::sync::Arc;
 
 use futures::{SinkExt, StreamExt, channel::mpsc};
@@ -114,22 +116,24 @@ fn is_dot_file(name: &std::ffi::OsStr) -> bool {
 }
 
 #[inline(always)]
-fn should_skip_pattern(path: &Path, pattern: &Option<Arc<GlobSet>>) -> bool {
-    pattern.as_ref().is_some_and(|p| !p.is_match(path))
+fn matches_pattern(rel_posix: &str, pattern: &Option<Arc<GlobSet>>) -> bool {
+    pattern.as_ref().is_none_or(|p| p.is_match(rel_posix))
 }
 
 #[inline(always)]
-fn should_skip_exclude(path: &Path, exclude: &Option<Arc<GlobSet>>) -> bool {
-    exclude.as_ref().is_some_and(|e| e.is_match(path))
+fn matches_exclude(rel_posix: &str, exclude: &Option<Arc<GlobSet>>) -> bool {
+    exclude.as_ref().is_none_or(|e| !e.is_match(rel_posix))
 }
 
 pub async fn walk_dir(
     dir: OsPathBuf,
+    base: OsPathBuf,
     opts: Arc<WalkOptions>,
     mut tx: mpsc::Sender<WalkRes>,
 ) -> js::Result<()> {
     let dir_path: &Path = dir.as_ref();
     let mut entities = fs::read_dir(dir_path).await?;
+    let needs_posix = opts.pattern.is_some() || opts.exclude.is_some();
 
     while let Some(entity) = entities.next_entry().await? {
         let file_name = entity.file_name();
@@ -139,30 +143,40 @@ pub async fn walk_dir(
         }
 
         let path = OsPathBuf::from_path_buf(entity.path()).map_err(|_| js::Error::Unknown)?;
-        let path_ref: &Path = path.as_ref();
 
-        if should_skip_pattern(path_ref, &opts.pattern) {
-            continue;
-        }
+        if needs_posix {
+            let rel_posix = base.relative_to(&path).to_posix().into_string();
 
-        if should_skip_exclude(path_ref, &opts.exclude) {
-            continue;
-        }
-
-        let is_dir = entity.file_type().await?.is_dir();
-
-        if !opts.filter.matches(is_dir) {
-            continue;
-        }
-
-        if is_dir {
-            if tx.send((WalkResType::Dir, path.clone())).await.is_err() {
-                return Ok(());
+            if !matches_exclude(&rel_posix, &opts.exclude) {
+                continue;
             }
-            Box::pin(walk_dir(path, opts.clone(), tx.clone())).await?;
+
+            let is_dir = entity.file_type().await?.is_dir();
+
+            if is_dir {
+                let emit = opts.filter.matches(true) && matches_pattern(&rel_posix, &opts.pattern);
+                if emit && tx.send((WalkResType::Dir, path.clone())).await.is_err() {
+                    return Ok(());
+                }
+                Box::pin(walk_dir(path, base.clone(), opts.clone(), tx.clone())).await?;
+            } else {
+                let emit = opts.filter.matches(false) && matches_pattern(&rel_posix, &opts.pattern);
+                if emit && tx.send((WalkResType::File, path)).await.is_err() {
+                    return Ok(());
+                }
+            }
         } else {
-            if tx.send((WalkResType::File, path)).await.is_err() {
-                return Ok(());
+            let is_dir = entity.file_type().await?.is_dir();
+
+            if is_dir {
+                if opts.filter.matches(true) && tx.send((WalkResType::Dir, path.clone())).await.is_err() {
+                    return Ok(());
+                }
+                Box::pin(walk_dir(path, base.clone(), opts.clone(), tx.clone())).await?;
+            } else {
+                if opts.filter.matches(false) && tx.send((WalkResType::File, path)).await.is_err() {
+                    return Ok(());
+                }
             }
         }
     }
@@ -170,17 +184,18 @@ pub async fn walk_dir(
     Ok(())
 }
 
+struct WalkIteratorInner {
+    rx: mpsc::Receiver<WalkRes>,
+    task: Option<tokio::task::JoinHandle<js::Result<()>>>,
+    base: OsPathBuf,
+    absolute: bool,
+}
+
 #[js::class]
 #[derive(rquickjs::class::Trace, rquickjs::JsLifetime)]
 pub struct WalkIterator<'js> {
     #[qjs(skip_trace)]
-    rx: mpsc::Receiver<WalkRes>,
-    #[qjs(skip_trace)]
-    task: tokio::task::JoinHandle<js::Result<()>>,
-    #[qjs(skip_trace)]
-    base: OsPathBuf,
-    #[qjs(skip_trace)]
-    absolute: bool,
+    inner: Rc<RefCell<WalkIteratorInner>>,
     #[qjs(skip_trace)]
     _marker: PhantomData<&'js ()>,
 }
@@ -200,34 +215,48 @@ pub fn create_iterator<'js>(
     let opts_arc = Arc::new(opts);
     let base = dir.clone();
     let absolute = opts_arc.absolute;
+    let base_for_walk = base.clone();
 
-    let task = tokio::spawn(async move { walk_dir(dir, opts_arc, tx).await });
+    let task = tokio::spawn(async move { walk_dir(dir, base_for_walk, opts_arc, tx).await });
 
     Ok(WalkIterator {
-        rx,
-        task,
-        base,
-        absolute,
+        inner: Rc::new(RefCell::new(WalkIteratorInner {
+            rx,
+            task: Some(task),
+            base,
+            absolute,
+        })),
         _marker: PhantomData,
     })
+}
+
+impl Clone for WalkIterator<'_> {
+    fn clone(&self) -> Self {
+        WalkIterator {
+            inner: self.inner.clone(),
+            _marker: PhantomData,
+        }
+    }
 }
 
 #[js::methods]
 impl<'js> WalkIterator<'js> {
     #[qjs(rename = rquickjs::atom::PredefinedAtom::SymbolAsyncIterator)]
-    fn async_iterator(&self, ctx: Ctx<'js>) -> js::Result<js::Value<'js>> {
-        let func: js::Function = ctx.eval("(function(obj) { return obj; })")?;
-        let class_obj = rquickjs::Class::<WalkIterator>::from_value(&ctx.globals().get("this")?)?;
-        func.call((class_obj,)).map(|v: js::Value| v)
+    fn async_iterator(&self, ctx: Ctx<'js>) -> js::Result<js::Class<'js, WalkIterator<'js>>> {
+        let cloned = self.clone();
+        js::Class::instance(ctx, cloned)
     }
 
+    #[qjs()]
+    #[allow(clippy::await_holding_refcell_ref)]
     pub async fn next(&mut self, ctx: Ctx<'js>) -> js::Result<js::Object<'js>> {
-        match self.rx.next().await {
+        let mut inner = self.inner.borrow_mut();
+        match inner.rx.next().await {
             Some((_, path)) => {
-                let result_path = if self.absolute {
+                let result_path = if inner.absolute {
                     path
                 } else {
-                    path.relative_to(&self.base)
+                    inner.base.relative_to(&path)
                 };
 
                 let rs_string = RsString::owned(result_path.to_string());
@@ -239,7 +268,9 @@ impl<'js> WalkIterator<'js> {
                 Ok(obj)
             }
             None => {
-                let _ = (&mut self.task).await;
+                if let Some(mut task) = inner.task.take() {
+                    let _ = (&mut task).await;
+                }
                 let obj = js::Object::new(ctx.clone())?;
                 obj.set("value", js::Value::new_undefined(ctx.clone()))?;
                 obj.set("done", true)?;
@@ -249,9 +280,13 @@ impl<'js> WalkIterator<'js> {
     }
 
     #[qjs(rename = "return")]
+    #[allow(clippy::await_holding_refcell_ref)]
     async fn return_method(&mut self, ctx: Ctx<'js>) -> js::Result<js::Object<'js>> {
-        self.task.abort();
-        let _ = (&mut self.task).await;
+        let mut inner = self.inner.borrow_mut();
+        if let Some(mut task) = inner.task.take() {
+            task.abort();
+            let _ = (&mut task).await;
+        }
 
         let obj = js::Object::new(ctx.clone())?;
         obj.set("value", js::Value::new_undefined(ctx.clone()))?;
@@ -261,14 +296,14 @@ impl<'js> WalkIterator<'js> {
 }
 
 #[js::function]
-pub async fn walk<'js>(
+pub fn walk<'js>(
     ctx: Ctx<'js>,
     dir: js::Value<'js>,
-    options: Option<Object<'js>>,
+    options: js::function::Opt<Object<'js>>,
 ) -> js::Result<WalkIterator<'js>> {
     let dir_str = StringArg::coerce_js(&ctx, &dir, "dir")?;
     let dir_buf = OsPathBuf::new(dir_str.as_str());
-    let opts = WalkOptions::from_js(&ctx, options)?;
+    let opts = WalkOptions::from_js(&ctx, options.into_inner())?;
 
     create_iterator(ctx, dir_buf, opts)
 }

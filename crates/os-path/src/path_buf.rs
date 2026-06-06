@@ -4,7 +4,7 @@ use std::hash::{Hash, Hasher};
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
 
-use crate::backend::{Component, PathBackend};
+use crate::backend::{Component, PathBackend, Posix, Win32};
 use crate::path::PlatformPath;
 
 pub struct PlatformPathBuf<B: PathBackend>(
@@ -154,6 +154,28 @@ impl<B: PathBackend> PlatformPathBuf<B> {
 
     pub fn as_path(&self) -> &PlatformPath<B> {
         PlatformPath::<B>::new(&self.0)
+    }
+
+    pub fn to_posix(&self) -> PlatformPathBuf<Posix> {
+        PlatformPathBuf::<Posix>::new(self.0.replace('\\', "/"))
+    }
+
+    pub fn to_win32(&self) -> PlatformPathBuf<Win32> {
+        PlatformPathBuf::<Win32>::new(self.0.replace('/', "\\"))
+    }
+}
+
+#[cfg(windows)]
+impl<B: PathBackend> PlatformPathBuf<B> {
+    pub fn to_native(&self) -> PlatformPathBuf<Win32> {
+        self.to_win32()
+    }
+}
+
+#[cfg(not(windows))]
+impl<B: PathBackend> PlatformPathBuf<B> {
+    pub fn to_native(&self) -> PlatformPathBuf<Posix> {
+        self.to_posix()
     }
 }
 
