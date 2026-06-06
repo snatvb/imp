@@ -40,7 +40,7 @@ pub async fn read_file<'js>(
             Ok(Class::instance(ctx.clone(), RsString::owned(s))?.into_value())
         }
         Encoding::Base64Url => {
-            let s = base64::engine::general_purpose::URL_SAFE.encode(&raw);
+            let s = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(&raw);
             Ok(Class::instance(ctx.clone(), RsString::owned(s))?.into_value())
         }
         Encoding::Hex => {

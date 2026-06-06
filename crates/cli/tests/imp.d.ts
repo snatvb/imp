@@ -92,6 +92,19 @@ declare class RsString {
   [Symbol.iterator](): IterableIterator<string>;
 }
 
+interface WalkOptions {
+  ignore?: string[];
+  absolute?: boolean;
+  dot?: boolean;
+  filter?: "all" | "files" | "directories";
+}
+
+interface WalkIterator extends AsyncIterable<string> {
+  [Symbol.asyncIterator](): WalkIterator;
+  next(): Promise<IteratorResult<string>>;
+  return(): Promise<IteratorResult<string>>;
+}
+
 declare class FileHandle {
   read(): Promise<ByteBuffer | undefined>;
   readInto(buffer: ByteBuffer): Promise<number | undefined>;
@@ -148,6 +161,9 @@ declare module "imp:fs" {
   function remove(path: string | RsString): Promise<void>;
   function removeAll(paths: Array<string | RsString>): Promise<void>;
   function exists(path: string | RsString): Promise<boolean>;
+  function walk(dir: string | RsString, options?: WalkOptions): WalkIterator;
+  function glob(dir: string | RsString, pattern: string | RsString, options?: WalkOptions): Promise<RsString[]>;
+  function globStream(dir: string | RsString, pattern: string | RsString, options?: WalkOptions): WalkIterator;
 
   const _default: {
     open: typeof open;
@@ -158,9 +174,12 @@ declare module "imp:fs" {
     remove: typeof remove;
     removeAll: typeof removeAll;
     exists: typeof exists;
+    walk: typeof walk;
+    glob: typeof glob;
+    globStream: typeof globStream;
   };
   export default _default;
-  export { open, readFile, mkdir, metadata, metadataBatch, remove, removeAll, exists, FileHandle, FsStats };
+  export { open, readFile, mkdir, metadata, metadataBatch, remove, removeAll, exists, walk, glob, globStream, FileHandle, FsStats, WalkIterator, WalkOptions };
 }
 
 declare module "path" {

@@ -45,7 +45,7 @@ pub async fn read_file<'js>(
         Encoding::Base64 => base64::engine::general_purpose::STANDARD
             .encode(&raw)
             .into_js(&ctx)?,
-        Encoding::Base64Url => base64::engine::general_purpose::URL_SAFE
+        Encoding::Base64Url => base64::engine::general_purpose::URL_SAFE_NO_PAD
             .encode(&raw)
             .into_js(&ctx)?,
         Encoding::Hex => hex::encode(&raw).into_js(&ctx)?,

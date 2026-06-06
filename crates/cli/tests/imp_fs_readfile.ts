@@ -24,6 +24,7 @@ console.assert(b64.toString() === "aGVsbG8gd29ybGQ=", "base64 content");
 
 // --- base64url encoding ---
 const b64url = await readFile(fixture("hello.txt"), "base64url");
+console.assert(b64url.toString() === "aGVsbG8gd29ybGQ", "base64url content");
 
 // --- ascii encoding ---
 const ascii = await readFile(fixture("hello.txt"), "ascii");
