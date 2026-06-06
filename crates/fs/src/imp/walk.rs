@@ -143,42 +143,28 @@ pub async fn walk_dir(
         }
 
         let path = OsPathBuf::from_path_buf(entity.path()).map_err(|_| js::Error::Unknown)?;
+        let is_dir = entity.file_type().await?.is_dir();
 
-        if needs_posix {
+        let should_emit = if needs_posix {
             let rel_posix = base.relative_to(&path).to_posix().into_string();
-
             if !matches_exclude(&rel_posix, &opts.exclude) {
                 continue;
             }
-
-            let is_dir = entity.file_type().await?.is_dir();
-
-            if is_dir {
-                let emit = opts.filter.matches(true) && matches_pattern(&rel_posix, &opts.pattern);
-                if emit && tx.send((WalkResType::Dir, path.clone())).await.is_err() {
-                    return Ok(());
-                }
-                Box::pin(walk_dir(path, base.clone(), opts.clone(), tx.clone())).await?;
-            } else {
-                let emit = opts.filter.matches(false) && matches_pattern(&rel_posix, &opts.pattern);
-                if emit && tx.send((WalkResType::File, path)).await.is_err() {
-                    return Ok(());
-                }
-            }
+            matches_pattern(&rel_posix, &opts.pattern)
         } else {
-            let is_dir = entity.file_type().await?.is_dir();
+            true
+        };
 
-            if is_dir {
-                if opts.filter.matches(true)
-                    && tx.send((WalkResType::Dir, path.clone())).await.is_err()
-                {
-                    return Ok(());
-                }
-                Box::pin(walk_dir(path, base.clone(), opts.clone(), tx.clone())).await?;
-            } else {
-                if opts.filter.matches(false) && tx.send((WalkResType::File, path)).await.is_err() {
-                    return Ok(());
-                }
+        if is_dir {
+            let emit = opts.filter.matches(true) && should_emit;
+            if emit && tx.send((WalkResType::Dir, path.clone())).await.is_err() {
+                return Ok(());
+            }
+            Box::pin(walk_dir(path, base.clone(), opts.clone(), tx.clone())).await?;
+        } else {
+            let emit = opts.filter.matches(false) && should_emit;
+            if emit && tx.send((WalkResType::File, path)).await.is_err() {
+                return Ok(());
             }
         }
     }
