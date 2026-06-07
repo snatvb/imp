@@ -1,7 +1,7 @@
 use std::fmt;
 
 use crate::coerce::{js_type_of, throw_type_error};
-use crate::js::{self, Class, Ctx, FromJs, Type, Value};
+use crate::js::{self, Array, Class, Ctx, FromJs, Type, Value};
 use crate::rs_string::RsString;
 
 pub enum StringArg {
@@ -31,6 +31,19 @@ pub trait JsStringArg<'js>: Sized {
             let msg =
                 format!("The \"{name}\" argument must be of type string. Received {received}");
             throw_type_error(ctx, "ERR_INVALID_ARG_TYPE", &msg)
+        })
+    }
+
+    fn coerce_array_iter(
+        ctx: &Ctx<'js>,
+        arr: &Array<'js>,
+        name: impl fmt::Display,
+    ) -> impl Iterator<Item = js::Result<StringArg>> + ExactSizeIterator + 'js {
+        let ctx = ctx.clone();
+        let name = name.to_string();
+        arr.iter::<Value>().enumerate().map(move |(i, val)| {
+            let val = val?;
+            StringArg::coerce_js(&ctx, &val, format_args!("{}[{}]", name, i))
         })
     }
 }
