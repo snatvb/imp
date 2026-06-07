@@ -50,10 +50,11 @@ pub fn basename<'js, B: PathBackend>(
     path: js::Value<'js>,
     suffix: js::prelude::Opt<js::Value<'js>>,
 ) -> js::Result<String> {
-    let path_str = String::coerce_js(ctx, &path, "path")?;
+    let path_arg = StringArg::coerce_js(ctx, &path, "path")?;
+    let path_str = path_arg.as_str();
     let suffix = suffix
         .0
-        .map(|s| String::coerce_js(ctx, &s, "suffix"))
+        .map(|s| StringArg::coerce_js(ctx, &s, "suffix").map(|a| a.as_str().to_string()))
         .transpose()?;
     let p = PlatformPathBuf::<B>::new(path_str);
     Ok(base(&p, suffix.as_deref()).into())
@@ -63,8 +64,8 @@ pub fn dirname<'js, B: PathBackend>(
     ctx: &js::Ctx<'js>,
     path: js::Value<'js>,
 ) -> js::Result<String> {
-    let path_str = String::coerce_js(ctx, &path, "path")?;
-    let p = PlatformPathBuf::<B>::new(path_str);
+    let path_arg = StringArg::coerce_js(ctx, &path, "path")?;
+    let p = PlatformPathBuf::<B>::new(path_arg.as_str());
     Ok(dir(&p).into())
 }
 
@@ -72,8 +73,8 @@ pub fn extname<'js, B: PathBackend>(
     ctx: &js::Ctx<'js>,
     path: js::Value<'js>,
 ) -> js::Result<String> {
-    let path_str = String::coerce_js(ctx, &path, "path")?;
-    let p = PlatformPathBuf::<B>::new(path_str);
+    let path_arg = StringArg::coerce_js(ctx, &path, "path")?;
+    let p = PlatformPathBuf::<B>::new(path_arg.as_str());
     Ok(p.extension().unwrap_or("").into())
 }
 
@@ -81,8 +82,8 @@ pub fn normalize<'js, B: PathBackend>(
     ctx: &js::Ctx<'js>,
     path: js::Value<'js>,
 ) -> js::Result<String> {
-    let path_str = String::coerce_js(ctx, &path, "path")?;
-    Ok(PlatformPathBuf::<B>::new(path_str)
+    let path_arg = StringArg::coerce_js(ctx, &path, "path")?;
+    Ok(PlatformPathBuf::<B>::new(path_arg.as_str())
         .normalize()
         .into_string())
 }
@@ -91,8 +92,8 @@ pub fn is_absolute<'js, B: PathBackend>(
     ctx: &js::Ctx<'js>,
     path: js::Value<'js>,
 ) -> js::Result<bool> {
-    let path_str = String::coerce_js(ctx, &path, "path")?;
-    Ok(PlatformPathBuf::<B>::new(path_str).is_absolute())
+    let path_arg = StringArg::coerce_js(ctx, &path, "path")?;
+    Ok(PlatformPathBuf::<B>::new(path_arg.as_str()).is_absolute())
 }
 
 #[allow(clippy::extra_unused_type_parameters)]
@@ -136,8 +137,9 @@ pub fn parse<'js, B: PathBackend>(
     ctx: &js::Ctx<'js>,
     path: js::Value<'js>,
 ) -> js::Result<js::Object<'js>> {
-    let path_str = String::coerce_js(ctx, &path, "path")?;
-    let p = PlatformPathBuf::<B>::new(&path_str);
+    let path_arg = StringArg::coerce_js(ctx, &path, "path")?;
+    let path_str = path_arg.as_str();
+    let p = PlatformPathBuf::<B>::new(path_str);
 
     let root = p.root().to_string();
     let base = p.file_name().unwrap_or("").to_string();
@@ -167,16 +169,14 @@ pub fn to_namespaced_path<'js, B: PathBackend>(
     ctx: &js::Ctx<'js>,
     path: js::Value<'js>,
 ) -> js::Result<js::Value<'js>> {
-    let Some(s) = path.as_string() else {
-        return Ok(path);
-    };
-    let s = s.to_string()?;
+    let path_arg = StringArg::coerce_js(ctx, &path, "path")?;
+    let s = path_arg.as_str();
 
     let result: String = if TypeId::of::<B>() == TypeId::of::<os_path::Posix>()
         || s.starts_with(r"\\?\")
         || s.starts_with(r"\\.\")
     {
-        s
+        s.to_string()
     } else {
         let s = s.replace('/', "\\");
         if s.starts_with("\\\\") && !s.starts_with(r"\\?\") {
@@ -202,8 +202,10 @@ pub fn relative<'js, B: PathBackend>(
     from: js::Value<'js>,
     to: js::Value<'js>,
 ) -> js::Result<String> {
-    let from_str = String::coerce_js(ctx, &from, "from")?;
-    let to_str = String::coerce_js(ctx, &to, "to")?;
+    let from_arg = StringArg::coerce_js(ctx, &from, "from")?;
+    let to_arg = StringArg::coerce_js(ctx, &to, "to")?;
+    let from_str = from_arg.as_str().to_string();
+    let to_str = to_arg.as_str().to_string();
 
     let cwd = std::env::current_dir()
         .map_err(|e| PathError::from_io(e, "resolve").into_exception(ctx))?;

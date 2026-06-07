@@ -27,7 +27,7 @@ pub struct WalkOptions {
 }
 
 impl WalkOptions {
-    pub fn from_js(ctx: &Ctx<'_>, options: Option<Object<'_>>) -> js::Result<Self> {
+    pub fn from_js<'a>(ctx: &Ctx<'a>, options: Option<Object<'a>>) -> js::Result<Self> {
         let Some(opts) = options else {
             return Ok(Self::default());
         };
@@ -43,11 +43,9 @@ impl WalkOptions {
             let mut has_patterns = false;
             for val in arr.iter::<Value>() {
                 let val = val?;
-                if let Some(s) = val.as_string() {
-                    // FIXME: support for support RsString - JsString exists
-                    builder.add(Glob::new(&s.to_string()?).into_js(ctx)?);
-                    has_patterns = true;
-                }
+                let arg = StringArg::coerce_js(ctx, &val, "ignore")?;
+                builder.add(Glob::new(arg.as_str()).into_js(ctx)?);
+                has_patterns = true;
             }
             if has_patterns {
                 result.exclude = Some(Arc::new(builder.build().into_js(ctx)?));
@@ -62,8 +60,9 @@ impl WalkOptions {
             result.dot = dot;
         }
 
-        if let Some(filter) = opts.get::<_, Option<String>>("filter")? {
-            result.filter = GlobFilter::from_js(Some(filter))?;
+        if let Some(filter_val) = opts.get::<_, Option<Value>>("filter")? {
+            let filter_arg = StringArg::coerce_js(ctx, &filter_val, "filter")?;
+            result.filter = GlobFilter::from_js(Some(filter_arg.as_str().to_string()))?;
         }
 
         Ok(result)

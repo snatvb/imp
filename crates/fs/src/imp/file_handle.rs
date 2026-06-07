@@ -6,6 +6,7 @@ use tokio::io::{AsyncReadExt, AsyncSeekExt, BufReader, SeekFrom};
 use crate::error::Error;
 use js_core::ByteBuffer;
 use js_core::error::{JsError, SystemError};
+use js_core::utils::{JsStringArg, StringArg};
 
 #[derive(rquickjs::class::Trace, rquickjs::JsLifetime)]
 #[rquickjs::class]
@@ -23,9 +24,11 @@ pub fn init<'js>(ctx: &Ctx<'js>) -> Result<()> {
 }
 
 #[rquickjs::function]
-pub async fn open<'js>(ctx: Ctx<'js>, path: String, chunk_size: usize) -> Result<FileHandle<'js>> {
-    let file = tokio::fs::File::open(&path).await.map_err(|e| {
-        Error::System(SystemError::from_io(e, "open", Some(path.clone()))).into_exception(&ctx)
+pub async fn open<'js>(ctx: Ctx<'js>, path: Value<'js>, chunk_size: usize) -> Result<FileHandle<'js>> {
+    let path_arg = StringArg::coerce_js(&ctx, &path, "path")?;
+    let path_str = path_arg.as_str().to_string();
+    let file = tokio::fs::File::open(&path_str).await.map_err(|e| {
+        Error::System(SystemError::from_io(e, "open", Some(path_str.clone()))).into_exception(&ctx)
     })?;
     let reader = BufReader::with_capacity(chunk_size.max(8192), file);
     let buf = vec![0u8; chunk_size];

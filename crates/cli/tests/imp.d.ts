@@ -1,3 +1,5 @@
+type JsString = string | RsString;
+
 interface ImportMeta {
   dirname: string;
   filename: string;
@@ -93,7 +95,7 @@ declare class RsString {
 }
 
 interface WalkOptions {
-  ignore?: string[];
+  ignore?: JsString[];
   absolute?: boolean;
   dot?: boolean;
   filter?: "all" | "files" | "directories";
@@ -151,19 +153,19 @@ interface FsStats {
 }
 
 declare module "imp:fs" {
-  function open(path: string | RsString, chunkSize: number): Promise<FileHandle>;
-  function readFile(path: string | RsString): Promise<ArrayBuffer>;
-  function readFile(path: string | RsString, encoding: "buffer" | "null"): Promise<ArrayBuffer>;
-  function readFile(path: string | RsString, encoding: string): Promise<RsString>;
-  function mkdir(path: string | RsString): Promise<void>;
-  function metadata(path: string | RsString): Promise<FsStats>;
-  function metadataBatch(paths: Array<string | RsString>): Promise<FsStats[]>;
-  function remove(path: string | RsString): Promise<void>;
-  function removeAll(paths: Array<string | RsString>): Promise<void>;
-  function exists(path: string | RsString): Promise<boolean>;
-  function walk(dir: string | RsString, options?: WalkOptions): WalkIterator;
-  function glob(dir: string | RsString, pattern: string | RsString, options?: WalkOptions): Promise<RsString[]>;
-  function globStream(dir: string | RsString, pattern: string | RsString, options?: WalkOptions): WalkIterator;
+  function open(path: JsString, chunkSize: number): Promise<FileHandle>;
+  function readFile(path: JsString): Promise<ArrayBuffer>;
+  function readFile(path: JsString, encoding: "buffer" | "null"): Promise<ArrayBuffer>;
+  function readFile(path: JsString, encoding: string): Promise<RsString>;
+  function mkdir(path: JsString): Promise<void>;
+  function metadata(path: JsString): Promise<FsStats>;
+  function metadataBatch(paths: JsString[]): Promise<FsStats[]>;
+  function remove(path: JsString): Promise<void>;
+  function removeAll(paths: JsString[]): Promise<void>;
+  function exists(path: JsString): Promise<boolean>;
+  function walk(dir: JsString, options?: WalkOptions): WalkIterator;
+  function glob(dir: JsString, pattern: JsString, options?: WalkOptions): Promise<RsString[]>;
+  function globStream(dir: JsString, pattern: JsString, options?: WalkOptions): WalkIterator;
 
   const _default: {
     open: typeof open;
@@ -183,8 +185,8 @@ declare module "imp:fs" {
 }
 
 declare module "imp:inq" {
-  function prompt(text: string | RsString): Promise<string>;
-  function select(question: string | RsString, variants: Array<string | RsString>): Promise<string>;
+  function prompt(text: JsString): Promise<string>;
+  function select(question: JsString, variants: JsString[]): Promise<string>;
 
   const _default: {
     prompt: typeof prompt;
@@ -195,49 +197,49 @@ declare module "imp:inq" {
 }
 
 declare module "path" {
-  function resolve(...paths: string[]): string;
-  function join(...paths: string[]): string;
-  function basename(path: string, suffix?: string): string;
-  function dirname(path: string): string;
-  function extname(path: string): string;
-  function normalize(path: string): string;
-  function isAbsolute(path: string): boolean;
+  function resolve(...paths: JsString[]): string;
+  function join(...paths: JsString[]): string;
+  function basename(path: JsString, suffix?: JsString): string;
+  function dirname(path: JsString): string;
+  function extname(path: JsString): string;
+  function normalize(path: JsString): string;
+  function isAbsolute(path: JsString): boolean;
   function format(pathObject: { dir?: string; root?: string; base?: string; name?: string; ext?: string }): string;
-  function parse(path: string): { root: string; dir: string; base: string; name: string; ext: string };
-  function relative(from: string, to: string): string;
-  function toNamespacedPath(path: string | number): string;
+  function parse(path: JsString): { root: string; dir: string; base: string; name: string; ext: string };
+  function relative(from: JsString, to: JsString): string;
+  function toNamespacedPath(path: JsString): string;
 
   const sep: string;
   const delimiter: string;
 
   const win32: {
-    resolve(...paths: string[]): string;
-    join(...paths: string[]): string;
-    basename(path: string, suffix?: string): string;
-    dirname(path: string): string;
-    extname(path: string): string;
-    normalize(path: string): string;
-    isAbsolute(path: string): boolean;
+    resolve(...paths: JsString[]): string;
+    join(...paths: JsString[]): string;
+    basename(path: JsString, suffix?: JsString): string;
+    dirname(path: JsString): string;
+    extname(path: JsString): string;
+    normalize(path: JsString): string;
+    isAbsolute(path: JsString): boolean;
     format(pathObject: { dir?: string; root?: string; base?: string; name?: string; ext?: string }): string;
-    parse(path: string): { root: string; dir: string; base: string; name: string; ext: string };
-    relative(from: string, to: string): string;
-    toNamespacedPath(path: string | number): string;
+    parse(path: JsString): { root: string; dir: string; base: string; name: string; ext: string };
+    relative(from: JsString, to: JsString): string;
+    toNamespacedPath(path: JsString): string;
     sep: "\\";
     delimiter: ";";
   };
 
   const posix: {
-    resolve(...paths: string[]): string;
-    join(...paths: string[]): string;
-    basename(path: string, suffix?: string): string;
-    dirname(path: string): string;
-    extname(path: string): string;
-    normalize(path: string): string;
-    isAbsolute(path: string): boolean;
+    resolve(...paths: JsString[]): string;
+    join(...paths: JsString[]): string;
+    basename(path: JsString, suffix?: JsString): string;
+    dirname(path: JsString): string;
+    extname(path: JsString): string;
+    normalize(path: JsString): string;
+    isAbsolute(path: JsString): boolean;
     format(pathObject: { dir?: string; root?: string; base?: string; name?: string; ext?: string }): string;
-    parse(path: string): { root: string; dir: string; base: string; name: string; ext: string };
-    relative(from: string, to: string): string;
-    toNamespacedPath(path: string | number): string;
+    parse(path: JsString): { root: string; dir: string; base: string; name: string; ext: string };
+    relative(from: JsString, to: JsString): string;
+    toNamespacedPath(path: JsString): string;
     sep: "/";
     delimiter: ":";
   };

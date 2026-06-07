@@ -3,6 +3,7 @@ use js_core::RsString;
 use js_core::error::SystemError;
 use js_core::js::Class;
 use js_core::js::function;
+use js_core::utils::{JsStringArg, StringArg};
 use tokio::fs;
 
 use crate::{encoding::Encoding, error::Error, prelude::*};
@@ -10,13 +11,15 @@ use crate::{encoding::Encoding, error::Error, prelude::*};
 #[function]
 pub async fn read_file<'js>(
     ctx: js::Ctx<'js>,
-    path: String,
+    path: js::Value<'js>,
     encoding: function::Opt<String>,
 ) -> js::Result<js::Value<'js>> {
+    let path_arg = StringArg::coerce_js(&ctx, &path, "path")?;
+    let path_str = path_arg.as_str();
     let encoding = Encoding::from_opt(encoding.as_deref()).map_err(|e| e.into_exception(&ctx))?;
-    let raw = fs::read(&path)
-        .await
-        .map_err(|e| SystemError::from_io(e, "read", Some(path.clone())).into_exception(&ctx))?;
+    let raw = fs::read(&path_str).await.map_err(|e| {
+        SystemError::from_io(e, "read", Some(path_str.to_string())).into_exception(&ctx)
+    })?;
     tracing::debug!(bytes = raw.len(), "imp:fs readFile raw bytes");
 
     match encoding {
