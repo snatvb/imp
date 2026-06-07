@@ -1,0 +1,43 @@
+use js_core::JsError;
+use js_core::error::SystemError;
+use thiserror::Error;
+
+js_core::declare_into_js_result!();
+
+#[derive(Error, Debug, JsError)]
+pub enum Error {
+    #[error("{0}")]
+    #[js(system)]
+    System(SystemError),
+
+    #[error("{0}")]
+    #[js(error)]
+    Internal(String),
+
+    #[error("{0}")]
+    #[js(type_error)]
+    Argument(String),
+
+    #[error("{0}")]
+    #[js(error)]
+    Prompt(String),
+}
+
+impl From<inquire::InquireError> for Error {
+    fn from(e: inquire::InquireError) -> Self {
+        Error::Prompt(e.to_string())
+    }
+}
+
+impl From<tokio::task::JoinError> for Error {
+    fn from(e: tokio::task::JoinError) -> Self {
+        Error::Internal(e.to_string())
+    }
+}
+
+js_core::impl_into_js_result!(
+    IntoJsResult,
+    Error,
+    inquire::InquireError,
+    tokio::task::JoinError
+);

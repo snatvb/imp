@@ -244,8 +244,8 @@ dependencies = [
  "clap",
  "console",
  "fs",
+ "inq",
  "js_core",
- "js_inquire",
  "js_path",
  "os-path",
  "process",
@@ -781,6 +781,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "inq"
+version = "0.1.0"
+dependencies = [
+ "inquire",
+ "js_core",
+ "rquickjs",
+ "thiserror",
+ "tokio",
+]
+
+[[package]]
 name = "inquire"
 version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -853,16 +864,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "js_inquire"
-version = "0.1.0"
-dependencies = [
- "inquire",
- "js_core",
- "rquickjs",
- "thiserror",
 ]
 
 [[package]]

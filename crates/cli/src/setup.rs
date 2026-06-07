@@ -12,6 +12,7 @@ pub async fn setup_loaders(rt: &js::AsyncRuntime, resolver: Resolver, cwd: OsPat
         ("fs/promises", fs::FsPromisesModule),
         ("path", js_path::PathModule),
         ("imp:fs", fs::imp::ImpFsModule),
+        ("inq", inq::InquireModule),
     );
 
     rt.set_loader(

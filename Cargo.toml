@@ -7,7 +7,7 @@ members = [
   "crates/process",
   "crates/os-path",
   "crates/js_path",
-  "crates/js_inquire",
+  "crates/inq",
   "crates/js_error_derive",
 ]
 resolver = "3"
@@ -42,5 +42,5 @@ fs = { path = "crates/fs" }
 process = { path = "crates/process" }
 os-path = { path = "crates/os-path" }
 js_path = { path = "crates/js_path" }
-js_inquire = { path = "crates/js_inquire" }
+inq = { path = "crates/inq" }
 js_error_derive = { path = "crates/js_error_derive" }
