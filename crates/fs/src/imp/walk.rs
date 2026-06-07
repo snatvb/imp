@@ -44,6 +44,7 @@ impl WalkOptions {
             for val in arr.iter::<Value>() {
                 let val = val?;
                 if let Some(s) = val.as_string() {
+                    // FIXME: support for support RsString - JsString exists
                     builder.add(Glob::new(&s.to_string()?).into_js(ctx)?);
                     has_patterns = true;
                 }
