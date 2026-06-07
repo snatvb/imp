@@ -184,12 +184,22 @@ declare module "imp:fs" {
   export { open, readFile, mkdir, metadata, metadataBatch, remove, removeAll, exists, walk, glob, globStream, FileHandle, FsStats, WalkIterator, WalkOptions };
 }
 
+interface DateOptions {
+  default?: Date;
+  minDate?: Date;
+  maxDate?: Date;
+  weekStart?: number;
+  helpMessage?: string;
+}
+
 declare module "imp:inq" {
   function prompt(text: JsString): Promise<string>;
   function select(question: JsString, variants: JsString[]): Promise<string>;
   function multiSelect(question: JsString, variants: JsString[]): Promise<string[]>;
   function password(question: JsString, hidden?: boolean): Promise<string>;
   function passwordWithConfirm(question: JsString, hidden?: boolean): Promise<string>;
+  function editor(question: JsString): Promise<string>;
+  function dateSelect(question: JsString, options?: DateOptions): Promise<Date>;
 
   const _default: {
     prompt: typeof prompt;
@@ -197,9 +207,11 @@ declare module "imp:inq" {
     multiSelect: typeof multiSelect;
     password: typeof password;
     passwordWithConfirm: typeof passwordWithConfirm;
+    editor: typeof editor;
+    dateSelect: typeof dateSelect;
   };
   export default _default;
-  export { prompt, select, multiSelect, password, passwordWithConfirm };
+  export { prompt, select, multiSelect, password, passwordWithConfirm, editor, dateSelect };
 }
 
 declare module "path" {

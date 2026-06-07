@@ -1,4 +1,5 @@
 mod convert;
+pub mod date;
 mod string;
 mod string_arg;
 

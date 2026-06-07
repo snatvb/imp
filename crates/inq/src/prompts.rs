@@ -1,4 +1,6 @@
-use inquire::{MultiSelect, Password, Select, Text};
+use chrono::{NaiveDate, Weekday};
+use inquire::{DateSelect, Editor, MultiSelect, Password, Select, Text};
+use js_core::utils::date::{naive_date_to_js_date, parse_date_field, weekday_from_u8};
 
 use crate::prelude::*;
 
@@ -105,4 +107,75 @@ pub async fn password_with_confirm<'js>(
     hidden: js::function::Opt<bool>,
 ) -> js::Result<String> {
     ask_password(ctx, question, hidden.unwrap_or(false), true).await
+}
+
+#[js::function]
+pub async fn editor<'js>(ctx: js::Ctx<'js>, question: js::Value<'js>) -> js::Result<String> {
+    let question = StringArg::coerce_js(&ctx, &question, "text")?;
+    spawn_blocking(&ctx, move || Editor::new(question.as_str()).prompt())
+        .await?
+        .into_js(&ctx)
+}
+
+#[derive(Debug, Default)]
+pub struct DateOptions {
+    pub default: Option<NaiveDate>,
+    pub min_date: Option<NaiveDate>,
+    pub max_date: Option<NaiveDate>,
+    pub week_start: Option<Weekday>,
+    pub help_message: Option<String>,
+}
+
+impl DateOptions {
+    pub fn from_js<'js>(_ctx: &js::Ctx<'js>, options: Option<js::Object<'js>>) -> js::Result<Self> {
+        let Some(opts) = options else {
+            return Ok(Self::default());
+        };
+
+        Ok(Self {
+            default: parse_date_field(&opts, "default")?,
+            min_date: parse_date_field(&opts, "minDate")?,
+            max_date: parse_date_field(&opts, "maxDate")?,
+            week_start: opts
+                .get::<_, Option<u8>>("weekStart")?
+                .and_then(weekday_from_u8),
+            help_message: opts.get::<_, Option<String>>("helpMessage")?,
+        })
+    }
+}
+
+#[js::function]
+pub async fn date_select<'js>(
+    ctx: js::Ctx<'js>,
+    question: js::Value<'js>,
+    options: js::function::Opt<js::Object<'js>>,
+) -> js::Result<js::Object<'js>> {
+    let question = StringArg::coerce_js(&ctx, &question, "text")?;
+    let opts = DateOptions::from_js(&ctx, options.into_inner())?;
+
+    let result = spawn_blocking(&ctx, move || {
+        let mut ds = DateSelect::new(question.as_str());
+
+        if let Some(default) = opts.default {
+            ds = ds.with_default(default);
+        }
+        if let Some(min) = opts.min_date {
+            ds = ds.with_min_date(min);
+        }
+        if let Some(max) = opts.max_date {
+            ds = ds.with_max_date(max);
+        }
+        if let Some(week_start) = opts.week_start {
+            ds = ds.with_week_start(week_start);
+        }
+        if let Some(help) = &opts.help_message {
+            ds = ds.with_help_message(help);
+        }
+
+        ds.prompt()
+    })
+    .await?
+    .into_js(&ctx)?;
+
+    naive_date_to_js_date(&ctx, &result)
 }

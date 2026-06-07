@@ -24,7 +24,11 @@ pub fn init<'js>(ctx: &Ctx<'js>) -> Result<()> {
 }
 
 #[rquickjs::function]
-pub async fn open<'js>(ctx: Ctx<'js>, path: Value<'js>, chunk_size: usize) -> Result<FileHandle<'js>> {
+pub async fn open<'js>(
+    ctx: Ctx<'js>,
+    path: Value<'js>,
+    chunk_size: usize,
+) -> Result<FileHandle<'js>> {
     let path_arg = StringArg::coerce_js(&ctx, &path, "path")?;
     let path_str = path_arg.as_str().to_string();
     let file = tokio::fs::File::open(&path_str).await.map_err(|e| {

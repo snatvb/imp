@@ -34,7 +34,7 @@ colored = { version = "3.1.1", features = ["no-color"] }
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 camino = { version = "1.2.2", features = [] }
-inquire = { version = "0.9.4", features = ["fuzzy", "date", "macros"] }
+chrono = "0.4.45"
 
 js_core = { path = "crates/js_core" }
 console = { path = "crates/console" }
