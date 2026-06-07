@@ -200,6 +200,7 @@ declare module "imp:inq" {
   function passwordWithConfirm(question: JsString, hidden?: boolean): Promise<string>;
   function editor(question: JsString): Promise<string>;
   function dateSelect(question: JsString, options?: DateOptions): Promise<Date>;
+  function confirm(question: JsString, byDefault?: boolean): Promise<Date>;
 
   const _default: {
     prompt: typeof prompt;
@@ -209,9 +210,19 @@ declare module "imp:inq" {
     passwordWithConfirm: typeof passwordWithConfirm;
     editor: typeof editor;
     dateSelect: typeof dateSelect;
+    confirm: typeof confirm;
   };
   export default _default;
-  export { prompt, select, multiSelect, password, passwordWithConfirm, editor, dateSelect };
+  export {
+    prompt,
+    select,
+    multiSelect,
+    password,
+    passwordWithConfirm,
+    editor,
+    dateSelect,
+    confirm
+  };
 }
 
 declare module "path" {

@@ -1,5 +1,5 @@
 use chrono::{NaiveDate, Weekday};
-use inquire::{DateSelect, Editor, MultiSelect, Password, Select, Text};
+use inquire::{Confirm, DateSelect, Editor, MultiSelect, Password, Select, Text};
 use js_core::utils::date::{naive_date_to_js_date, parse_date_field, weekday_from_u8};
 
 use crate::prelude::*;
@@ -178,4 +178,21 @@ pub async fn date_select<'js>(
     .into_js(&ctx)?;
 
     naive_date_to_js_date(&ctx, &result)
+}
+
+#[js::function]
+pub async fn confirm<'js>(
+    ctx: js::Ctx<'js>,
+    question: js::Value<'js>,
+    default: js::function::Opt<bool>,
+) -> js::Result<bool> {
+    let question = StringArg::coerce_js(&ctx, &question, "text")?;
+
+    spawn_blocking(&ctx, move || {
+        Confirm::new(question.as_str())
+            .with_default(default.unwrap_or(false))
+            .prompt()
+    })
+    .await?
+    .into_js(&ctx)
 }

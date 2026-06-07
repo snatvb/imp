@@ -8,4 +8,5 @@ js_core::impl_module!(InquireModule,
     "passwordWithConfirm" => prompts::js_password_with_confirm,
     "editor" => prompts::js_editor,
     "dateSelect" => prompts::js_date_select,
+    "confirm" => prompts::js_confirm,
 );
