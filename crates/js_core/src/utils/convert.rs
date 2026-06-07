@@ -32,7 +32,20 @@ fn format_one<'js>(
         Type::Function => format_function(arg.as_function().unwrap(), out),
         Type::Array => format_array(ctx, arg.as_array().unwrap(), depth, out),
         Type::Object | Type::Constructor | Type::Promise | Type::Proxy | Type::Exception => {
-            format_object(ctx, arg.as_object().unwrap(), depth, out)
+            let obj = arg.as_object().unwrap();
+            if let Some(class) = crate::js::Class::<crate::rs_string::RsString>::from_object(obj) {
+                let borrowed = class.borrow();
+                let s = borrowed.get_slice().to_string();
+                if quote_str {
+                    out.push('"');
+                    out.push_str(&s);
+                    out.push('"');
+                } else {
+                    out.push_str(&s);
+                }
+                return;
+            }
+            format_object(ctx, obj, depth, out)
         }
         _ => out.push_str("[object/unknown]"),
     }
