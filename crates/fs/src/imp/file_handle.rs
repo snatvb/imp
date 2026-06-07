@@ -5,7 +5,7 @@ use tokio::io::{AsyncReadExt, AsyncSeekExt, BufReader, SeekFrom};
 
 use crate::error::Error;
 use js_core::ByteBuffer;
-use js_core::error::SystemError;
+use js_core::error::{JsError, SystemError};
 
 #[derive(rquickjs::class::Trace, rquickjs::JsLifetime)]
 #[rquickjs::class]

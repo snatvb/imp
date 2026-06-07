@@ -1,14 +1,17 @@
+use js_core::JsError;
 use js_core::error::SystemError;
 use thiserror::Error;
 
-use rquickjs::{Constructor, Ctx, Object, Value};
+js_core::declare_into_js_result!();
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, JsError)]
 pub enum PathError {
     #[error("{0}")]
+    #[js(system)]
     System(SystemError),
 
     #[error("{0}")]
+    #[js(error)]
     InvalidPath(String),
 }
 
@@ -20,22 +23,6 @@ impl PathError {
     pub fn invalid_path(msg: impl Into<String>) -> Self {
         PathError::InvalidPath(msg.into())
     }
-
-    pub fn into_js<'js>(self, ctx: &Ctx<'js>) -> rquickjs::Result<Value<'js>> {
-        match self {
-            PathError::System(sys) => sys.into_js(ctx),
-            PathError::InvalidPath(msg) => {
-                let ctor: Constructor = ctx.globals().get("Error")?;
-                let err: Object = ctor.construct((msg,))?;
-                Ok(err.into_value())
-            }
-        }
-    }
-
-    pub fn into_exception<'js>(self, ctx: &Ctx<'js>) -> rquickjs::Error {
-        match self.into_js(ctx) {
-            Ok(val) => ctx.throw(val),
-            Err(e) => e,
-        }
-    }
 }
+
+js_core::impl_into_js_result!(IntoJsResult, PathError);

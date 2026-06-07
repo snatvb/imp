@@ -1,7 +1,64 @@
 use std::io;
 
 use crate::js;
-use js::{Constructor, Ctx, Object, Value};
+use js::{Constructor, Object};
+
+pub trait JsError: std::error::Error {
+    fn into_js<'js>(self, ctx: &js::Ctx<'js>) -> js::Result<js::Value<'js>>;
+
+    fn into_exception<'js>(self, ctx: &js::Ctx<'js>) -> js::Error
+    where
+        Self: Sized,
+    {
+        match self.into_js(ctx) {
+            Ok(val) => ctx.throw(val),
+            Err(e) => e,
+        }
+    }
+}
+
+pub fn make_type_error<'js>(ctx: &js::Ctx<'js>, msg: String) -> js::Result<js::Value<'js>> {
+    let ctor: Constructor = ctx.globals().get("TypeError")?;
+    let err: Object = ctor.construct((msg,))?;
+    Ok(err.into_value())
+}
+
+pub fn make_error<'js>(ctx: &js::Ctx<'js>, msg: String) -> js::Result<js::Value<'js>> {
+    let ctor: Constructor = ctx.globals().get("Error")?;
+    let err: Object = ctor.construct((msg,))?;
+    Ok(err.into_value())
+}
+
+pub trait IntoJsResult<T> {
+    fn into_js(self, ctx: &js::Ctx<'_>) -> js::Result<T>;
+}
+
+#[macro_export]
+macro_rules! declare_into_js_result {
+    () => {
+        pub trait IntoJsResult<T> {
+            fn into_js(self, ctx: &$crate::js::Ctx<'_>) -> $crate::js::Result<T>;
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! impl_into_js_result {
+    ($trait:ident, $target:ty $(, $external:ty)* $(,)?) => {
+        impl<T> $trait<T> for Result<T, $target> {
+            fn into_js(self, ctx: &$crate::js::Ctx<'_>) -> $crate::js::Result<T> {
+                self.map_err(|e| <$target as $crate::error::JsError>::into_exception(e, ctx))
+            }
+        }
+        $(
+            impl<T> $trait<T> for Result<T, $external> {
+                fn into_js(self, ctx: &$crate::js::Ctx<'_>) -> $crate::js::Result<T> {
+                    self.map_err(|e| <$target as $crate::error::JsError>::into_exception(<$target>::from(e), ctx))
+                }
+            }
+        )*
+    };
+}
 
 #[derive(Debug)]
 pub struct SystemError {
@@ -16,6 +73,8 @@ impl std::fmt::Display for SystemError {
         write!(f, "{}: {}", self.code, self.message)
     }
 }
+
+impl std::error::Error for SystemError {}
 
 impl SystemError {
     pub fn from_io(e: io::Error, syscall: &'static str, path: Option<String>) -> Self {
@@ -33,8 +92,10 @@ impl SystemError {
             path,
         }
     }
+}
 
-    pub fn into_js<'js>(self, ctx: &Ctx<'js>) -> js::Result<Value<'js>> {
+impl JsError for SystemError {
+    fn into_js<'js>(self, ctx: &js::Ctx<'js>) -> js::Result<js::Value<'js>> {
         let ctor: Constructor = ctx.globals().get("Error")?;
         let err: Object = ctor.construct((self.message,))?;
         err.set("code", self.code)?;
@@ -43,12 +104,5 @@ impl SystemError {
             err.set("path", p)?;
         }
         Ok(err.into_value())
-    }
-
-    pub fn into_exception<'js>(self, ctx: &Ctx<'js>) -> js::Error {
-        match self.into_js(ctx) {
-            Ok(val) => ctx.throw(val),
-            Err(e) => e,
-        }
     }
 }

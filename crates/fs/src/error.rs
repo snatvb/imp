@@ -1,22 +1,29 @@
+use js_core::JsError;
 use js_core::error::SystemError;
+use thiserror::Error;
 
-use crate::prelude::*;
+js_core::declare_into_js_result!();
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, JsError)]
 pub enum Error {
     #[error("{0}")]
+    #[js(system)]
     System(SystemError),
 
     #[error("{0}")]
+    #[js(type_error)]
     GlobPattern(String),
 
     #[error("{0}")]
+    #[js(error)]
     Internal(String),
 
     #[error("{0}")]
+    #[js(error)]
     Encoding(String),
 
     #[error("{0}")]
+    #[js(type_error)]
     Argument(String),
 }
 
@@ -32,37 +39,4 @@ impl From<tokio::task::JoinError> for Error {
     }
 }
 
-pub trait IntoJsResult<T> {
-    fn into_js(self, ctx: &js::Ctx<'_>) -> js::Result<T>;
-}
-
-impl<T, E: Into<Error>> IntoJsResult<T> for Result<T, E> {
-    fn into_js(self, ctx: &js::Ctx<'_>) -> js::Result<T> {
-        self.map_err(|e| e.into().into_exception(ctx))
-    }
-}
-
-impl Error {
-    pub fn into_js<'js>(self, ctx: &js::Ctx<'js>) -> js::Result<js::Value<'js>> {
-        match self {
-            Error::System(sys) => sys.into_js(ctx),
-            Error::GlobPattern(msg) | Error::Argument(msg) => {
-                let ctor: js::Constructor = ctx.globals().get("TypeError")?;
-                let err: js::Object = ctor.construct((msg,))?;
-                Ok(err.into_value())
-            }
-            Error::Encoding(msg) | Error::Internal(msg) => {
-                let ctor: js::Constructor = ctx.globals().get("Error")?;
-                let err: js::Object = ctor.construct((msg,))?;
-                Ok(err.into_value())
-            }
-        }
-    }
-
-    pub fn into_exception<'js>(self, ctx: &js::Ctx<'js>) -> js::Error {
-        match self.into_js(ctx) {
-            Ok(val) => ctx.throw(val),
-            Err(e) => e,
-        }
-    }
-}
+js_core::impl_into_js_result!(IntoJsResult, Error, globset::Error, tokio::task::JoinError);

@@ -1,5 +1,7 @@
 pub use rquickjs as js;
 
+pub use js_error_derive::JsError;
+
 pub mod byte_buffer;
 pub mod coerce;
 pub mod error;

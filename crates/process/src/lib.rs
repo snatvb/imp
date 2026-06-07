@@ -1,4 +1,4 @@
-use js_core::error::SystemError;
+use js_core::error::{JsError, SystemError};
 use rquickjs as js;
 
 #[js::function]
