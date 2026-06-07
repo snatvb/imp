@@ -187,13 +187,19 @@ declare module "imp:fs" {
 declare module "imp:inq" {
   function prompt(text: JsString): Promise<string>;
   function select(question: JsString, variants: JsString[]): Promise<string>;
+  function multiSelect(question: JsString, variants: JsString[]): Promise<string[]>;
+  function password(question: JsString, hidden?: boolean): Promise<string>;
+  function passwordWithConfirm(question: JsString, hidden?: boolean): Promise<string>;
 
   const _default: {
     prompt: typeof prompt;
     select: typeof select;
+    multiSelect: typeof multiSelect;
+    password: typeof password;
+    passwordWithConfirm: typeof passwordWithConfirm;
   };
   export default _default;
-  export { prompt, select };
+  export { prompt, select, multiSelect, password, passwordWithConfirm };
 }
 
 declare module "path" {

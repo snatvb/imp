@@ -1,4 +1,4 @@
-use inquire::{MultiSelect, Select, Text};
+use inquire::{MultiSelect, Password, Select, Text};
 
 use crate::prelude::*;
 
@@ -60,4 +60,49 @@ pub async fn multi_select<'js>(
     })
     .await?
     .into_js(&ctx)
+}
+
+#[inline(always)]
+pub async fn ask_password<'js>(
+    ctx: js::Ctx<'js>,
+    question: js::Value<'js>,
+    hidden: bool,
+    with_confirm: bool,
+) -> js::Result<String> {
+    let text = StringArg::coerce_js(&ctx, &question, "text")?;
+    let mode = if hidden {
+        inquire::PasswordDisplayMode::Hidden
+    } else {
+        inquire::PasswordDisplayMode::Masked
+    };
+
+    spawn_blocking(&ctx, move || {
+        let pass = Password::new(text.as_str()).with_display_mode(mode);
+        let pass = if with_confirm {
+            pass
+        } else {
+            pass.without_confirmation()
+        };
+        pass.prompt()
+    })
+    .await?
+    .into_js(&ctx)
+}
+
+#[js::function]
+pub async fn password<'js>(
+    ctx: js::Ctx<'js>,
+    question: js::Value<'js>,
+    hidden: js::function::Opt<bool>,
+) -> js::Result<String> {
+    ask_password(ctx, question, hidden.unwrap_or(false), false).await
+}
+
+#[js::function]
+pub async fn password_with_confirm<'js>(
+    ctx: js::Ctx<'js>,
+    question: js::Value<'js>,
+    hidden: js::function::Opt<bool>,
+) -> js::Result<String> {
+    ask_password(ctx, question, hidden.unwrap_or(false), true).await
 }
