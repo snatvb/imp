@@ -21,6 +21,7 @@ impl StringArg {
 pub trait JsStringArg<'js>: Sized {
     fn to_string_arg(self, ctx: &Ctx<'js>) -> js::Result<StringArg>;
 
+    #[inline(always)]
     fn coerce_js(
         ctx: &Ctx<'js>,
         val: &Value<'js>,
@@ -34,6 +35,7 @@ pub trait JsStringArg<'js>: Sized {
         })
     }
 
+    #[allow(clippy::implied_bounds_in_impls)] // otherwise doesn't work and type can't be infered
     fn coerce_array_iter(
         ctx: &Ctx<'js>,
         arr: &Array<'js>,
