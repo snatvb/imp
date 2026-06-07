@@ -182,14 +182,16 @@ declare module "imp:fs" {
   export { open, readFile, mkdir, metadata, metadataBatch, remove, removeAll, exists, walk, glob, globStream, FileHandle, FsStats, WalkIterator, WalkOptions };
 }
 
-declare module "inq" {
+declare module "imp:inq" {
   function prompt(text: string | RsString): Promise<string>;
+  function select(question: string | RsString, variants: Array<string | RsString>): Promise<string>;
 
   const _default: {
     prompt: typeof prompt;
+    select: typeof select;
   };
   export default _default;
-  export { prompt };
+  export { prompt, select };
 }
 
 declare module "path" {
