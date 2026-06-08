@@ -1,0 +1,12 @@
+[package]
+version = "0.1.0"
+name = "cli"
+edition.workspace = true
+authors.workspace = true
+
+[dependencies]
+tokio.workspace = true
+clap.workspace = true
+
+js_core.workspace = true
+fs.workspace = true

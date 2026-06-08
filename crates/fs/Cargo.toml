@@ -1,0 +1,14 @@
+[package]
+name = "fs"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+
+[dependencies]
+base64 = "0.22.1"
+encoding_rs = "0.8.35"
+hex = "0.4.3"
+
+tokio.workspace = true
+js_core.workspace = true
+thiserror.workspace = true

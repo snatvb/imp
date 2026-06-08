@@ -1,0 +1,14 @@
+[package]
+name = "js_core"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+
+[dependencies]
+oxc_allocator = "0.133.0"
+oxc_codegen = "0.133.0"
+oxc_parser = "0.133.0"
+oxc_span = "0.133.0"
+oxc_transformer = "0.133.0"
+oxc_semantic = "0.133.0"
+rquickjs.workspace = true
