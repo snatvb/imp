@@ -305,3 +305,13 @@ declare module "fs/promises" {
   export default _default;
   export { readFile, glob };
 }
+
+declare module "imp:sys/input_simulate" {
+  function injectKeys(keys: string[]): Promise<void>;
+
+  const _default: {
+    injectKeys: typeof injectKeys;
+  };
+  export default _default;
+  export { injectKeys };
+}

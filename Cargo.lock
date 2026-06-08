@@ -255,6 +255,7 @@ dependencies = [
  "js_path",
  "os-path",
  "process",
+ "sys",
  "tokio",
  "tracing",
  "tracing-subscriber",
@@ -1899,6 +1900,17 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
+]
+
+[[package]]
+name = "sys"
+version = "0.1.0"
+dependencies = [
+ "js_core",
+ "libc",
+ "rquickjs",
+ "thiserror",
+ "tokio",
 ]
 
 [[package]]

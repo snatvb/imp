@@ -9,6 +9,7 @@ members = [
   "crates/js_path",
   "crates/inq",
   "crates/js_error_derive",
+  "crates/sys",
 ]
 resolver = "3"
 
@@ -35,6 +36,7 @@ tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 camino = { version = "1.2.2", features = [] }
 chrono = "0.4.45"
+libc = "0.2.186"
 
 js_core = { path = "crates/js_core" }
 console = { path = "crates/console" }
@@ -43,4 +45,5 @@ process = { path = "crates/process" }
 os-path = { path = "crates/os-path" }
 js_path = { path = "crates/js_path" }
 inq = { path = "crates/inq" }
+sys = { path = "crates/sys" }
 js_error_derive = { path = "crates/js_error_derive" }

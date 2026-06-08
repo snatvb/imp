@@ -13,6 +13,7 @@ pub async fn setup_loaders(rt: &js::AsyncRuntime, resolver: Resolver, cwd: OsPat
         ("path", js_path::PathModule),
         ("imp:fs", fs::imp::ImpFsModule),
         ("imp:inq", inq::InquireModule),
+        ("imp:sys/input_simulate", sys::InputSimulateModule),
     );
 
     rt.set_loader(
