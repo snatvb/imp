@@ -315,3 +315,15 @@ declare module "imp:sys/input_simulate" {
   export default _default;
   export { injectKeys };
 }
+
+declare module "imp:sys/stdin" {
+  function readLine(): Promise<RsString>;
+  function readAll(): Promise<ByteBuffer>;
+
+  const _default: {
+    readLine: typeof readLine;
+    readAll: typeof readAll;
+  };
+  export default _default;
+  export _default;
+}
