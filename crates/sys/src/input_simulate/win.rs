@@ -91,12 +91,8 @@ pub fn inject_keys(keys: &[&str]) -> Result<(), Error> {
         }
 
         let mut written = 0u32;
-        let result = WriteConsoleInputW(
-            handle,
-            records.as_ptr(),
-            records.len() as u32,
-            &mut written,
-        );
+        let result =
+            WriteConsoleInputW(handle, records.as_ptr(), records.len() as u32, &mut written);
 
         CloseHandle(handle);
 

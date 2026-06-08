@@ -25,8 +25,4 @@ impl From<tokio::task::JoinError> for Error {
     }
 }
 
-js_core::impl_into_js_result!(
-    IntoJsResult,
-    Error,
-    tokio::task::JoinError
-);
+js_core::impl_into_js_result!(IntoJsResult, Error, tokio::task::JoinError);

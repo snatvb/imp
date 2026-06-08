@@ -35,7 +35,9 @@ fn ensure_pty() -> Result<RawFd, Error> {
             libc::close(slave);
         }
         let io_err = std::io::Error::last_os_error();
-        return Err(Error::Internal(format!("dup2 slave to stdin failed: {io_err}")));
+        return Err(Error::Internal(format!(
+            "dup2 slave to stdin failed: {io_err}"
+        )));
     }
 
     unsafe { libc::close(slave) };
@@ -60,12 +62,12 @@ pub fn inject_keys(keys: &[&str]) -> Result<(), Error> {
     let bytes = keys_to_bytes(keys)?;
     let master = ensure_pty()?;
 
-    let ret = unsafe {
-        libc::write(master, bytes.as_ptr() as *const libc::c_void, bytes.len())
-    };
+    let ret = unsafe { libc::write(master, bytes.as_ptr() as *const libc::c_void, bytes.len()) };
     if ret < 0 {
         let io_err = std::io::Error::last_os_error();
-        return Err(Error::Internal(format!("write to PTY master failed: {io_err}")));
+        return Err(Error::Internal(format!(
+            "write to PTY master failed: {io_err}"
+        )));
     }
 
     Ok(())

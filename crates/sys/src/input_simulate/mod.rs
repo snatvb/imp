@@ -22,10 +22,7 @@ async fn spawn_blocking<'js, R: Send + 'static>(
 }
 
 #[js::function]
-pub async fn inject_keys<'js>(
-    ctx: js::Ctx<'js>,
-    keys: js::Array<'js>,
-) -> js::Result<()> {
+pub async fn inject_keys<'js>(ctx: js::Ctx<'js>, keys: js::Array<'js>) -> js::Result<()> {
     let iter = StringArg::coerce_array_iter(&ctx, &keys, "keys");
     let key_strs: Vec<String> = iter
         .map(|arg| arg.map(|a| a.as_str().to_string()))
