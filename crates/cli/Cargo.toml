@@ -17,5 +17,6 @@ process.workspace = true
 js_path.workspace = true
 inq.workspace = true
 sys.workspace = true
+imp_clap.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true

@@ -10,6 +10,7 @@ members = [
   "crates/inq",
   "crates/js_error_derive",
   "crates/sys",
+  "crates/clap",
 ]
 resolver = "3"
 
@@ -47,3 +48,4 @@ js_path = { path = "crates/js_path" }
 inq = { path = "crates/inq" }
 sys = { path = "crates/sys" }
 js_error_derive = { path = "crates/js_error_derive" }
+imp_clap = { path = "crates/clap" }

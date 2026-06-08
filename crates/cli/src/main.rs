@@ -17,6 +17,8 @@ use prelude::*;
 struct Args {
     #[arg(help = "Path to the target file")]
     filepath: PathBuf,
+    #[arg(trailing_var_arg = true, allow_hyphen_values = true, hide = true)]
+    script_args: Vec<String>,
     #[cfg(debug_assertions)]
     #[arg(short, long, help = "Enable tracing output (debug only)")]
     trace: bool,
@@ -62,7 +64,7 @@ async fn main() {
     setup::setup_loaders(&rt, resolver, cwd).await;
 
     ctx.async_with(async |ctx| {
-        let js_timers = setup::setup_globals(&ctx);
+        let js_timers = setup::setup_globals(&ctx, args.script_args);
 
         tracing::info!(file = %filepath, "evaluating module");
         let Some(promise) = error::try_js(

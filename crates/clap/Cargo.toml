@@ -1,0 +1,10 @@
+[package]
+name = "imp_clap"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+
+[dependencies]
+rquickjs.workspace = true
+js_core.workspace = true
+clap.workspace = true

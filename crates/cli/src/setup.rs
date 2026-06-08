@@ -15,6 +15,7 @@ pub async fn setup_loaders(rt: &js::AsyncRuntime, resolver: Resolver, cwd: OsPat
         ("imp:inq", inq::InquireModule),
         ("imp:sys/input_simulate", sys::InputSimulateModule),
         ("imp:sys/stdin", sys::StdinModule),
+        ("imp:clap", imp_clap::ClapModule),
     );
 
     rt.set_loader(
@@ -28,7 +29,7 @@ pub async fn setup_loaders(rt: &js::AsyncRuntime, resolver: Resolver, cwd: OsPat
     .await;
 }
 
-pub fn setup_globals<'js>(ctx: &js::Ctx<'js>) -> JsTimers {
+pub fn setup_globals<'js>(ctx: &js::Ctx<'js>, script_args: Vec<String>) -> JsTimers {
     js_core::rs_string::init_rs_string_or_panic(ctx);
     js_core::byte_buffer::init_or_panic(ctx);
     let globals = ctx.globals();
@@ -43,5 +44,6 @@ pub fn setup_globals<'js>(ctx: &js::Ctx<'js>) -> JsTimers {
     globals
         .set("performance", js_core::performance::create(ctx).unwrap())
         .unwrap();
+    imp_clap::set_script_args(ctx, script_args).unwrap();
     js_timers
 }
