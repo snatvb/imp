@@ -8,7 +8,7 @@ use rquickjs::{
 };
 
 #[js::class]
-#[derive(JsLifetime, Clone)]
+#[derive(JsLifetime, Clone, Debug)]
 pub struct RsString {
     inner: Arc<str>,
     start: usize,

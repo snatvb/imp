@@ -21,7 +21,7 @@ authors = ["Andrei Avsenin <snatlip48@gmail.com>"]
 
 [workspace.dependencies]
 rquickjs = { version = "0.12.0", features = ["full-async", "macro", "loader"] }
-clap = { version = "4.6.1", features = ["color", "derive"] }
+clap = { version = "4.6.1", features = ["color", "derive", "string"] }
 tokio = { version = "1.52.3", features = [
   "process",
   "fs",

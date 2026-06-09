@@ -29,7 +29,12 @@ pub async fn setup_loaders(rt: &js::AsyncRuntime, resolver: Resolver, cwd: OsPat
     .await;
 }
 
-pub fn setup_globals<'js>(ctx: &js::Ctx<'js>, script_args: Vec<String>) -> JsTimers {
+pub fn setup_globals<'js>(
+    ctx: &js::Ctx<'js>,
+    exe: &str,
+    filepath: &str,
+    script_args: &[impl std::borrow::Borrow<str>],
+) -> JsTimers {
     js_core::rs_string::init_rs_string_or_panic(ctx);
     js_core::byte_buffer::init_or_panic(ctx);
     let globals = ctx.globals();
@@ -39,11 +44,13 @@ pub fn setup_globals<'js>(ctx: &js::Ctx<'js>, script_args: Vec<String>) -> JsTim
         .set("console", console::create(ctx).unwrap())
         .unwrap();
     globals
-        .set("process", process::create(ctx).unwrap())
+        .set(
+            "process",
+            process::create(ctx, exe, filepath, script_args).unwrap(),
+        )
         .unwrap();
     globals
         .set("performance", js_core::performance::create(ctx).unwrap())
         .unwrap();
-    imp_clap::set_script_args(ctx, script_args).unwrap();
     js_timers
 }

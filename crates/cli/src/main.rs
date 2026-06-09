@@ -41,6 +41,8 @@ async fn main() {
         )
     };
     tracing::info!(file = %filepath, "entry resolved");
+    let filepath = std::fs::canonicalize(filepath).unwrap();
+    let filepath_str = filepath.to_string_lossy();
 
     tracing::info!("loading source");
     let code = tokio::fs::read_to_string(&filepath).await.unwrap();
@@ -50,7 +52,7 @@ async fn main() {
     let code = if typescript::is_ts_ext(&filepath) {
         tracing::info!("stripping TS");
         typescript::strip_types_fast_default(&code)
-            .map(with_meta(&cwd, &filepath))
+            .map(with_meta(&cwd, &filepath_str))
             .unwrap()
     } else {
         code
@@ -63,13 +65,19 @@ async fn main() {
 
     setup::setup_loaders(&rt, resolver, cwd).await;
 
+    let exe_path = std::env::current_exe().unwrap();
     ctx.async_with(async |ctx| {
-        let js_timers = setup::setup_globals(&ctx, args.script_args);
+        let js_timers = setup::setup_globals(
+            &ctx,
+            exe_path.to_string_lossy().as_ref(),
+            &filepath_str,
+            args.script_args.as_slice(),
+        );
 
-        tracing::info!(file = %filepath, "evaluating module");
+        tracing::info!(file = %filepath_str, "evaluating module");
         let Some(promise) = error::try_js(
             &ctx,
-            js::Module::evaluate(ctx.clone(), filepath.as_str(), code.as_str()),
+            js::Module::evaluate(ctx.clone(), filepath_str.to_string(), code.as_str()),
             "module evaluation failed",
         ) else {
             return;
