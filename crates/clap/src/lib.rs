@@ -1,10 +1,12 @@
-use std::rc::Rc;
+pub mod arg_params;
+pub mod error;
+mod prelude;
 
-use clap::Id;
-use js_core::{
-    RsString, js,
-    utils::{JsStringArg, StringArg},
-};
+use std::sync::Arc;
+
+use clap::{Arg, Id};
+
+use crate::{arg_params::ArgParams, prelude::*};
 
 js_core::impl_module!(ClapModule,
     evaluate: |ctx, exports, export_all| {
@@ -47,47 +49,61 @@ impl Parser {
         }
     }
 
-    #[qjs(rename = "name")]
-    fn js_name(this: js::class::Class<'_, Parser>, name: String) -> js::class::Class<'_, Parser> {
+    #[qjs()]
+    fn name(this: js::class::Class<'_, Parser>, name: String) -> js::class::Class<'_, Parser> {
         update(this, |c| c.name(Id::from(name)))
     }
 
-    #[qjs(rename = "version")]
-    fn js_version(
+    #[qjs()]
+    fn version(
         this: js::class::Class<'_, Parser>,
         version: String,
     ) -> js::class::Class<'_, Parser> {
         update(this, |c| c.version(Id::from(version)))
     }
 
-    #[qjs(rename = "about")]
-    fn js_about(this: js::class::Class<'_, Parser>, about: String) -> js::class::Class<'_, Parser> {
+    #[qjs()]
+    fn about(this: js::class::Class<'_, Parser>, about: String) -> js::class::Class<'_, Parser> {
         update(this, |c| c.about(about))
+    }
+
+    #[qjs()]
+    fn arg<'js>(
+        ctx: js::Ctx<'js>,
+        this: js::class::Class<'js, Parser>,
+        options: js::Value<'js>,
+    ) -> js::Result<js::class::Class<'js, Parser>> {
+        let options = ArgParams::from_js(&ctx, options)?;
+        let mut arg = Arg::new(options.name);
+        if let Some(count) = options.count {
+            arg = arg.num_args(1..count);
+        }
+        Ok(update(this, |c| c.arg(arg)))
     }
 }
 
 // TODO: Move to js_core
 #[derive(Debug, js::JsLifetime)]
-struct SavedArgs(RsString);
+struct SavedArgs(Arc<RsString>);
 
-pub fn set_script_args<'js>(
-    ctx: &js::Ctx<'js>,
-    args: &[impl std::borrow::Borrow<str>],
-) -> js::Result<()> {
-    ctx.store_userdata(SavedArgs(RsString::owned(args.join(" "))))?;
-    Ok(())
-}
-
-#[js::function]
-fn parse<'js>(ctx: js::Ctx<'js>, args: js::function::Opt<js::Value<'js>>) -> js::Result<()> {
-    let args = args
-        .as_ref()
-        .as_ref()
-        .map(|val| StringArg::coerce_js(&ctx, val, "args"))
-        .unwrap_or_else(|| {
-            ctx.userdata::<SavedArgs>()
-                .map(|saved| StringArg::RsString(saved.0.clone()))
-                .ok_or_else(|| js::Error::new_from_js("userdata", "SavedArgs"))
-        })?;
-    todo!()
-}
+// pub fn set_script_args<'js>(
+//     ctx: &js::Ctx<'js>,
+//     args: &[impl std::borrow::Borrow<str>],
+// ) -> js::Result<()> {
+//     ctx.store_userdata(SavedArgs(RsString::owned(args.join(" ")).into()))?;
+//     Ok(())
+// }
+//
+// #[js::function]
+// fn parse<'js>(ctx: js::Ctx<'js>, args: js::function::Opt<js::Value<'js>>) -> js::Result<()> {
+//     let args = args
+//         .as_ref()
+//         .as_ref()
+//         .map(|val| StringArg::coerce_js(&ctx, val, "args"))
+//         .unwrap_or_else(|| {
+//             ctx.userdata::<SavedArgs>()
+//                 .map(|saved| StringArg::RsString(saved.0.clone()))
+//                 .ok_or_else(|| js::Error::new_from_js("userdata", "SavedArgs"))
+//         })?;
+//     todo!()
+// }

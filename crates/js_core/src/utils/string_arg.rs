@@ -18,6 +18,12 @@ impl StringArg {
     }
 }
 
+impl fmt::Display for StringArg {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
+}
+
 pub trait JsStringArg<'js>: Sized {
     fn to_string_arg(self, ctx: &Ctx<'js>) -> js::Result<StringArg>;
 
@@ -33,6 +39,15 @@ pub trait JsStringArg<'js>: Sized {
                 format!("The \"{name}\" argument must be of type string. Received {received}");
             throw_type_error(ctx, "ERR_INVALID_ARG_TYPE", &msg)
         })
+    }
+
+    #[inline(always)]
+    fn coerce_string(
+        ctx: &Ctx<'js>,
+        val: &Value<'js>,
+        name: impl fmt::Display,
+    ) -> js::Result<String> {
+        Self::coerce_js(ctx, val, name).map(|s| s.as_str().to_string())
     }
 
     #[allow(clippy::implied_bounds_in_impls)] // otherwise doesn't work and type can't be infered

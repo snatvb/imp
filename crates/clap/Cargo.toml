@@ -8,3 +8,4 @@ authors.workspace = true
 rquickjs.workspace = true
 js_core.workspace = true
 clap.workspace = true
+thiserror.workspace = true
