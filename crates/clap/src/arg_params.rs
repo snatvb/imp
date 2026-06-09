@@ -28,10 +28,23 @@ impl Action {
     }
 }
 
+impl From<Action> for clap::ArgAction {
+    fn from(action: Action) -> Self {
+        match action {
+            Action::Set => clap::ArgAction::Set,
+            Action::Append => clap::ArgAction::Append,
+            Action::Count => clap::ArgAction::Count,
+            Action::Flag => clap::ArgAction::SetTrue,
+            Action::Help => clap::ArgAction::Help,
+            Action::Version => clap::ArgAction::Version,
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct ArgParams {
     pub name: String,
-    pub short: Option<String>,
+    pub short: Option<char>,
     pub help: Option<String>,
     pub count: Option<i32>,
     pub choices: Option<Vec<String>>,
@@ -44,7 +57,7 @@ fn optional_string<'js>(
     obj: &js::Object<'js>,
     name: &str,
 ) -> Result<Option<String>, js::Error> {
-    obj.get::<_, Option<js::Value>>("short")?
+    obj.get::<_, Option<js::Value>>(name)?
         .filter(|val| !val.is_undefined() && !val.is_null())
         .map(|val| StringArg::coerce_string(ctx, &val, name))
         .transpose()
@@ -65,6 +78,25 @@ impl ArgParams {
         let name = StringArg::coerce_string(ctx, &obj.get("name")?, "name")?;
 
         let [short, help] = ["short", "help"].map(|n| optional_string(ctx, obj, n));
+
+        let short = short?
+            .map(|s| {
+                let mut chars = s.chars();
+                let c = chars.next().ok_or_else(|| {
+                    Error::TypeError(
+                        "Short must be exactly 1 character, got empty string".to_string(),
+                    )
+                })?;
+                if chars.next().is_some() {
+                    return Err(Error::TypeError(format!(
+                        "Short must be exactly 1 character, got \"{}\"",
+                        s
+                    )));
+                }
+                Ok(c)
+            })
+            .transpose()
+            .into_js(ctx)?;
 
         let choices = obj
             .get::<_, Option<js::Array>>("count")?
@@ -110,7 +142,7 @@ impl ArgParams {
         Ok(Self {
             name,
             count,
-            short: short?,
+            short,
             help: help?,
             choices,
             exclusive,

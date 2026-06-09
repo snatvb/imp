@@ -73,11 +73,31 @@ impl Parser {
         this: js::class::Class<'js, Parser>,
         options: js::Value<'js>,
     ) -> js::Result<js::class::Class<'js, Parser>> {
-        let options = ArgParams::from_js(&ctx, options)?;
-        let mut arg = Arg::new(options.name);
-        if let Some(count) = options.count {
-            arg = arg.num_args(1..count);
+        let params = ArgParams::from_js(&ctx, options)?;
+        let mut arg = Arg::new(&params.name);
+
+        if let Some(short) = params.short {
+            arg = arg.short(short);
         }
+        if let Some(help) = &params.help {
+            let s: &'static str = Box::leak(help.clone().into_boxed_str());
+            arg = arg.help(s);
+        }
+        arg = arg.action(clap::ArgAction::from(params.action));
+        if let Some(choices) = &params.choices {
+            let strs: Vec<&'static str> = choices
+                .iter()
+                .map(|s| Box::leak(s.clone().into_boxed_str()) as &'static str)
+                .collect();
+            arg = arg.value_parser(strs);
+        }
+        if params.exclusive {
+            arg = arg.exclusive(true);
+        }
+        if let Some(count) = params.count {
+            arg = arg.num_args(1..count as usize);
+        }
+
         Ok(update(this, |c| c.arg(arg)))
     }
 }
