@@ -6,7 +6,10 @@ use std::sync::Arc;
 
 use clap::{Arg, Id};
 
-use crate::{arg_params::ArgParams, prelude::*};
+use crate::{
+    arg_params::{Action, ArgParams},
+    prelude::*,
+};
 
 js_core::impl_module!(ClapModule,
     evaluate: |ctx, exports, export_all| {
@@ -83,20 +86,47 @@ impl Parser {
             let s: &'static str = Box::leak(help.clone().into_boxed_str());
             arg = arg.help(s);
         }
-        arg = arg.action(clap::ArgAction::from(params.action));
-        if let Some(choices) = &params.choices {
-            let strs: Vec<&'static str> = choices
-                .iter()
-                .map(|s| Box::leak(s.clone().into_boxed_str()) as &'static str)
-                .collect();
-            arg = arg.value_parser(strs);
-        }
         if params.exclusive {
             arg = arg.exclusive(true);
         }
-        if let Some(count) = params.count {
-            arg = arg.num_args(1..count as usize);
-        }
+
+        arg = match params.action {
+            Action::Set { choices, num_args } => {
+                let mut a = arg.action(clap::ArgAction::Set);
+                if let Some(choices) = &choices {
+                    let strs: Vec<&'static str> = choices
+                        .iter()
+                        .map(|s| Box::leak(s.clone().into_boxed_str()) as &'static str)
+                        .collect();
+                    a = a.value_parser(strs);
+                }
+                if let Some(num_args) = num_args {
+                    a = a.num_args(num_args);
+                }
+                a
+            }
+            Action::Append { choices, num_args } => {
+                let mut a = arg.action(clap::ArgAction::Append);
+                if let Some(choices) = &choices {
+                    let strs: Vec<&'static str> = choices
+                        .iter()
+                        .map(|s| Box::leak(s.clone().into_boxed_str()) as &'static str)
+                        .collect();
+                    a = a.value_parser(strs);
+                }
+                if let Some(num_args) = num_args {
+                    a = a.num_args(num_args);
+                }
+                a
+            }
+            Action::Count => arg.action(clap::ArgAction::Count),
+            Action::Flag => arg.action(clap::ArgAction::SetTrue),
+            Action::SetFalse => arg.action(clap::ArgAction::SetFalse),
+            Action::Help => arg.action(clap::ArgAction::Help),
+            Action::HelpShort => arg.action(clap::ArgAction::HelpShort),
+            Action::HelpLong => arg.action(clap::ArgAction::HelpLong),
+            Action::Version => arg.action(clap::ArgAction::Version),
+        };
 
         Ok(update(this, |c| c.arg(arg)))
     }
