@@ -259,7 +259,7 @@ declare module "imp:inq" {
   function passwordWithConfirm(question: JsString, hidden?: boolean): Promise<string>;
   function editor(question: JsString): Promise<string>;
   function dateSelect(question: JsString, options?: DateOptions): Promise<Date>;
-  function confirm(question: JsString, byDefault?: boolean): Promise<Date>;
+  function confirm(question: JsString, byDefault?: boolean): Promise<boolean>;
 
   const _default: {
     prompt: typeof prompt;
@@ -354,7 +354,8 @@ declare module "path" {
 }
 
 declare module "fs/promises" {
-  function readFile(path: string, encoding?: string): Promise<ArrayBuffer | string>;
+  function readFile(path: string, encoding: string): Promise<string>;
+  function readFile(path: string): Promise<ArrayBuffer>;
   function glob(pattern: string, options?: { cwd?: string }): AsyncIterableIterator<string>;
 
   const _default: {
@@ -384,5 +385,5 @@ declare module "imp:sys/stdin" {
     readAll: typeof readAll;
   };
   export default _default;
-  export { _default };
+  export { readLine, readAll };
 }
