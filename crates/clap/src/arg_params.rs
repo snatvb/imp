@@ -92,6 +92,52 @@ fn optional_string<'js>(
         .transpose()
 }
 
+fn validate_non_neg(ctx: &js::Ctx<'_>, v: f64) -> js::Result<usize> {
+    if !v.is_finite() || v.is_nan() || v < 0.0 {
+        Err(Exception::throw_type(
+            ctx,
+            "num_args must be non-negative number",
+        ))
+    } else {
+        Ok(v as usize)
+    }
+}
+
+fn extract_num(ctx: &js::Ctx<'_>, arr: &js::Array<'_>, i: usize) -> js::Result<usize> {
+    let v: f64 = arr
+        .get::<js::Value>(i)?
+        .as_number()
+        .ok_or_else(|| Exception::throw_type(ctx, "num_args array elements must be numbers"))?;
+    if !v.is_finite() || v.is_nan() || v < 0.0 {
+        Err(Exception::throw_type(
+            ctx,
+            "num_args values must be non-negative",
+        ))
+    } else {
+        Ok(v as usize)
+    }
+}
+
+fn parse_num_args_array(ctx: &js::Ctx<'_>, arr: &js::Array<'_>) -> js::Result<ValueRange> {
+    let len = arr.len();
+    if len == 0 || len > 2 {
+        return Err(Exception::throw_type(
+            ctx,
+            "num_args array must have 1 or 2 elements",
+        ));
+    }
+    let first = extract_num(ctx, arr, 0)?;
+    if len == 1 {
+        return Ok(ValueRange::new(first..));
+    }
+    let second = extract_num(ctx, arr, 1)?;
+    Ok(if first == 0 {
+        ValueRange::new(..=second)
+    } else {
+        ValueRange::new(first..=second)
+    })
+}
+
 fn parse_num_args<'js>(
     ctx: &js::Ctx<'js>,
     obj: &js::Object<'js>,
@@ -101,64 +147,18 @@ fn parse_num_args<'js>(
         _ => return Ok(None),
     };
 
-    if let Some(num) = val.as_number() {
-        if !num.is_finite() || num.is_nan() || num < 0.0 {
-            return Err(
-                Error::TypeError("num_args must be non-negative number".to_string())
-                    .into_exception(ctx),
-            );
-        }
-        return Ok(Some(ValueRange::new(num as usize)));
+    if let Some(n) = val.as_number() {
+        return validate_non_neg(ctx, n).map(ValueRange::new).map(Some);
     }
 
     if let Some(arr) = val.as_array() {
-        let len = arr.len();
-        if len == 0 || len > 2 {
-            return Err(
-                Error::TypeError("num_args array must have 1 or 2 elements".to_string())
-                    .into_exception(ctx),
-            );
-        }
-
-        let first: f64 = arr
-            .get::<js::Value>(0)?
-            .as_number()
-            .ok_or_else(|| Error::TypeError("num_args array elements must be numbers".to_string()))
-            .into_js(ctx)?;
-
-        if !first.is_finite() || first.is_nan() || first < 0.0 {
-            return Err(
-                Error::TypeError("num_args values must be non-negative".to_string())
-                    .into_exception(ctx),
-            );
-        }
-        let first = first as usize;
-
-        if len == 1 {
-            return Ok(Some(ValueRange::new(first..)));
-        }
-
-        let second: f64 = arr
-            .get::<js::Value>(1)?
-            .as_number()
-            .ok_or_else(|| Error::TypeError("num_args array elements must be numbers".to_string()))
-            .into_js(ctx)?;
-
-        if !second.is_finite() || second.is_nan() || second < 0.0 {
-            return Err(
-                Error::TypeError("num_args values must be non-negative".to_string())
-                    .into_exception(ctx),
-            );
-        }
-        let second = second as usize;
-
-        if first == 0 {
-            return Ok(Some(ValueRange::new(..=second)));
-        }
-        return Ok(Some(ValueRange::new(first..=second)));
+        return parse_num_args_array(ctx, arr).map(Some);
     }
 
-    Err(Error::TypeError("num_args must be a number or array".to_string()).into_exception(ctx))
+    Err(Exception::throw_type(
+        ctx,
+        "num_args must be a number or array",
+    ))
 }
 
 fn parse_choices<'js>(
@@ -179,55 +179,47 @@ fn parse_choices<'js>(
 #[allow(clippy::option_as_ref_deref)]
 impl ArgParams {
     pub fn from_js<'js>(ctx: &js::Ctx<'js>, value: js::Value<'js>) -> js::Result<Self> {
-        let obj = value
-            .as_object()
-            .ok_or_else(|| {
-                Error::TypeError(format!(
-                    "Params must be an object but, got {}",
-                    value.type_name()
-                ))
-            })
-            .into_js(ctx)?;
+        let obj = value.as_object().ok_or_else(|| {
+            Exception::throw_type(
+                ctx,
+                &format!("Params must be an object but, got {}", value.type_name()),
+            )
+        })?;
+
         let name = StringArg::coerce_string(ctx, &obj.get("name")?, "name")?;
+        let help = optional_string(ctx, obj, "help")?;
 
-        let [short, help] = ["short", "help"].map(|n| optional_string(ctx, obj, n));
-
-        let short = short?
+        let short = optional_string(ctx, obj, "short")?
             .map(|s| {
                 let mut chars = s.chars();
                 let c = chars.next().ok_or_else(|| {
-                    Error::TypeError(
-                        "Short must be exactly 1 character, got empty string".to_string(),
+                    Exception::throw_type(
+                        ctx,
+                        "Short must be exactly 1 character, got empty string",
                     )
                 })?;
                 if chars.next().is_some() {
-                    return Err(Error::TypeError(format!(
-                        "Short must be exactly 1 character, got \"{}\"",
-                        s
-                    )));
+                    return Err(Exception::throw_type(
+                        ctx,
+                        &format!("Short must be exactly 1 character, got \"{}\"", s),
+                    ));
                 }
                 Ok(c)
             })
-            .transpose()
-            .into_js(ctx)?;
+            .transpose()?;
 
         let exclusive: bool = obj.get("exclusive")?;
         let action_str = optional_string(ctx, obj, "action")?;
-        let action = action_str
-            .as_ref()
-            .map(String::as_str)
-            .map(Action::from_string)
-            .map(|s| {
-                s.ok_or_else(|| {
-                    Error::TypeError(format!(
+        let action = match action_str.as_deref() {
+            Some(s) => Action::from_string(s)
+                .ok_or_else(|| {
+                    Exception::throw_type(ctx, &format!(
                         "Incorrect action value \"{}\", available: set, append, count, flag, set_false, help, help_short, help_long, version",
-                        action_str.unwrap_or_default(),
+                        s,
                     ))
-                })
-            })
-            .transpose()
-            .into_js(ctx)?
-            .unwrap_or_default();
+                })?,
+            None => Action::default(),
+        };
 
         let action = match action {
             Action::Set { .. } => Action::Set {
@@ -244,7 +236,7 @@ impl ArgParams {
         Ok(Self {
             name,
             short,
-            help: help?,
+            help,
             exclusive,
             action,
         })
