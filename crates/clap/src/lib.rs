@@ -6,6 +6,7 @@ use std::sync::OnceLock;
 
 use clap::builder::ValueRange;
 use clap::{Arg, ArgAction, Id};
+use js_core::utils::{JsStringArg, StringArg};
 use js_core::RsString;
 
 use crate::{
@@ -105,6 +106,9 @@ impl Parser {
         if params.exclusive {
             arg = arg.exclusive(true);
         }
+        if params.required {
+            arg = arg.required(true);
+        }
 
         arg = match params.action {
             Action::Set { choices, num_args } => {
@@ -143,15 +147,23 @@ impl Parser {
     }
 
     #[qjs()]
-    fn parse<'js>(&self, ctx: js::Ctx<'js>, args: Vec<String>) -> js::Result<js::Object<'js>> {
+    fn parse<'js>(&self, ctx: js::Ctx<'js>, args: js::Value<'js>) -> js::Result<js::Object<'js>> {
         let cmd = self
             .command
             .as_ref()
             .ok_or_else(|| Exception::throw_type(&ctx, "Parser not initialized"))?;
 
+        let arr = args
+            .as_array()
+            .ok_or_else(|| Exception::throw_type(&ctx, "args must be an array"))?;
+
+        let args_vec: Vec<String> = StringArg::coerce_array_iter(&ctx, &arr, "args")
+            .map(|r| r.map(|s| s.as_str().to_string()))
+            .collect::<js::Result<_>>()?;
+
         let obj = js::Object::new(ctx.clone())?;
 
-        match cmd.clone().try_get_matches_from(args) {
+        match cmd.clone().try_get_matches_from(args_vec) {
             Ok(matches) => {
                 let rs_type = js::Class::instance(ctx.clone(), RsString::owned("result".to_string()))?;
                 obj.set("type", rs_type)?;
@@ -202,7 +214,7 @@ impl Parser {
                     clap::error::ErrorKind::DisplayHelp
                     | clap::error::ErrorKind::DisplayHelpOnMissingArgumentOrSubcommand => "help",
                     clap::error::ErrorKind::DisplayVersion => "version",
-                    _ => return Err(Exception::throw_type(&ctx, &e.to_string())),
+                    _ => "error",
                 };
                 let rs_type = js::Class::instance(ctx.clone(), RsString::owned(type_str.to_string()))?;
                 obj.set("type", rs_type)?;

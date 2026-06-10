@@ -159,6 +159,7 @@ declare module "imp:clap" {
     long?: string;
     help?: string;
     exclusive?: boolean;
+    required?: boolean;
     action?: "set" | "append" | "count" | "flag" | "set_false" | "help" | "help_short" | "help_long" | "version";
     choices?: string[];
     num_args?: number | [number] | [number, number];
@@ -179,7 +180,14 @@ declare module "imp:clap" {
     message: RsString;
   }
 
-  type ParseResult = ParseResultSuccess | ParseResultHelp | ParseResultVersion;
+  interface ParseResultError {
+    type: "error";
+    message: RsString;
+  }
+
+  type ParseResult = ParseResultSuccess | ParseResultHelp | ParseResultVersion | ParseResultError;
+
+  const args: readonly RsString[];
 
   class Parser {
     constructor();
@@ -190,7 +198,7 @@ declare module "imp:clap" {
     parse(args: string[]): ParseResult;
   }
 
-  export { Parser };
+  export { Parser, args };
 }
 
 declare module "imp:fs" {

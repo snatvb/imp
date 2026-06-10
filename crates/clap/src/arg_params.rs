@@ -79,6 +79,7 @@ pub struct ArgParams {
     pub long: Option<String>,
     pub help: Option<String>,
     pub exclusive: bool,
+    pub required: bool,
     pub action: Action,
 }
 
@@ -211,6 +212,7 @@ impl ArgParams {
             .transpose()?;
 
         let exclusive: bool = obj.get::<_, Option<bool>>("exclusive")?.unwrap_or(false);
+        let required: bool = obj.get::<_, Option<bool>>("required")?.unwrap_or(false);
         let action_str = optional_string(ctx, obj, "action")?;
         let action = match action_str.as_deref() {
             Some(s) => Action::from_string(s)
@@ -241,6 +243,7 @@ impl ArgParams {
             long,
             help,
             exclusive,
+            required,
             action,
         })
     }

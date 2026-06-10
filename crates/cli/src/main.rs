@@ -17,7 +17,7 @@ use prelude::*;
 struct Args {
     #[arg(help = "Path to the target file")]
     filepath: PathBuf,
-    #[arg(trailing_var_arg = true, allow_hyphen_values = true, hide = true)]
+    #[arg(last = true, hide = true)]
     script_args: Vec<String>,
     #[cfg(debug_assertions)]
     #[arg(short, long, help = "Enable tracing output (debug only)")]
