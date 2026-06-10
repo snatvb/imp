@@ -76,6 +76,7 @@ impl From<Action> for clap::ArgAction {
 pub struct ArgParams {
     pub name: String,
     pub short: Option<char>,
+    pub long: Option<String>,
     pub help: Option<String>,
     pub exclusive: bool,
     pub action: Action,
@@ -188,6 +189,7 @@ impl ArgParams {
 
         let name = StringArg::coerce_string(ctx, &obj.get("name")?, "name")?;
         let help = optional_string(ctx, obj, "help")?;
+        let long = optional_string(ctx, obj, "long")?;
 
         let short = optional_string(ctx, obj, "short")?
             .map(|s| {
@@ -208,7 +210,7 @@ impl ArgParams {
             })
             .transpose()?;
 
-        let exclusive: bool = obj.get("exclusive")?;
+        let exclusive: bool = obj.get::<_, Option<bool>>("exclusive")?.unwrap_or(false);
         let action_str = optional_string(ctx, obj, "action")?;
         let action = match action_str.as_deref() {
             Some(s) => Action::from_string(s)
@@ -236,6 +238,7 @@ impl ArgParams {
         Ok(Self {
             name,
             short,
+            long,
             help,
             exclusive,
             action,

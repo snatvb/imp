@@ -2,45 +2,60 @@ pub mod arg_params;
 pub mod error;
 mod prelude;
 
-use std::sync::Arc;
+use std::sync::OnceLock;
 
-use clap::{Arg, Id};
+use clap::builder::ValueRange;
+use clap::{Arg, ArgAction, Id};
+use js_core::RsString;
 
 use crate::{
     arg_params::{Action, ArgParams},
     prelude::*,
 };
 
+static ARGS: OnceLock<Vec<RsString>> = OnceLock::new();
+
+fn take_args<'js>(ctx: &js::Ctx<'js>) -> js::Result<js::Array<'js>> {
+    let args = js::Array::new(ctx.clone())?;
+    for (i, arg) in ARGS
+        .get()
+        .ok_or_else(|| Exception::throw_type(ctx, "imp_clap not initialized"))?
+        .iter()
+        .enumerate()
+    {
+        args.set(i, arg.clone())?;
+    }
+
+    Ok(args)
+}
+
 js_core::impl_module!(ClapModule,
+    declare: |decl, declare_all| {
+        decl.declare("Parser")?;
+        decl.declare("default")?;
+        decl.declare("args")?;
+        Ok(())
+    },
     evaluate: |ctx, exports, export_all| {
-        init(ctx)?;
+        js::Class::<Parser>::define(&ctx.globals())?;
+        let ctor = js::Class::<Parser>::create_constructor(ctx)?
+            .ok_or_else(|| Exception::throw_type(ctx, "Failed to create Parser constructor"))?;
+        exports.export("Parser", ctor.clone())?;
+        let args = take_args(ctx)?;
+        exports.export("args", args.clone())?;
         let ns = export_all(ctx, exports)?;
+        ns.set("Parser", ctor)?;
+        ns.set("args", args)?;
         exports.export("default", ns)?;
         Ok(())
     },
 );
-
-pub fn init<'js>(ctx: &js::Ctx<'js>) -> js::Result<()> {
-    js::Class::<Parser>::define(&ctx.globals())?;
-    Ok(())
-}
 
 #[derive(Debug, js::class::Trace, js::JsLifetime)]
 #[js::class]
 pub struct Parser {
     #[qjs(skip_trace)]
     command: Option<clap::Command>,
-}
-
-fn update(
-    this: js::class::Class<'_, Parser>,
-    f: impl FnOnce(clap::Command) -> clap::Command,
-) -> js::class::Class<'_, Parser> {
-    let mut cell = this.borrow_mut();
-    let cmd = cell.command.take();
-    cell.command = cmd.map(f);
-    drop(cell);
-    this
 }
 
 #[js::methods]
@@ -53,38 +68,39 @@ impl Parser {
     }
 
     #[qjs()]
-    fn name(this: js::class::Class<'_, Parser>, name: String) -> js::class::Class<'_, Parser> {
-        update(this, |c| c.name(Id::from(name)))
+    fn name(&mut self, name: String) {
+        if let Some(cmd) = self.command.take() {
+            self.command = Some(cmd.name(Id::from(name)));
+        }
     }
 
     #[qjs()]
-    fn version(
-        this: js::class::Class<'_, Parser>,
-        version: String,
-    ) -> js::class::Class<'_, Parser> {
-        update(this, |c| c.version(Id::from(version)))
+    fn version(&mut self, version: String) {
+        if let Some(cmd) = self.command.take() {
+            self.command = Some(cmd.version(Id::from(version)));
+        }
     }
 
     #[qjs()]
-    fn about(this: js::class::Class<'_, Parser>, about: String) -> js::class::Class<'_, Parser> {
-        update(this, |c| c.about(about))
+    fn about(&mut self, about: String) {
+        if let Some(cmd) = self.command.take() {
+            self.command = Some(cmd.about(about));
+        }
     }
 
     #[qjs()]
-    fn arg<'js>(
-        ctx: js::Ctx<'js>,
-        this: js::class::Class<'js, Parser>,
-        options: js::Value<'js>,
-    ) -> js::Result<js::class::Class<'js, Parser>> {
+    fn arg<'js>(&mut self, ctx: js::Ctx<'js>, options: js::Value<'js>) -> js::Result<()> {
         let params = ArgParams::from_js(&ctx, options)?;
         let mut arg = Arg::new(&params.name);
 
         if let Some(short) = params.short {
             arg = arg.short(short);
         }
+        if let Some(long) = &params.long {
+            arg = arg.long(long);
+        }
         if let Some(help) = &params.help {
-            let s: &'static str = Box::leak(help.clone().into_boxed_str());
-            arg = arg.help(s);
+            arg = arg.help(help);
         }
         if params.exclusive {
             arg = arg.exclusive(true);
@@ -94,11 +110,7 @@ impl Parser {
             Action::Set { choices, num_args } => {
                 let mut a = arg.action(clap::ArgAction::Set);
                 if let Some(choices) = &choices {
-                    let strs: Vec<&'static str> = choices
-                        .iter()
-                        .map(|s| Box::leak(s.clone().into_boxed_str()) as &'static str)
-                        .collect();
-                    a = a.value_parser(strs);
+                    a = a.value_parser(choices.to_vec());
                 }
                 if let Some(num_args) = num_args {
                     a = a.num_args(num_args);
@@ -108,11 +120,7 @@ impl Parser {
             Action::Append { choices, num_args } => {
                 let mut a = arg.action(clap::ArgAction::Append);
                 if let Some(choices) = &choices {
-                    let strs: Vec<&'static str> = choices
-                        .iter()
-                        .map(|s| Box::leak(s.clone().into_boxed_str()) as &'static str)
-                        .collect();
-                    a = a.value_parser(strs);
+                    a = a.value_parser(choices.to_vec());
                 }
                 if let Some(num_args) = num_args {
                     a = a.num_args(num_args);
@@ -128,32 +136,94 @@ impl Parser {
             Action::Version => arg.action(clap::ArgAction::Version),
         };
 
-        Ok(update(this, |c| c.arg(arg)))
+        if let Some(cmd) = self.command.take() {
+            self.command = Some(cmd.arg(arg));
+        }
+        Ok(())
+    }
+
+    #[qjs()]
+    fn parse<'js>(&self, ctx: js::Ctx<'js>, args: Vec<String>) -> js::Result<js::Object<'js>> {
+        let cmd = self
+            .command
+            .as_ref()
+            .ok_or_else(|| Exception::throw_type(&ctx, "Parser not initialized"))?;
+
+        let obj = js::Object::new(ctx.clone())?;
+
+        match cmd.clone().try_get_matches_from(args) {
+            Ok(matches) => {
+                let rs_type = js::Class::instance(ctx.clone(), RsString::owned("result".to_string()))?;
+                obj.set("type", rs_type)?;
+                for arg in cmd.get_arguments() {
+                    let name = arg.get_id().as_str();
+                    match arg.get_action() {
+                        ArgAction::Set => {
+                            let num_args = arg.get_num_args().unwrap_or(ValueRange::new(1));
+                            if num_args.max_values() == 1 {
+                                if let Some(val) = matches.get_one::<String>(name) {
+                                    let rs_str =
+                                        js::Class::instance(ctx.clone(), RsString::owned(val.clone()))?;
+                                    obj.set(name, rs_str)?;
+                                }
+                            } else {
+                                let vals: Vec<js::Class<'js, RsString>> = matches
+                                    .get_many::<String>(name)
+                                    .unwrap_or_default()
+                                    .map(|s| js::Class::instance(ctx.clone(), RsString::owned(s.clone())))
+                                    .collect::<js::Result<_>>()?;
+                                if !vals.is_empty() {
+                                    obj.set(name, vals)?;
+                                }
+                            }
+                        }
+                        ArgAction::Append => {
+                            let vals: Vec<js::Class<'js, RsString>> = matches
+                                .get_many::<String>(name)
+                                .unwrap_or_default()
+                                .map(|s| js::Class::instance(ctx.clone(), RsString::owned(s.clone())))
+                                .collect::<js::Result<_>>()?;
+                            if !vals.is_empty() {
+                                obj.set(name, vals)?;
+                            }
+                        }
+                        ArgAction::Count => {
+                            obj.set(name, matches.get_count(name))?;
+                        }
+                        ArgAction::SetTrue | ArgAction::SetFalse => {
+                            obj.set(name, matches.get_flag(name))?;
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            Err(e) => {
+                let type_str = match e.kind() {
+                    clap::error::ErrorKind::DisplayHelp
+                    | clap::error::ErrorKind::DisplayHelpOnMissingArgumentOrSubcommand => "help",
+                    clap::error::ErrorKind::DisplayVersion => "version",
+                    _ => return Err(Exception::throw_type(&ctx, &e.to_string())),
+                };
+                let rs_type = js::Class::instance(ctx.clone(), RsString::owned(type_str.to_string()))?;
+                obj.set("type", rs_type)?;
+                let message = RsString::owned(e.render().to_string());
+                let rs_message = js::Class::instance(ctx.clone(), message)?;
+                obj.set("message", rs_message)?;
+            }
+        }
+
+        Ok(obj)
     }
 }
 
-// TODO: Move to js_core
-#[derive(Debug, js::JsLifetime)]
-struct SavedArgs(Arc<RsString>);
+pub fn init<'js>(_ctx: &js::Ctx<'js>, args: &[impl std::borrow::Borrow<str>]) -> js::Result<()> {
+    let args = args
+        .iter()
+        .map(|s| s.borrow())
+        .map(|s| s.to_owned())
+        .map(RsString::owned)
+        .collect::<Vec<_>>();
+    ARGS.set(args).unwrap();
 
-// pub fn set_script_args<'js>(
-//     ctx: &js::Ctx<'js>,
-//     args: &[impl std::borrow::Borrow<str>],
-// ) -> js::Result<()> {
-//     ctx.store_userdata(SavedArgs(RsString::owned(args.join(" ")).into()))?;
-//     Ok(())
-// }
-//
-// #[js::function]
-// fn parse<'js>(ctx: js::Ctx<'js>, args: js::function::Opt<js::Value<'js>>) -> js::Result<()> {
-//     let args = args
-//         .as_ref()
-//         .as_ref()
-//         .map(|val| StringArg::coerce_js(&ctx, val, "args"))
-//         .unwrap_or_else(|| {
-//             ctx.userdata::<SavedArgs>()
-//                 .map(|saved| StringArg::RsString(saved.0.clone()))
-//                 .ok_or_else(|| js::Error::new_from_js("userdata", "SavedArgs"))
-//         })?;
-//     todo!()
-// }
+    Ok(())
+}

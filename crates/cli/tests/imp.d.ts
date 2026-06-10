@@ -152,6 +152,47 @@ interface FsStats {
   readonly system: boolean;
 }
 
+declare module "imp:clap" {
+  interface ArgOptions {
+    name: string;
+    short?: string;
+    long?: string;
+    help?: string;
+    exclusive?: boolean;
+    action?: "set" | "append" | "count" | "flag" | "set_false" | "help" | "help_short" | "help_long" | "version";
+    choices?: string[];
+    num_args?: number | [number] | [number, number];
+  }
+
+  interface ParseResultSuccess {
+    type: "result";
+    [key: string]: any;
+  }
+
+  interface ParseResultHelp {
+    type: "help";
+    message: RsString;
+  }
+
+  interface ParseResultVersion {
+    type: "version";
+    message: RsString;
+  }
+
+  type ParseResult = ParseResultSuccess | ParseResultHelp | ParseResultVersion;
+
+  class Parser {
+    constructor();
+    name(name: string): void;
+    version(version: string): void;
+    about(about: string): void;
+    arg(options: ArgOptions): void;
+    parse(args: string[]): ParseResult;
+  }
+
+  export { Parser };
+}
+
 declare module "imp:fs" {
   function open(path: JsString, chunkSize: number): Promise<FileHandle>;
   function readFile(path: JsString): Promise<ArrayBuffer>;

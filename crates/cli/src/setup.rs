@@ -37,6 +37,7 @@ pub fn setup_globals<'js>(
 ) -> JsTimers {
     js_core::rs_string::init_rs_string_or_panic(ctx);
     js_core::byte_buffer::init_or_panic(ctx);
+    imp_clap::init(ctx, script_args).unwrap();
     let globals = ctx.globals();
     let js_timers = JsTimers::new();
     js_timers.bind_to(ctx, &globals).unwrap();

@@ -1,5 +1,3 @@
-pub use rquickjs as js;
-
 pub use js_error_derive::JsError;
 
 pub mod byte_buffer;
@@ -10,11 +8,11 @@ pub mod meta;
 pub mod modules;
 pub mod object;
 pub mod performance;
+mod re_export;
 pub mod resolver;
 pub mod rs_string;
 pub mod timers;
 pub mod typescript;
 pub mod utils;
 
-pub use byte_buffer::*;
-pub use rs_string::*;
+pub use re_export::*;
