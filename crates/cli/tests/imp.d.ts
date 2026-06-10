@@ -43,12 +43,8 @@ declare class ByteBuffer {
   toArray(): number[];
 }
 
-declare class RsString {
-  static fromString(value?: any): RsString;
-  static fromCharCode(...codes: number[]): RsString;
-  static fromCodePoint(...points: number[]): RsString;
-
-  get length(): number;
+type RsString = string & {
+  readonly length: number;
 
   at(index?: number): RsString;
   charAt(index: number): RsString;
@@ -92,6 +88,12 @@ declare class RsString {
   [Symbol.toPrimitive](hint: string): string;
   toJSON(): string;
   [Symbol.iterator](): IterableIterator<string>;
+};
+
+declare namespace RsString {
+  function fromString(value?: any): RsString;
+  function fromCharCode(...codes: number[]): RsString;
+  function fromCodePoint(...points: number[]): RsString;
 }
 
 interface WalkOptions {
@@ -153,21 +155,29 @@ interface FsStats {
 }
 
 declare module "imp:clap" {
-  interface ArgOptions {
-    name: string;
+  interface ArgOptions<N extends string = string, C extends string = string> {
+    name: N;
     short?: string;
     long?: string;
     help?: string;
     exclusive?: boolean;
     required?: boolean;
     action?: "set" | "append" | "count" | "flag" | "set_false" | "help" | "help_short" | "help_long" | "version";
-    choices?: string[];
+    choices?: readonly C[];
     num_args?: number | [number] | [number, number];
   }
 
-  interface ParseResultSuccess {
+  type ArgValueKind<O extends ArgOptions> =
+    O['action'] extends 'count' ? number :
+    O['action'] extends 'flag' | 'set_false' ? boolean :
+    O['action'] extends 'append' ? (O['choices'] extends readonly (infer C)[] ? C[] : RsString[]) :
+    O['action'] extends 'help' | 'help_short' | 'help_long' | 'version' ? never :
+    O['num_args'] extends [number, number] | [number] ? (O['choices'] extends readonly (infer C)[] ? C[] : RsString[]) :
+    O['choices'] extends readonly (infer C)[] ? C :
+    RsString | undefined;
+
+  interface ParseResultSuccess<T> {
     type: "result";
-    [key: string]: any;
   }
 
   interface ParseResultHelp {
@@ -185,17 +195,17 @@ declare module "imp:clap" {
     message: RsString;
   }
 
-  type ParseResult = ParseResultSuccess | ParseResultHelp | ParseResultVersion | ParseResultError;
+  type ParseResult<T = {}> = (ParseResultSuccess<T> & T) | ParseResultHelp | ParseResultVersion | ParseResultError;
 
   const args: readonly RsString[];
 
-  class Parser {
+  class Parser<T = {}> {
     constructor();
-    name(name: string): void;
-    version(version: string): void;
-    about(about: string): void;
-    arg(options: ArgOptions): void;
-    parse(args: string[]): ParseResult;
+    name(name: string): Parser<T>;
+    version(version: string): Parser<T>;
+    about(about: string): Parser<T>;
+    arg<const O extends ArgOptions>(opts: O): Parser<T & { [K in O['name']]: ArgValueKind<O> }>;
+    parse(args: readonly JsString[]): ParseResult<T>;
   }
 
   export { Parser, args };
@@ -374,5 +384,5 @@ declare module "imp:sys/stdin" {
     readAll: typeof readAll;
   };
   export default _default;
-  export _default;
+  export { _default };
 }

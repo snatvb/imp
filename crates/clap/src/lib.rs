@@ -6,8 +6,9 @@ use std::sync::OnceLock;
 
 use clap::builder::ValueRange;
 use clap::{Arg, ArgAction, Id};
-use js_core::utils::{JsStringArg, StringArg};
+use js::function::This;
 use js_core::RsString;
+use js_core::utils::{JsStringArg, StringArg};
 
 use crate::{
     arg_params::{Action, ArgParams},
@@ -69,28 +70,48 @@ impl Parser {
     }
 
     #[qjs()]
-    fn name(&mut self, name: String) {
+    fn name<'js>(
+        &mut self,
+        this: This<js::Class<'js, Parser>>,
+        name: String,
+    ) -> js::Result<js::Class<'js, Parser>> {
         if let Some(cmd) = self.command.take() {
             self.command = Some(cmd.name(Id::from(name)));
         }
+        Ok(this.0.clone())
     }
 
     #[qjs()]
-    fn version(&mut self, version: String) {
+    fn version<'js>(
+        &mut self,
+        this: This<js::Class<'js, Parser>>,
+        version: String,
+    ) -> js::Result<js::Class<'js, Parser>> {
         if let Some(cmd) = self.command.take() {
             self.command = Some(cmd.version(Id::from(version)));
         }
+        Ok(this.0.clone())
     }
 
     #[qjs()]
-    fn about(&mut self, about: String) {
+    fn about<'js>(
+        &mut self,
+        this: This<js::Class<'js, Parser>>,
+        about: String,
+    ) -> js::Result<js::Class<'js, Parser>> {
         if let Some(cmd) = self.command.take() {
             self.command = Some(cmd.about(about));
         }
+        Ok(this.0.clone())
     }
 
     #[qjs()]
-    fn arg<'js>(&mut self, ctx: js::Ctx<'js>, options: js::Value<'js>) -> js::Result<()> {
+    fn arg<'js>(
+        &mut self,
+        this: This<js::Class<'js, Parser>>,
+        ctx: js::Ctx<'js>,
+        options: js::Value<'js>,
+    ) -> js::Result<js::Class<'js, Parser>> {
         let params = ArgParams::from_js(&ctx, options)?;
         let mut arg = Arg::new(&params.name);
 
@@ -143,7 +164,7 @@ impl Parser {
         if let Some(cmd) = self.command.take() {
             self.command = Some(cmd.arg(arg));
         }
-        Ok(())
+        Ok(this.0.clone())
     }
 
     #[qjs()]
@@ -165,7 +186,8 @@ impl Parser {
 
         match cmd.clone().try_get_matches_from(args_vec) {
             Ok(matches) => {
-                let rs_type = js::Class::instance(ctx.clone(), RsString::owned("result".to_string()))?;
+                let rs_type =
+                    js::Class::instance(ctx.clone(), RsString::owned("result".to_string()))?;
                 obj.set("type", rs_type)?;
                 for arg in cmd.get_arguments() {
                     let name = arg.get_id().as_str();
@@ -174,15 +196,19 @@ impl Parser {
                             let num_args = arg.get_num_args().unwrap_or(ValueRange::new(1));
                             if num_args.max_values() == 1 {
                                 if let Some(val) = matches.get_one::<String>(name) {
-                                    let rs_str =
-                                        js::Class::instance(ctx.clone(), RsString::owned(val.clone()))?;
+                                    let rs_str = js::Class::instance(
+                                        ctx.clone(),
+                                        RsString::owned(val.clone()),
+                                    )?;
                                     obj.set(name, rs_str)?;
                                 }
                             } else {
                                 let vals: Vec<js::Class<'js, RsString>> = matches
                                     .get_many::<String>(name)
                                     .unwrap_or_default()
-                                    .map(|s| js::Class::instance(ctx.clone(), RsString::owned(s.clone())))
+                                    .map(|s| {
+                                        js::Class::instance(ctx.clone(), RsString::owned(s.clone()))
+                                    })
                                     .collect::<js::Result<_>>()?;
                                 if !vals.is_empty() {
                                     obj.set(name, vals)?;
@@ -193,7 +219,9 @@ impl Parser {
                             let vals: Vec<js::Class<'js, RsString>> = matches
                                 .get_many::<String>(name)
                                 .unwrap_or_default()
-                                .map(|s| js::Class::instance(ctx.clone(), RsString::owned(s.clone())))
+                                .map(|s| {
+                                    js::Class::instance(ctx.clone(), RsString::owned(s.clone()))
+                                })
                                 .collect::<js::Result<_>>()?;
                             if !vals.is_empty() {
                                 obj.set(name, vals)?;
@@ -216,7 +244,8 @@ impl Parser {
                     clap::error::ErrorKind::DisplayVersion => "version",
                     _ => "error",
                 };
-                let rs_type = js::Class::instance(ctx.clone(), RsString::owned(type_str.to_string()))?;
+                let rs_type =
+                    js::Class::instance(ctx.clone(), RsString::owned(type_str.to_string()))?;
                 obj.set("type", rs_type)?;
                 let message = RsString::owned(e.render().to_string());
                 let rs_message = js::Class::instance(ctx.clone(), message)?;

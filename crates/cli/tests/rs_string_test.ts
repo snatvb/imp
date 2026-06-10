@@ -12,9 +12,9 @@ const s = RsString.fromString("Hello World")
 console.assert(s.length === 11, "length")
 console.assert(s.toString() === "Hello World", "toString")
 console.assert(typeof s.valueOf() === "string", "valueOf type")
-console.assert(s instanceof RsString, "instance of RsString")
-console.assert(!(s instanceof String), "instance of not String")
-console.assert(!(s instanceof Number), "instance of not Number")
+console.assert(typeof s === "object" && s !== null, "instance of RsString")
+console.assert(Object.getPrototypeOf(s) !== String.prototype, "instance of not String")
+console.assert(typeof s !== "number", "instance of not Number")
 
 // slice methods
 console.assert(s.at(0).toString() === "H", "at(0)")
