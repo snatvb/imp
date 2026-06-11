@@ -409,4 +409,8 @@ declare module "imp:parsers" {
     parse(input: JsString): unknown;
     stringify(value: unknown): RsString;
   };
+  export const xml: {
+    parse(input: JsString): unknown;
+    stringify(value: unknown, root: JsString): RsString;
+  };
 }
