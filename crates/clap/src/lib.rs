@@ -184,78 +184,111 @@ impl Parser {
         full_args.extend(args_vec);
 
         match cmd.clone().try_get_matches_from(full_args) {
-            Ok(matches) => {
-                let rs_type =
-                    js::Class::instance(ctx.clone(), RsString::owned("result".to_string()))?;
-                obj.set("type", rs_type)?;
-                for arg in cmd.get_arguments() {
-                    let name = arg.get_id().as_str();
-                    match arg.get_action() {
-                        ArgAction::Set => {
-                            let num_args = arg.get_num_args().unwrap_or(ValueRange::new(1));
-                            if num_args.max_values() == 1 {
-                                if let Some(val) = matches.get_one::<String>(name) {
-                                    let rs_str = js::Class::instance(
-                                        ctx.clone(),
-                                        RsString::owned(val.clone()),
-                                    )?;
-                                    obj.set(name, rs_str)?;
-                                }
-                            } else {
-                                let vals: Vec<js::Class<'js, RsString>> = matches
-                                    .get_many::<String>(name)
-                                    .unwrap_or_default()
-                                    .map(|s| {
-                                        js::Class::instance(ctx.clone(), RsString::owned(s.clone()))
-                                    })
-                                    .collect::<js::Result<_>>()?;
-                                if !vals.is_empty() {
-                                    obj.set(name, vals)?;
-                                }
-                            }
-                        }
-                        ArgAction::Append => {
-                            let vals: Vec<js::Class<'js, RsString>> = matches
-                                .get_many::<String>(name)
-                                .unwrap_or_default()
-                                .map(|s| {
-                                    js::Class::instance(ctx.clone(), RsString::owned(s.clone()))
-                                })
-                                .collect::<js::Result<_>>()?;
-                            if !vals.is_empty() {
-                                obj.set(name, vals)?;
-                            }
-                        }
-                        ArgAction::Count => {
-                            obj.set(name, matches.get_count(name))?;
-                        }
-                        ArgAction::SetTrue | ArgAction::SetFalse => {
-                            obj.set(name, matches.get_flag(name))?;
-                        }
-                        _ => {}
-                    }
-                }
-            }
-            Err(e) => {
-                let type_str = match e.kind() {
-                    clap::error::ErrorKind::DisplayHelp
-                    | clap::error::ErrorKind::DisplayHelpOnMissingArgumentOrSubcommand => "help",
-                    clap::error::ErrorKind::DisplayVersion => "version",
-                    _ => "error",
-                };
-                let rs_type =
-                    js::Class::instance(ctx.clone(), RsString::owned(type_str.to_string()))?;
-                obj.set("type", rs_type)?;
-                let message = RsString::owned(e.render().to_string());
-                let rs_message = js::Class::instance(ctx.clone(), message)?;
-                obj.set("message", rs_message)?;
-            }
+            Ok(matches) => build_result(&ctx, &obj, cmd, &matches)?,
+            Err(e) => build_error(&ctx, &obj, &e)?,
         }
 
         Ok(obj)
     }
 }
 
+#[inline(always)]
+fn strings_to_js_vec<'js>(
+    ctx: &js::Ctx<'js>,
+    strings: impl Iterator<Item = impl AsRef<str>>,
+) -> js::Result<Vec<js::Class<'js, RsString>>> {
+    strings
+        .map(|s| js::Class::instance(ctx.clone(), RsString::owned(s.as_ref().to_string())))
+        .collect()
+}
+
+#[inline(always)]
+fn handle_set_action<'js>(
+    ctx: &js::Ctx<'js>,
+    obj: &js::Object<'js>,
+    matches: &clap::ArgMatches,
+    arg: &clap::Arg,
+) -> js::Result<()> {
+    let name = arg.get_id().as_str();
+    let num_args = arg.get_num_args().unwrap_or(ValueRange::new(1));
+
+    if num_args.max_values() == 1 {
+        if let Some(val) = matches.get_one::<String>(name) {
+            let rs_str = js::Class::instance(ctx.clone(), RsString::owned(val.clone()))?;
+            obj.set(name, rs_str)?;
+        }
+    } else {
+        let vals = strings_to_js_vec(ctx, matches.get_many::<String>(name).unwrap_or_default())?;
+        if !vals.is_empty() {
+            obj.set(name, vals)?;
+        }
+    }
+    Ok(())
+}
+
+#[inline(always)]
+fn handle_append_action<'js>(
+    ctx: &js::Ctx<'js>,
+    obj: &js::Object<'js>,
+    matches: &clap::ArgMatches,
+    arg: &clap::Arg,
+) -> js::Result<()> {
+    let name = arg.get_id().as_str();
+    let vals = strings_to_js_vec(ctx, matches.get_many::<String>(name).unwrap_or_default())?;
+    if !vals.is_empty() {
+        obj.set(name, vals)?;
+    }
+    Ok(())
+}
+
+fn build_result<'js>(
+    ctx: &js::Ctx<'js>,
+    obj: &js::Object<'js>,
+    cmd: &clap::Command,
+    matches: &clap::ArgMatches,
+) -> js::Result<()> {
+    let rs_type = js::Class::instance(ctx.clone(), RsString::owned("result".to_string()))?;
+    obj.set("type", rs_type)?;
+
+    for arg in cmd.get_arguments() {
+        match arg.get_action() {
+            ArgAction::Set => handle_set_action(ctx, obj, matches, arg)?,
+            ArgAction::Append => handle_append_action(ctx, obj, matches, arg)?,
+            ArgAction::Count => {
+                obj.set(
+                    arg.get_id().as_str(),
+                    matches.get_count(arg.get_id().as_str()),
+                )?;
+            }
+            ArgAction::SetTrue | ArgAction::SetFalse => {
+                obj.set(
+                    arg.get_id().as_str(),
+                    matches.get_flag(arg.get_id().as_str()),
+                )?;
+            }
+            _ => {}
+        }
+    }
+    Ok(())
+}
+
+#[inline(always)]
+fn build_error<'js>(ctx: &js::Ctx<'js>, obj: &js::Object<'js>, e: &clap::Error) -> js::Result<()> {
+    let type_str = match e.kind() {
+        clap::error::ErrorKind::DisplayHelp
+        | clap::error::ErrorKind::DisplayHelpOnMissingArgumentOrSubcommand => "help",
+        clap::error::ErrorKind::DisplayVersion => "version",
+        _ => "error",
+    };
+    let rs_type = js::Class::instance(ctx.clone(), RsString::owned(type_str.to_string()))?;
+    obj.set("type", rs_type)?;
+    let message = RsString::owned(e.render().to_string());
+    let rs_message = js::Class::instance(ctx.clone(), message)?;
+    obj.set("message", rs_message)?;
+    Ok(())
+}
+
+#[inline(always)]
 pub fn init<'js>(_ctx: &js::Ctx<'js>, args: &[impl std::borrow::Borrow<str>]) -> js::Result<()> {
     let args = args
         .iter()
