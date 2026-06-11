@@ -1,6 +1,7 @@
+use crate::prelude::*;
 use std::marker::PhantomData;
 
-use rquickjs::{Ctx, Result, Value, class::Class};
+use js::{Ctx, Function, Value, class::Class, function::This};
 use tokio::io::{AsyncSeekExt, AsyncWriteExt, BufWriter, SeekFrom};
 
 use crate::error::Error;
@@ -8,8 +9,8 @@ use js_core::ByteBuffer;
 use js_core::error::{JsError, SystemError};
 use js_core::utils::{JsStringArg, StringArg};
 
-#[derive(rquickjs::class::Trace, rquickjs::JsLifetime)]
-#[rquickjs::class]
+#[derive(js::class::Trace, js::JsLifetime)]
+#[js::class]
 pub struct WriteHandle<'js> {
     #[qjs(skip_trace)]
     file: Option<BufWriter<tokio::fs::File>>,
@@ -17,16 +18,34 @@ pub struct WriteHandle<'js> {
     _marker: PhantomData<&'js ()>,
 }
 
-pub fn init<'js>(ctx: &Ctx<'js>) -> Result<()> {
-    Class::<WriteHandle>::define(&ctx.globals())
+pub fn init<'js>(ctx: &Ctx<'js>) -> js::Result<()> {
+    Class::<WriteHandle>::define(&ctx.globals())?;
+
+    if let Some(proto) = Class::<WriteHandle>::prototype(ctx)? {
+        let symbol_obj: js::Object = ctx.globals().get("Symbol")?;
+        let dispose: js::Symbol = symbol_obj.get("dispose")?;
+
+        let dispose_fn = Function::new(
+            ctx.clone(),
+            |this: This<Class<'js, WriteHandle<'js>>>| -> js::Result<()> {
+                let mut handle = this.0.borrow_mut();
+                handle.file = None;
+                Ok(())
+            },
+        )?;
+
+        proto.set(dispose, dispose_fn)?;
+    }
+
+    Ok(())
 }
 
-#[rquickjs::function]
+#[js::function]
 pub async fn open_write<'js>(
     ctx: Ctx<'js>,
     path: Value<'js>,
     chunk_size: usize,
-) -> Result<WriteHandle<'js>> {
+) -> js::Result<WriteHandle<'js>> {
     let path_arg = StringArg::coerce_js(&ctx, &path, "path")?;
     let path_str = path_arg.as_str().to_string();
     let file = tokio::fs::OpenOptions::new()
@@ -46,14 +65,14 @@ pub async fn open_write<'js>(
     })
 }
 
-#[rquickjs::methods]
+#[js::methods]
 impl<'js> WriteHandle<'js> {
     #[qjs()]
-    async fn write(&mut self, ctx: Ctx<'js>, data: Value<'js>) -> Result<usize> {
+    async fn write(&mut self, ctx: Ctx<'js>, data: Value<'js>) -> js::Result<usize> {
         let writer = self
             .file
             .as_mut()
-            .ok_or_else(|| rquickjs::Error::new_from_js("string", "file is closed"))?;
+            .ok_or_else(|| js::Error::new_from_js("string", "file is closed"))?;
 
         if let Ok(bb) = Class::<ByteBuffer>::from_value(&data) {
             let bb = bb.borrow();
@@ -62,23 +81,23 @@ impl<'js> WriteHandle<'js> {
                 Error::System(SystemError::from_io(e, "write", None::<String>)).into_exception(&ctx)
             })?;
             Ok(bytes.len())
-        } else if let Ok(s) = data.get::<rquickjs::String<'js>>() {
+        } else if let Ok(s) = data.get::<js::String<'js>>() {
             let s = s.to_string()?;
             let bytes = s.as_bytes();
             writer.write_all(bytes).await.map_err(|e| {
                 Error::System(SystemError::from_io(e, "write", None::<String>)).into_exception(&ctx)
             })?;
             Ok(bytes.len())
-        } else if let Ok(ab) = data.get::<rquickjs::ArrayBuffer<'js>>() {
-            let bytes = ab.as_bytes().ok_or_else(|| {
-                rquickjs::Error::new_from_js("ArrayBuffer", "failed to read bytes")
-            })?;
+        } else if let Ok(ab) = data.get::<js::ArrayBuffer<'js>>() {
+            let bytes = ab
+                .as_bytes()
+                .ok_or_else(|| js::Error::new_from_js("ArrayBuffer", "failed to read bytes"))?;
             writer.write_all(bytes).await.map_err(|e| {
                 Error::System(SystemError::from_io(e, "write", None::<String>)).into_exception(&ctx)
             })?;
             Ok(bytes.len())
         } else {
-            Err(rquickjs::Error::new_from_js(
+            Err(js::Error::new_from_js(
                 "ByteBuffer, string, or ArrayBuffer",
                 "unsupported write data type",
             ))
@@ -92,11 +111,11 @@ impl<'js> WriteHandle<'js> {
         buffer: Class<'js, ByteBuffer>,
         offset: Option<usize>,
         length: Option<usize>,
-    ) -> Result<usize> {
+    ) -> js::Result<usize> {
         let writer = self
             .file
             .as_mut()
-            .ok_or_else(|| rquickjs::Error::new_from_js("string", "file is closed"))?;
+            .ok_or_else(|| js::Error::new_from_js("string", "file is closed"))?;
 
         let bb = buffer.borrow();
         let slice = bb.as_slice();
@@ -114,11 +133,11 @@ impl<'js> WriteHandle<'js> {
     }
 
     #[qjs()]
-    async fn flush(&mut self, ctx: Ctx<'js>) -> Result<()> {
+    async fn flush(&mut self, ctx: Ctx<'js>) -> js::Result<()> {
         let writer = self
             .file
             .as_mut()
-            .ok_or_else(|| rquickjs::Error::new_from_js("string", "file is closed"))?;
+            .ok_or_else(|| js::Error::new_from_js("string", "file is closed"))?;
 
         writer.flush().await.map_err(|e| {
             Error::System(SystemError::from_io(e, "flush", None::<String>)).into_exception(&ctx)
@@ -126,18 +145,18 @@ impl<'js> WriteHandle<'js> {
     }
 
     #[qjs()]
-    async fn seek(&mut self, ctx: Ctx<'js>, offset: i64, whence: String) -> Result<u64> {
+    async fn seek(&mut self, ctx: Ctx<'js>, offset: i64, whence: String) -> js::Result<u64> {
         let writer = self
             .file
             .as_mut()
-            .ok_or_else(|| rquickjs::Error::new_from_js("string", "file is closed"))?;
+            .ok_or_else(|| js::Error::new_from_js("string", "file is closed"))?;
 
         let pos = match whence.as_str() {
             "start" => SeekFrom::Start(offset as u64),
             "current" => SeekFrom::Current(offset),
             "end" => SeekFrom::End(offset),
             _ => {
-                return Err(rquickjs::Error::new_from_js(
+                return Err(js::Error::new_from_js(
                     "string",
                     "whence must be start/current/end",
                 ));
@@ -150,7 +169,7 @@ impl<'js> WriteHandle<'js> {
     }
 
     #[qjs()]
-    async fn close(&mut self, ctx: Ctx<'js>) -> Result<()> {
+    async fn close(&mut self, ctx: Ctx<'js>) -> js::Result<()> {
         if let Some(mut writer) = self.file.take() {
             writer.flush().await.map_err(|e| {
                 Error::System(SystemError::from_io(e, "close", None::<String>)).into_exception(&ctx)

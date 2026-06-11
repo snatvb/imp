@@ -1,6 +1,7 @@
+use crate::prelude::*;
 use std::marker::PhantomData;
 
-use rquickjs::{Ctx, Result, Value, class::Class};
+use js::{Ctx, Function, Value, class::Class, function::This};
 use tokio::io::{AsyncReadExt, AsyncSeekExt, BufReader, SeekFrom};
 
 use crate::error::Error;
@@ -8,8 +9,8 @@ use js_core::ByteBuffer;
 use js_core::error::{JsError, SystemError};
 use js_core::utils::{JsStringArg, StringArg};
 
-#[derive(rquickjs::class::Trace, rquickjs::JsLifetime)]
-#[rquickjs::class]
+#[derive(js::class::Trace, js::JsLifetime)]
+#[js::class]
 pub struct FileHandle<'js> {
     #[qjs(skip_trace)]
     file: Option<BufReader<tokio::fs::File>>,
@@ -19,16 +20,34 @@ pub struct FileHandle<'js> {
     _marker: PhantomData<&'js ()>,
 }
 
-pub fn init<'js>(ctx: &Ctx<'js>) -> Result<()> {
-    Class::<FileHandle>::define(&ctx.globals())
+pub fn init<'js>(ctx: &Ctx<'js>) -> js::Result<()> {
+    Class::<FileHandle>::define(&ctx.globals())?;
+
+    if let Some(proto) = Class::<FileHandle>::prototype(ctx)? {
+        let symbol_obj: js::Object = ctx.globals().get("Symbol")?;
+        let dispose: js::Symbol = symbol_obj.get("dispose")?;
+
+        let dispose_fn = Function::new(
+            ctx.clone(),
+            |this: This<Class<'js, FileHandle<'js>>>| -> js::Result<()> {
+                let mut handle = this.0.borrow_mut();
+                handle.file = None;
+                Ok(())
+            },
+        )?;
+
+        proto.set(dispose, dispose_fn)?;
+    }
+
+    Ok(())
 }
 
-#[rquickjs::function]
+#[js::function]
 pub async fn open<'js>(
     ctx: Ctx<'js>,
     path: Value<'js>,
     chunk_size: usize,
-) -> Result<FileHandle<'js>> {
+) -> js::Result<FileHandle<'js>> {
     let path_arg = StringArg::coerce_js(&ctx, &path, "path")?;
     let path_str = path_arg.as_str().to_string();
     let file = tokio::fs::File::open(&path_str).await.map_err(|e| {
@@ -43,14 +62,14 @@ pub async fn open<'js>(
     })
 }
 
-#[rquickjs::methods]
+#[js::methods]
 impl<'js> FileHandle<'js> {
     #[qjs()]
-    async fn read(&mut self, ctx: Ctx<'js>) -> Result<Value<'js>> {
+    async fn read(&mut self, ctx: Ctx<'js>) -> js::Result<Value<'js>> {
         let reader = self
             .file
             .as_mut()
-            .ok_or_else(|| rquickjs::Error::new_from_js("string", "file is closed"))?;
+            .ok_or_else(|| js::Error::new_from_js("string", "file is closed"))?;
 
         let n = reader.read(&mut self.buf).await.map_err(|e| {
             Error::System(SystemError::from_io(e, "read", None::<String>)).into_exception(&ctx)
@@ -69,11 +88,11 @@ impl<'js> FileHandle<'js> {
         &mut self,
         ctx: Ctx<'js>,
         buffer: Class<'js, ByteBuffer>,
-    ) -> Result<Value<'js>> {
+    ) -> js::Result<Value<'js>> {
         let reader = self
             .file
             .as_mut()
-            .ok_or_else(|| rquickjs::Error::new_from_js("string", "file is closed"))?;
+            .ok_or_else(|| js::Error::new_from_js("string", "file is closed"))?;
 
         let mut bb = buffer.borrow_mut();
         let slice = bb.as_mut_slice();
@@ -90,18 +109,18 @@ impl<'js> FileHandle<'js> {
     }
 
     #[qjs()]
-    async fn seek(&mut self, ctx: Ctx<'js>, offset: i64, whence: String) -> Result<u64> {
+    async fn seek(&mut self, ctx: Ctx<'js>, offset: i64, whence: String) -> js::Result<u64> {
         let reader = self
             .file
             .as_mut()
-            .ok_or_else(|| rquickjs::Error::new_from_js("string", "file is closed"))?;
+            .ok_or_else(|| js::Error::new_from_js("string", "file is closed"))?;
 
         let pos = match whence.as_str() {
             "start" => SeekFrom::Start(offset as u64),
             "current" => SeekFrom::Current(offset),
             "end" => SeekFrom::End(offset),
             _ => {
-                return Err(rquickjs::Error::new_from_js(
+                return Err(js::Error::new_from_js(
                     "string",
                     "whence must be start/current/end",
                 ));
@@ -114,7 +133,7 @@ impl<'js> FileHandle<'js> {
     }
 
     #[qjs()]
-    async fn close(&mut self) -> Result<()> {
+    async fn close(&mut self) -> js::Result<()> {
         self.file = None;
         Ok(())
     }

@@ -114,6 +114,7 @@ declare class FileHandle {
   readInto(buffer: ByteBuffer): Promise<number | undefined>;
   seek(offset: number, whence: string): Promise<number>;
   close(): Promise<void>;
+  [Symbol.dispose](): void;
 }
 
 declare class WriteHandle {
@@ -122,6 +123,7 @@ declare class WriteHandle {
   flush(): Promise<void>;
   seek(offset: number, whence: "start" | "current" | "end"): Promise<number>;
   close(): Promise<void>;
+  [Symbol.dispose](): void;
 }
 
 interface FsStats {
