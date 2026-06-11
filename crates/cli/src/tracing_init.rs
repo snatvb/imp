@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 #[cfg(debug_assertions)]
 pub fn init() {
     use tracing_subscriber::{EnvFilter, fmt};
@@ -12,4 +13,5 @@ pub fn init() {
 
 #[cfg(not(debug_assertions))]
 #[inline(always)]
+#[allow(dead_code)]
 pub fn init() {}
