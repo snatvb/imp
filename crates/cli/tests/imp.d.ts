@@ -112,7 +112,7 @@ interface WalkIterator extends AsyncIterable<string> {
 declare class FileHandle {
   read(): Promise<ByteBuffer | undefined>;
   readInto(buffer: ByteBuffer): Promise<number | undefined>;
-  seek(offset: number, whence: string): Promise<number>;
+  seek(offset: number, whence: JsString): Promise<number>;
   close(): Promise<void>;
   [Symbol.dispose](): void;
 }
@@ -121,7 +121,7 @@ declare class WriteHandle {
   write(data: ByteBuffer | string | ArrayBuffer): Promise<number>;
   writeFrom(buffer: ByteBuffer, offset?: number, length?: number): Promise<number>;
   flush(): Promise<void>;
-  seek(offset: number, whence: "start" | "current" | "end"): Promise<number>;
+  seek(offset: number, whence: JsString): Promise<number>;
   close(): Promise<void>;
   [Symbol.dispose](): void;
 }
@@ -223,7 +223,7 @@ declare module "imp:clap" {
 
 declare module "imp:fs" {
   function open(path: JsString, chunkSize: number): Promise<FileHandle>;
-  function openWrite(path: JsString, chunkSize?: number): Promise<WriteHandle>;
+  function openWrite(path: JsString, flags?: 'w' | 'a' | 'rw', chunkSize?: number): Promise<WriteHandle>;
   function readFile(path: JsString): Promise<ArrayBuffer>;
   function readFile(path: JsString, encoding: "buffer" | "null"): Promise<ArrayBuffer>;
   function readFile(path: JsString, encoding: string): Promise<RsString>;

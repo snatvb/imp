@@ -109,13 +109,16 @@ impl<'js> FileHandle<'js> {
     }
 
     #[qjs()]
-    async fn seek(&mut self, ctx: Ctx<'js>, offset: i64, whence: String) -> js::Result<u64> {
+    async fn seek(&mut self, ctx: Ctx<'js>, offset: i64, whence: Value<'js>) -> js::Result<u64> {
+        let whence_arg = StringArg::coerce_js(&ctx, &whence, "whence")?;
+        let whence_str = whence_arg.as_str();
+
         let reader = self
             .file
             .as_mut()
             .ok_or_else(|| js::Error::new_from_js("string", "file is closed"))?;
 
-        let pos = match whence.as_str() {
+        let pos = match whence_str {
             "start" => SeekFrom::Start(offset as u64),
             "current" => SeekFrom::Current(offset),
             "end" => SeekFrom::End(offset),

@@ -3,7 +3,7 @@ import { openWrite, readFile, remove } from "imp:fs";
 const testPath = process.cwd() + "\\test_write_output.tmp";
 
 {
-  using wh = await openWrite(testPath, 8192);
+  using wh = await openWrite(testPath, "w", 8192);
   const n1 = await wh.write("hello world");
   console.assert(n1 === 11, "write string returns byte count");
 
@@ -32,7 +32,7 @@ const testPath = process.cwd() + "\\test_write_output.tmp";
 }
 
 {
-  using wh = await openWrite(testPath, 8192);
+  using wh = await openWrite(testPath, "w", 8192);
   await wh.write("abcdefghij");
   await wh.seek(0, "start");
   const n = await wh.write("XY");
@@ -40,20 +40,20 @@ const testPath = process.cwd() + "\\test_write_output.tmp";
 
   const buf = await readFile(testPath, "buffer");
   const view = new Uint8Array(buf);
-  const expected = "abcdefghij";
+  const expected = "XYcdefghij";
   let match = view.length === expected.length;
   if (match) {
     for (let i = 0; i < expected.length; i++) {
       if (view[i] !== expected.charCodeAt(i)) { match = false; break; }
     }
   }
-  console.assert(match, "overwrite content matches (seek not flushed yet)");
+  console.assert(match, "overwrite content matches after seek+write");
 }
 
 await remove(testPath);
 
 {
-  using wh = await openWrite(testPath, 8192);
+  using wh = await openWrite(testPath, "w", 8192);
   const bb = new ByteBuffer(10);
   const arr = bb.toArray();
   for (let i = 0; i < 10; i++) arr[i] = 65 + i;
@@ -66,6 +66,101 @@ await remove(testPath);
   const view = new Uint8Array(buf);
   console.assert(view.length === 5, "writeFrom wrote correct length");
   console.assert(view[0] === 67, "writeFrom offset correct");
+}
+
+await remove(testPath);
+
+{
+  using wh = await openWrite(testPath, "w", 8192);
+  await wh.write("first");
+}
+
+{
+  using wh = await openWrite(testPath, "a", 8192);
+  await wh.write("second");
+}
+
+{
+  const buf = await readFile(testPath, "buffer");
+  const view = new Uint8Array(buf);
+  const expected = "firstsecond";
+  let match = view.length === expected.length;
+  if (match) {
+    for (let i = 0; i < expected.length; i++) {
+      if (view[i] !== expected.charCodeAt(i)) { match = false; break; }
+    }
+  }
+  console.assert(match, "append mode: file content matches");
+}
+
+{
+  using wh = await openWrite(testPath, "a", 8192);
+  await wh.seek(0, "start");
+  await wh.write("X");
+}
+
+{
+  const buf = await readFile(testPath, "buffer");
+  const view = new Uint8Array(buf);
+  const expected = "firstsecondX";
+  let match = view.length === expected.length;
+  if (match) {
+    for (let i = 0; i < expected.length; i++) {
+      if (view[i] !== expected.charCodeAt(i)) { match = false; break; }
+    }
+  }
+  console.assert(match, "append mode: seek is no-op, write at end");
+}
+
+await remove(testPath);
+
+{
+  using wh = await openWrite(testPath, "w", 8192);
+  await wh.write("abcdefghij");
+}
+
+{
+  using wh = await openWrite(testPath, "rw", 8192);
+  await wh.seek(5, "start");
+  await wh.write("XYZ");
+}
+
+{
+  const buf = await readFile(testPath, "buffer");
+  const view = new Uint8Array(buf);
+  const expected = "abcdeXYZij";
+  let match = view.length === expected.length;
+  if (match) {
+    for (let i = 0; i < expected.length; i++) {
+      if (view[i] !== expected.charCodeAt(i)) { match = false; break; }
+    }
+  }
+  console.assert(match, "rw mode: seek+write in middle works");
+}
+
+await remove(testPath);
+
+{
+  using wh = await openWrite(testPath, "w", 8192);
+  await wh.write("base");
+}
+
+{
+  using wh = await openWrite(testPath);
+  await wh.write("_default");
+}
+
+{
+  const buf = await readFile(testPath, "buffer");
+  const view = new Uint8Array(buf);
+  const expected = "base_default";
+  let match = view.length === expected.length;
+  if (match) {
+    for (let i = 0; i < expected.length; i++) {
+      if (view[i] !== expected.charCodeAt(i)) { match = false; break; }
+    }
+  }
+  console.assert(match, "default flags (undefined) = append");
 }
 
 await remove(testPath);

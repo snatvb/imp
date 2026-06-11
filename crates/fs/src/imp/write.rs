@@ -1,7 +1,11 @@
 use crate::prelude::*;
 use std::marker::PhantomData;
 
-use js::{Ctx, Function, Value, class::Class, function::This};
+use js::{
+    Ctx, Function, Value,
+    class::Class,
+    function::{Opt, This},
+};
 use tokio::io::{AsyncSeekExt, AsyncWriteExt, BufWriter, SeekFrom};
 
 use crate::error::Error;
@@ -14,6 +18,8 @@ use js_core::utils::{JsStringArg, StringArg};
 pub struct WriteHandle<'js> {
     #[qjs(skip_trace)]
     file: Option<BufWriter<tokio::fs::File>>,
+    #[qjs(skip_trace)]
+    append: bool,
     #[qjs(skip_trace)]
     _marker: PhantomData<&'js ()>,
 }
@@ -44,23 +50,58 @@ pub fn init<'js>(ctx: &Ctx<'js>) -> js::Result<()> {
 pub async fn open_write<'js>(
     ctx: Ctx<'js>,
     path: Value<'js>,
-    chunk_size: usize,
+    flags: Opt<String>,
+    chunk_size: Opt<usize>,
 ) -> js::Result<WriteHandle<'js>> {
     let path_arg = StringArg::coerce_js(&ctx, &path, "path")?;
     let path_str = path_arg.as_str().to_string();
-    let file = tokio::fs::OpenOptions::new()
-        .write(true)
-        .create(true)
-        .truncate(true)
-        .open(&path_str)
-        .await
-        .map_err(|e| {
-            Error::System(SystemError::from_io(e, "open", Some(path_str.clone())))
-                .into_exception(&ctx)
-        })?;
+    let flags = flags.as_deref().unwrap_or("a");
+    let chunk_size = chunk_size.0.unwrap_or(8192);
+
+    let (file, append) = match flags {
+        "w" => (
+            tokio::fs::OpenOptions::new()
+                .write(true)
+                .create(true)
+                .truncate(true)
+                .open(&path_str)
+                .await,
+            false,
+        ),
+        "a" => (
+            tokio::fs::OpenOptions::new()
+                .write(true)
+                .create(true)
+                .append(true)
+                .open(&path_str)
+                .await,
+            true,
+        ),
+        "rw" => (
+            tokio::fs::OpenOptions::new()
+                .read(true)
+                .write(true)
+                .create(true)
+                .open(&path_str)
+                .await,
+            false,
+        ),
+        _ => {
+            return Err(Error::Argument(format!(
+                "invalid flags: '{}', expected 'w', 'a', or 'rw'",
+                flags
+            ))
+            .into_exception(&ctx));
+        }
+    };
+
+    let file = file.map_err(|e| {
+        Error::System(SystemError::from_io(e, "open", Some(path_str.clone()))).into_exception(&ctx)
+    })?;
     let writer = BufWriter::with_capacity(chunk_size.max(8192), file);
     Ok(WriteHandle {
         file: Some(writer),
+        append,
         _marker: PhantomData,
     })
 }
@@ -145,13 +186,20 @@ impl<'js> WriteHandle<'js> {
     }
 
     #[qjs()]
-    async fn seek(&mut self, ctx: Ctx<'js>, offset: i64, whence: String) -> js::Result<u64> {
+    async fn seek(&mut self, ctx: Ctx<'js>, offset: i64, whence: Value<'js>) -> js::Result<u64> {
+        if self.append {
+            return Ok(0);
+        }
+
+        let whence_arg = StringArg::coerce_js(&ctx, &whence, "whence")?;
+        let whence_str = whence_arg.as_str();
+
         let writer = self
             .file
             .as_mut()
             .ok_or_else(|| js::Error::new_from_js("string", "file is closed"))?;
 
-        let pos = match whence.as_str() {
+        let pos = match whence_str {
             "start" => SeekFrom::Start(offset as u64),
             "current" => SeekFrom::Current(offset),
             "end" => SeekFrom::End(offset),
