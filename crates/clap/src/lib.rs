@@ -73,10 +73,10 @@ impl Parser {
     fn name<'js>(
         &mut self,
         this: This<js::Class<'js, Parser>>,
-        name: String,
+        name: StringArg,
     ) -> js::Result<js::Class<'js, Parser>> {
         if let Some(cmd) = self.command.take() {
-            self.command = Some(cmd.name(Id::from(name)));
+            self.command = Some(cmd.name(Id::from(name.to_string())));
         }
         Ok(this.0.clone())
     }
@@ -85,10 +85,10 @@ impl Parser {
     fn version<'js>(
         &mut self,
         this: This<js::Class<'js, Parser>>,
-        version: String,
+        version: StringArg,
     ) -> js::Result<js::Class<'js, Parser>> {
         if let Some(cmd) = self.command.take() {
-            self.command = Some(cmd.version(Id::from(version)));
+            self.command = Some(cmd.version(Id::from(version.to_string())));
         }
         Ok(this.0.clone())
     }
@@ -97,10 +97,10 @@ impl Parser {
     fn about<'js>(
         &mut self,
         this: This<js::Class<'js, Parser>>,
-        about: String,
+        about: StringArg,
     ) -> js::Result<js::Class<'js, Parser>> {
         if let Some(cmd) = self.command.take() {
-            self.command = Some(cmd.about(about));
+            self.command = Some(cmd.about(about.to_string()));
         }
         Ok(this.0.clone())
     }
@@ -168,17 +168,13 @@ impl Parser {
     }
 
     #[qjs()]
-    fn parse<'js>(&self, ctx: js::Ctx<'js>, args: js::Value<'js>) -> js::Result<js::Object<'js>> {
+    fn parse<'js>(&self, ctx: js::Ctx<'js>, args: js::Array<'js>) -> js::Result<js::Object<'js>> {
         let cmd = self
             .command
             .as_ref()
             .ok_or_else(|| Exception::throw_type(&ctx, "Parser not initialized"))?;
 
-        let arr = args
-            .as_array()
-            .ok_or_else(|| Exception::throw_type(&ctx, "args must be an array"))?;
-
-        let args_vec: Vec<String> = StringArg::coerce_array_iter(&ctx, arr, "args")
+        let args_vec: Vec<String> = StringArg::coerce_array_iter(&ctx, &args, "args")
             .map(|r| r.map(|s| s.as_str().to_string()))
             .collect::<js::Result<_>>()?;
 
