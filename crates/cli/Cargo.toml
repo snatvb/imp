@@ -19,5 +19,6 @@ inq.workspace = true
 sys.workspace = true
 imp_clap.workspace = true
 embed.workspace = true
+parsers.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true

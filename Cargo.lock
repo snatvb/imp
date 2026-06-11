@@ -256,6 +256,7 @@ dependencies = [
  "js_core",
  "js_path",
  "os-path",
+ "parsers",
  "process",
  "sys",
  "tokio",
@@ -1476,6 +1477,17 @@ dependencies = [
  "redox_syscall",
  "smallvec",
  "windows-link",
+]
+
+[[package]]
+name = "parsers"
+version = "0.1.0"
+dependencies = [
+ "js_core",
+ "rquickjs",
+ "serde",
+ "serde_json",
+ "thiserror",
 ]
 
 [[package]]

@@ -12,6 +12,7 @@ pub fn native_module_names() -> &'static [&'static str] {
         "imp:sys/input_simulate",
         "imp:sys/stdin",
         "imp:clap",
+        "imp:parsers",
     ]
 }
 
@@ -29,6 +30,7 @@ pub fn register_all_native_modules(
         ("imp:sys/input_simulate", sys::InputSimulateModule),
         ("imp:sys/stdin", sys::StdinModule),
         ("imp:clap", imp_clap::ClapModule),
+        ("imp:parsers", parsers::ParsersModule),
     );
 }
 
