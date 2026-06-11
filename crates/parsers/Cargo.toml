@@ -9,6 +9,6 @@ js_core.workspace = true
 rquickjs.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-serde_yml.workspace = true
+serde-saphyr.workspace = true
 quick-xml.workspace = true
 thiserror.workspace = true
