@@ -6,6 +6,7 @@ authors.workspace = true
 
 [dependencies]
 oxc_allocator = "0.133.0"
+oxc_ast = "0.133.0"
 oxc_codegen = "0.133.0"
 oxc_parser = "0.133.0"
 oxc_span = "0.133.0"
@@ -15,6 +16,7 @@ unicode-normalization = "0.1.25"
 rquickjs.workspace = true
 tracing.workspace = true
 camino.workspace = true
+embed.workspace = true
 os-path.workspace = true
 js_error_derive.workspace = true
 chrono.workspace = true

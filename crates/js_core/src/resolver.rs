@@ -2,6 +2,46 @@ use std::path::{Path, PathBuf};
 
 pub use rquickjs as js;
 
+pub const MODULE_EXTENSIONS: &[&str] = &["ts", "mts", "js", "mjs", "json"];
+
+pub fn normalize_relative_path(base: &str, name: &str) -> String {
+    let base_dir = Path::new(base).parent().unwrap_or(Path::new(""));
+    let mut target = base_dir.to_path_buf();
+    for segment in name.split('/') {
+        match segment {
+            "." => {}
+            ".." => {
+                target.pop();
+            }
+            seg => target.push(seg),
+        }
+    }
+    target.to_string_lossy().replace('\\', "/")
+}
+
+pub fn try_with_extensions<F>(path: &str, extensions: &[&str], checker: F) -> Option<String>
+where
+    F: Fn(&str) -> bool,
+{
+    if checker(path) {
+        return Some(path.to_string());
+    }
+    for ext in extensions {
+        let with_ext = format!("{}.{}", path, ext);
+        if checker(&with_ext) {
+            return Some(with_ext);
+        }
+    }
+    let index_path = format!("{}/index", path);
+    for ext in extensions {
+        let with_ext = format!("{}.{}", index_path, ext);
+        if checker(&with_ext) {
+            return Some(with_ext);
+        }
+    }
+    None
+}
+
 pub struct Resolver {
     pub extensions: Vec<&'static str>,
 }
@@ -110,7 +150,7 @@ impl Resolver {
     }
 
     #[tracing::instrument(level = "debug", skip(self), fields(name = %name, base = %base))]
-    fn resolve_impl(&self, base: &str, name: &str) -> Result<String, String> {
+    pub fn resolve_impl(&self, base: &str, name: &str) -> Result<String, String> {
         if name.starts_with("./") || name.starts_with("../") {
             let base_dir = self.dir_of(base);
             let path = self.push_rel(&base_dir, name);

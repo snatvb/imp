@@ -1,9 +1,10 @@
 use std::env;
 
-use clap::Parser;
+use clap::{Parser, Subcommand};
 use os_path::OsPathBuf;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
+mod embedded_run;
 mod error;
 mod event_loop;
 mod prelude;
@@ -14,31 +15,106 @@ use prelude::*;
 
 #[derive(Debug, Parser)]
 #[command(name = "ImpJS", version = "0.1.0", long_about = None)]
-struct Args {
+struct Cli {
+    #[command(subcommand)]
+    command: Option<Commands>,
+
     #[arg(help = "Path to the target file")]
-    filepath: PathBuf,
+    filepath: Option<PathBuf>,
+
     #[arg(last = true, hide = true)]
     script_args: Vec<String>,
+
     #[cfg(debug_assertions)]
     #[arg(short, long, help = "Enable tracing output (debug only)")]
     trace: bool,
 }
 
+#[derive(Debug, Subcommand)]
+enum Commands {
+    #[command(about = "Run a script")]
+    Run {
+        #[arg(help = "Path to the target file")]
+        filepath: PathBuf,
+        #[arg(last = true, hide = true)]
+        script_args: Vec<String>,
+        #[cfg(debug_assertions)]
+        #[arg(short, long, help = "Enable tracing output (debug only)")]
+        trace: bool,
+    },
+    #[command(about = "Compile a script into a standalone executable")]
+    Compile {
+        #[arg(help = "Path to the entry script")]
+        filepath: PathBuf,
+        #[arg(help = "Output binary name")]
+        output: String,
+    },
+}
+
 #[tokio::main]
 async fn main() {
-    let args = Args::parse();
-    if args.trace_enabled() {
-        tracing_init::init();
+    if let Some(bundle) = embed::read_embedded() {
+        embedded_run::run_embedded(bundle).await;
+        return;
     }
-    let _span = tracing::info_span!("imp", file = %args.filepath.display()).entered();
+
+    let cli = Cli::parse();
+    match cli.command {
+        Some(Commands::Compile { filepath, output }) => {
+            compile(&filepath, &output);
+        }
+        Some(Commands::Run {
+            filepath,
+            script_args,
+            #[cfg(debug_assertions)]
+            trace,
+        }) => {
+            #[cfg(debug_assertions)]
+            if trace {
+                tracing_init::init();
+            }
+            run_script(filepath, script_args).await;
+        }
+        None => {
+            #[cfg(debug_assertions)]
+            if cli.trace_enabled() {
+                tracing_init::init();
+            }
+            let filepath = cli.filepath.expect("filepath is required");
+            run_script(filepath, cli.script_args).await;
+        }
+    }
+}
+
+fn compile(filepath: &Path, output: &str) {
+    let resolver = js_core::resolver::Resolver::default();
+    let Some(entry) = resolver.resolve_entry(filepath) else {
+        panic!("Can't find script by path {}", filepath.display());
+    };
+
+    let native_names = setup::native_module_names();
+    let bundle = js_core::bundler::bundle(std::path::Path::new(&entry), &resolver, native_names)
+        .unwrap_or_else(|e| panic!("Bundle failed: {}", e));
+
+    let exe = std::env::current_exe().unwrap();
+    let mut output_path = PathBuf::from(output);
+    if cfg!(windows) && output_path.extension().is_none() {
+        output_path.set_extension("exe");
+    }
+
+    embed::write_embedded(&exe, &output_path, &bundle)
+        .unwrap_or_else(|e| panic!("Write embedded failed: {}", e));
+
+    println!("Compiled: {}", output_path.display());
+}
+
+async fn run_script(filepath: PathBuf, script_args: Vec<String>) {
+    let _span = tracing::info_span!("imp", file = %filepath.display()).entered();
 
     tracing::info!("resolving entry");
     let resolver = js_core::resolver::Resolver::default();
-    let Some(filepath) = resolver.resolve_entry(&args.filepath) else {
-        panic!(
-            "Can't find script by path {}",
-            args.filepath.to_string_lossy()
-        )
+    let Some(filepath) = resolver.resolve_entry(&filepath) else {
+        panic!("Can't find script by path {}", filepath.display());
     };
     tracing::info!(file = %filepath, "entry resolved");
     let filepath = std::fs::canonicalize(filepath).unwrap();
@@ -65,47 +141,17 @@ async fn main() {
 
     setup::setup_loaders(&rt, resolver, cwd).await;
 
-    let exe_path = std::env::current_exe().unwrap();
     ctx.async_with(async |ctx| {
-        let js_timers = setup::setup_globals(
-            &ctx,
-            exe_path.to_string_lossy().as_ref(),
-            &filepath_str,
-            args.script_args.as_slice(),
-        );
-
-        tracing::info!(file = %filepath_str, "evaluating module");
-        let Some(promise) = error::try_js(
-            &ctx,
-            js::Module::evaluate(ctx.clone(), filepath_str.to_string(), code.as_str()),
-            "module evaluation failed",
-        ) else {
-            return;
-        };
-        error::try_js(
-            &ctx,
-            promise.into_future::<js::Value<'_>>().await,
-            "promise rejected",
-        );
-        tokio::task::yield_now().await;
-        tracing::info!("module evaluated");
-
-        event_loop::run_event_loop(&ctx, &rt, js_timers).await;
+        setup::run_js_entry(&ctx, &rt, &filepath_str, &code, &script_args).await;
     })
     .await;
 
     rt.idle().await;
 }
 
-impl Args {
+#[cfg(debug_assertions)]
+impl Cli {
     fn trace_enabled(&self) -> bool {
-        #[cfg(debug_assertions)]
-        {
-            self.trace
-        }
-        #[cfg(not(debug_assertions))]
-        {
-            false
-        }
+        self.trace
     }
 }

@@ -11,6 +11,7 @@ members = [
   "crates/js_error_derive",
   "crates/sys",
   "crates/clap",
+  "crates/embed",
 ]
 resolver = "3"
 
@@ -20,6 +21,8 @@ edition = "2024"
 authors = ["Andrei Avsenin <snatlip48@gmail.com>"]
 
 [workspace.dependencies]
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = { version = "1.0.150" }
 rquickjs = { version = "0.12.0", features = ["full-async", "macro", "loader"] }
 clap = { version = "4.6.1", features = ["color", "derive", "string"] }
 tokio = { version = "1.52.3", features = [
@@ -38,6 +41,7 @@ tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 camino = { version = "1.2.2", features = [] }
 chrono = "0.4.45"
 libc = "0.2.186"
+oxc_ast = "0.133.0"
 
 js_core = { path = "crates/js_core" }
 console = { path = "crates/console" }
@@ -49,3 +53,4 @@ inq = { path = "crates/inq" }
 sys = { path = "crates/sys" }
 js_error_derive = { path = "crates/js_error_derive" }
 imp_clap = { path = "crates/clap" }
+embed = { path = "crates/embed" }

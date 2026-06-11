@@ -178,13 +178,16 @@ impl Parser {
             .as_array()
             .ok_or_else(|| Exception::throw_type(&ctx, "args must be an array"))?;
 
-        let args_vec: Vec<String> = StringArg::coerce_array_iter(&ctx, &arr, "args")
+        let args_vec: Vec<String> = StringArg::coerce_array_iter(&ctx, arr, "args")
             .map(|r| r.map(|s| s.as_str().to_string()))
             .collect::<js::Result<_>>()?;
 
         let obj = js::Object::new(ctx.clone())?;
 
-        match cmd.clone().try_get_matches_from(args_vec) {
+        let mut full_args = vec![self.command.as_ref().unwrap().get_name().to_string()];
+        full_args.extend(args_vec);
+
+        match cmd.clone().try_get_matches_from(full_args) {
             Ok(matches) => {
                 let rs_type =
                     js::Class::instance(ctx.clone(), RsString::owned("result".to_string()))?;

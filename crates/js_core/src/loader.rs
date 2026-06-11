@@ -1,9 +1,14 @@
+use std::collections::{HashMap, HashSet};
 use std::path::Path;
 
 use os_path::OsPath;
 pub use rquickjs as js;
 
-use crate::{meta::with_meta, typescript};
+use crate::{
+    meta::with_meta,
+    resolver::{MODULE_EXTENSIONS, normalize_relative_path, try_with_extensions},
+    typescript,
+};
 
 pub struct TsLoader;
 
@@ -68,5 +73,69 @@ impl js::loader::Loader for ScriptLoader {
         };
 
         js::module::Module::declare(ctx.clone(), name, code)
+    }
+}
+
+pub struct EmbeddedResolver {
+    modules: HashSet<String>,
+}
+
+impl EmbeddedResolver {
+    pub fn new(module_names: impl Iterator<Item = String>) -> Self {
+        Self {
+            modules: module_names.collect(),
+        }
+    }
+}
+
+impl js::loader::Resolver for EmbeddedResolver {
+    fn resolve<'js>(
+        &mut self,
+        _ctx: &js::Ctx<'js>,
+        base: &str,
+        name: &str,
+        _attrs: Option<js::loader::ImportAttributes<'js>>,
+    ) -> js::Result<String> {
+        if name.starts_with("./") || name.starts_with("../") {
+            let target_str = normalize_relative_path(base, name);
+            let checker = |p: &str| self.modules.contains(p);
+            try_with_extensions(&target_str, MODULE_EXTENSIONS, checker).ok_or_else(|| {
+                js::Error::new_resolving_message(base, name, "module not found in bundle")
+            })
+        } else {
+            if self.modules.contains(name) {
+                return Ok(name.to_string());
+            }
+            Err(js::Error::new_resolving_message(
+                base,
+                name,
+                "module not found in bundle",
+            ))
+        }
+    }
+}
+
+pub struct EmbeddedLoader {
+    modules: HashMap<String, String>,
+}
+
+impl EmbeddedLoader {
+    pub fn new(modules: HashMap<String, String>) -> Self {
+        Self { modules }
+    }
+}
+
+impl js::loader::Loader for EmbeddedLoader {
+    fn load<'js>(
+        &mut self,
+        ctx: &js::Ctx<'js>,
+        name: &str,
+        _attrs: Option<js::loader::ImportAttributes<'js>>,
+    ) -> js::Result<js::module::Module<'js, js::module::Declared>> {
+        let code = self
+            .modules
+            .get(name)
+            .ok_or_else(|| js::Error::new_loading_message(name, "module not found in bundle"))?;
+        js::module::Module::declare(ctx.clone(), name, code.as_str())
     }
 }
