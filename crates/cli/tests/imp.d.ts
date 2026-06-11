@@ -399,3 +399,14 @@ declare module "imp:sys/stdin" {
   export default _default;
   export { readLine, readAll };
 }
+
+declare module "imp:parsers" {
+  export const json: {
+    parse(input: JsString): unknown;
+    stringify(value: unknown): RsString;
+  };
+  export const yaml: {
+    parse(input: JsString): unknown;
+    stringify(value: unknown): RsString;
+  };
+}

@@ -2,7 +2,7 @@ import { json } from 'imp:parsers';
 
 {
     const input = '{"name":"test","value":42,"nested":{"a":true,"b":null}}';
-    const parsed = json.parse(input);
+    const parsed = json.parse(input) as any;
     console.assert(parsed.name === "test", "name should be test");
     console.assert(parsed.value === 42, "value should be 42");
     console.assert(parsed.nested.a === true, "nested.a should be true");
@@ -23,7 +23,7 @@ import { json } from 'imp:parsers';
 
 {
     const input = '[1,2,3]';
-    const parsed = json.parse(input);
+    const parsed = json.parse(input) as any[];
     console.assert(Array.isArray(parsed), "should be array");
     console.assert(parsed.length === 3, "length should be 3");
     console.assert(parsed[0] === 1 && parsed[1] === 2 && parsed[2] === 3, "array values");
@@ -31,7 +31,7 @@ import { json } from 'imp:parsers';
 
 {
     const input = '{"float":3.14,"negative":-10}';
-    const parsed = json.parse(input);
+    const parsed = json.parse(input) as any;
     console.assert(parsed.float === 3.14, "float should work");
     console.assert(parsed.negative === -10, "negative should work");
 }
