@@ -57,7 +57,8 @@ pub async fn setup_embedded_loaders(
 
     let exe = std::env::current_exe().unwrap();
     let exe_dir = OsPathBuf::from_path_buf(exe.parent().unwrap().to_path_buf()).unwrap();
-    let exe_name = exe.file_name().unwrap().to_string_lossy().to_string();
+    let exe = os_path::normalize_absolute(&exe, &exe_dir);
+    let exe_name = exe.as_path().file_name().unwrap().to_string();
 
     let embedded_resolver = js_core::loader::EmbeddedResolver::new(bundle.modules.keys().cloned());
     let embedded_loader = js_core::loader::EmbeddedLoader::new(bundle.modules, exe_dir.clone());

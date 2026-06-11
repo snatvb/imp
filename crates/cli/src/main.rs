@@ -117,14 +117,14 @@ async fn run_script(filepath: PathBuf, script_args: Vec<String>) {
         panic!("Can't find script by path {}", filepath.display());
     };
     tracing::info!(file = %filepath, "entry resolved");
-    let filepath = std::fs::canonicalize(filepath).unwrap();
-    let filepath_str = filepath.to_string_lossy();
+    let cwd = OsPathBuf::from_path_buf(env::current_dir().unwrap()).unwrap();
+    let filepath = os_path::normalize_absolute(&filepath, &cwd);
+    let filepath_str = filepath.as_str();
 
     tracing::info!("loading source");
     let code = tokio::fs::read_to_string(&filepath).await.unwrap();
     tracing::debug!(bytes = code.len(), "source loaded");
 
-    let cwd = OsPathBuf::from_path_buf(env::current_dir().unwrap()).unwrap();
     let code = if typescript::is_ts_ext(&filepath) {
         tracing::info!("stripping TS");
         typescript::strip_types_fast_default(&code)

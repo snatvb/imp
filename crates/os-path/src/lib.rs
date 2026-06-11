@@ -26,3 +26,15 @@ pub type Win32PathBuf = PlatformPathBuf<Win32>;
 /// Explicit POSIX path (forward slash, no drive letters)
 pub type PosixPath = PlatformPath<Posix>;
 pub type PosixPathBuf = PlatformPathBuf<Posix>;
+
+/// Normalize path to absolute, resolving `.` and `..` without UNC prefix.
+/// If path is relative, joins with base directory first.
+pub fn normalize_absolute(path: impl AsRef<std::path::Path>, base: &OsPathBuf) -> OsPathBuf {
+    let s = path.as_ref().to_string_lossy();
+    let p = OsPathBuf::new(s.as_ref());
+    if p.is_absolute() {
+        p.normalize()
+    } else {
+        base.join(p.as_str()).normalize()
+    }
+}
