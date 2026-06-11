@@ -10,7 +10,7 @@ use embed::Bundle;
 use crate::resolver::Resolver;
 use crate::typescript;
 
-fn extract_imports(source: &str) -> Vec<String> {
+fn extract_imports(source: &str, file_path: &str) -> Vec<String> {
     let allocator = Allocator::default();
     let source_type = SourceType::mjs();
     let parser = Parser::new(&allocator, source, source_type).with_options(ParseOptions {
@@ -19,6 +19,11 @@ fn extract_imports(source: &str) -> Vec<String> {
     });
     let parsed = parser.parse();
     if !parsed.errors.is_empty() {
+        tracing::warn!(
+            file = file_path,
+            errors = ?parsed.errors,
+            "bundler: parse errors, imports may be missed"
+        );
         return Vec::new();
     }
 
@@ -46,22 +51,24 @@ fn is_native_module(name: &str, native_names: &[&str]) -> bool {
     native_names.contains(&name)
 }
 
-fn virtual_name(abs_path: &str, entry_dir: &Path) -> String {
-    let p = Path::new(abs_path);
-    p.strip_prefix(entry_dir)
-        .unwrap_or(p)
-        .to_string_lossy()
-        .replace('\\', "/")
+fn virtual_name(abs_path: &str, entry_dir: &str) -> String {
+    abs_path
+        .strip_prefix(entry_dir)
+        .unwrap_or(abs_path)
+        .trim_start_matches('/')
+        .trim_start_matches('\\')
+        .to_string()
 }
 
 pub fn bundle(entry: &Path, resolver: &Resolver, native_names: &[&str]) -> Result<Bundle, String> {
     let entry_abs = std::fs::canonicalize(entry)
         .map_err(|e| format!("cannot resolve entry {}: {}", entry.display(), e))?;
-    let entry_abs_str = entry_abs.to_string_lossy().to_string();
+    let entry_abs_str = entry_abs.to_string_lossy().replace('\\', "/");
     let entry_dir = entry_abs
         .parent()
         .ok_or_else(|| "entry has no parent dir".to_string())?
-        .to_path_buf();
+        .to_string_lossy()
+        .replace('\\', "/");
 
     let mut modules: HashMap<String, String> = HashMap::new();
     let mut visited: HashSet<String> = HashSet::new();
@@ -86,7 +93,7 @@ pub fn bundle(entry: &Path, resolver: &Resolver, native_names: &[&str]) -> Resul
             source
         };
 
-        let imports = extract_imports(&code);
+        let imports = extract_imports(&code, &abs_path);
 
         for specifier in &imports {
             if is_native_module(specifier, native_names) {

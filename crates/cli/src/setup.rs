@@ -53,10 +53,14 @@ pub async fn setup_embedded_loaders(
     bundle: embed::Bundle,
 ) -> (String, String) {
     let entry_name = bundle.entry.clone();
-    let entry_code = bundle.modules.get(&entry_name).cloned().unwrap();
+    let entry_raw = bundle.modules.get(&entry_name).cloned().unwrap();
+
+    let exe = std::env::current_exe().unwrap();
+    let exe_dir = OsPathBuf::from_path_buf(exe.parent().unwrap().to_path_buf()).unwrap();
+    let exe_name = exe.file_name().unwrap().to_string_lossy().to_string();
 
     let embedded_resolver = js_core::loader::EmbeddedResolver::new(bundle.modules.keys().cloned());
-    let embedded_loader = js_core::loader::EmbeddedLoader::new(bundle.modules);
+    let embedded_loader = js_core::loader::EmbeddedLoader::new(bundle.modules, exe_dir.clone());
 
     let mut builtin_resolver = js::loader::BuiltinResolver::default();
     let mut module_loader = js::loader::ModuleLoader::default();
@@ -71,6 +75,8 @@ pub async fn setup_embedded_loaders(
         ),
     )
     .await;
+
+    let entry_code = js_core::meta::with_meta(&exe_dir, &exe_name)(entry_raw);
 
     (entry_name, entry_code)
 }
