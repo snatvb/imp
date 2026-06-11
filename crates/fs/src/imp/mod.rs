@@ -8,18 +8,21 @@ pub mod write;
 
 pub use file_handle::FileHandle;
 pub use fs_stats::FsStats;
+pub use write::WriteHandle;
 
 js_core::impl_module!(ImpFsModule,
     evaluate: |ctx, exports, export_all| {
         file_handle::init(ctx)?;
         fs_stats::init(ctx)?;
         walk::init(ctx)?;
+        write::init(ctx)?;
         let ns = export_all(ctx, exports)?;
         exports.export("default", ns)?;
         Ok(())
     },
     "readFile" => read::js_read_file,
     "open" => file_handle::js_open,
+    "openWrite" => write::js_open_write,
     "mkdir" => dir::js_mkdir,
     "metadata" => dir::js_metadata,
     "metadataBatch" => dir::js_metadata_batch,

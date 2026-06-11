@@ -116,6 +116,14 @@ declare class FileHandle {
   close(): Promise<void>;
 }
 
+declare class WriteHandle {
+  write(data: ByteBuffer | string | ArrayBuffer): Promise<number>;
+  writeFrom(buffer: ByteBuffer, offset?: number, length?: number): Promise<number>;
+  flush(): Promise<void>;
+  seek(offset: number, whence: "start" | "current" | "end"): Promise<number>;
+  close(): Promise<void>;
+}
+
 interface FsStats {
   readonly isFile: boolean;
   readonly isDirectory: boolean;
@@ -213,6 +221,7 @@ declare module "imp:clap" {
 
 declare module "imp:fs" {
   function open(path: JsString, chunkSize: number): Promise<FileHandle>;
+  function openWrite(path: JsString, chunkSize?: number): Promise<WriteHandle>;
   function readFile(path: JsString): Promise<ArrayBuffer>;
   function readFile(path: JsString, encoding: "buffer" | "null"): Promise<ArrayBuffer>;
   function readFile(path: JsString, encoding: string): Promise<RsString>;
@@ -228,6 +237,7 @@ declare module "imp:fs" {
 
   const _default: {
     open: typeof open;
+    openWrite: typeof openWrite;
     readFile: typeof readFile;
     mkdir: typeof mkdir;
     metadata: typeof metadata;
@@ -240,7 +250,7 @@ declare module "imp:fs" {
     globStream: typeof globStream;
   };
   export default _default;
-  export { open, readFile, mkdir, metadata, metadataBatch, remove, removeAll, exists, walk, glob, globStream, FileHandle, FsStats, WalkIterator, WalkOptions };
+  export { open, openWrite, readFile, mkdir, metadata, metadataBatch, remove, removeAll, exists, walk, glob, globStream, FileHandle, WriteHandle, FsStats, WalkIterator, WalkOptions };
 }
 
 interface DateOptions {

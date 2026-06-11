@@ -24,6 +24,10 @@ impl ByteBuffer {
     pub fn as_mut_slice(&mut self) -> &mut [u8] {
         &mut self.inner
     }
+
+    pub fn as_slice(&self) -> &[u8] {
+        &self.inner
+    }
 }
 
 #[js::methods]
