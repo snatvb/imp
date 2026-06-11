@@ -99,6 +99,12 @@ impl<'js> JsStringArg<'js> for Value<'js> {
     }
 }
 
+impl<'js> FromJs<'js> for StringArg {
+    fn from_js(ctx: &Ctx<'js>, value: Value<'js>) -> js::Result<Self> {
+        value.to_string_arg(ctx)
+    }
+}
+
 impl<'js> JsStringArg<'js> for StringArg {
     fn to_string_arg(self, _: &Ctx<'js>) -> js::Result<StringArg> {
         Ok(self)

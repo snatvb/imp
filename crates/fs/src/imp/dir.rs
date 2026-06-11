@@ -18,9 +18,8 @@ fn make_err(
 }
 
 #[js::function]
-pub async fn mkdir<'js>(ctx: js::Ctx<'js>, path: js::Value<'js>) -> js::Result<()> {
-    let path_arg = StringArg::coerce_js(&ctx, &path, "path")?;
-    let path_str = path_arg.as_str();
+pub async fn mkdir<'js>(ctx: js::Ctx<'js>, path: StringArg) -> js::Result<()> {
+    let path_str = path.as_str();
     fs::create_dir_all(path_str)
         .await
         .map_err(make_err(&ctx, "mkdir", path_str))?;
@@ -42,9 +41,8 @@ async fn remove_path<'js>(ctx: &js::Ctx<'js>, path_arg: StringArg) -> js::Result
 }
 
 #[js::function]
-pub async fn remove<'js>(ctx: js::Ctx<'js>, path: js::Value<'js>) -> js::Result<()> {
-    let path_arg = StringArg::coerce_js(&ctx, &path, "path")?;
-    remove_path(&ctx, path_arg).await
+pub async fn remove<'js>(ctx: js::Ctx<'js>, path: StringArg) -> js::Result<()> {
+    remove_path(&ctx, path).await
 }
 
 #[js::function(rename = "removeAll")]
@@ -67,9 +65,8 @@ pub async fn remove_all<'js>(ctx: js::Ctx<'js>, paths: js::Array<'js>) -> js::Re
 }
 
 #[js::function]
-pub async fn exists<'js>(ctx: js::Ctx<'js>, path: js::Value<'js>) -> js::Result<bool> {
-    let path_arg = StringArg::coerce_js(&ctx, &path, "path")?;
-    let path_str = path_arg.as_str();
+pub async fn exists<'js>(ctx: js::Ctx<'js>, path: StringArg) -> js::Result<bool> {
+    let path_str = path.as_str();
     fs::try_exists(path_str)
         .await
         .map_err(make_err(&ctx, "exists", path_str))
@@ -88,26 +85,23 @@ async fn read_metadata<R>(
 }
 
 #[js::function]
-pub async fn is_dir<'js>(ctx: js::Ctx<'js>, path: js::Value<'js>) -> js::Result<bool> {
-    let path_arg = StringArg::coerce_js(&ctx, &path, "path")?;
-    let path_str = path_arg.as_str();
+pub async fn is_dir<'js>(ctx: js::Ctx<'js>, path: StringArg) -> js::Result<bool> {
+    let path_str = path.as_str();
     read_metadata(&ctx, path_str, |p| p.is_dir()).await
 }
 
 #[js::function]
-pub async fn is_file<'js>(ctx: js::Ctx<'js>, path: js::Value<'js>) -> js::Result<bool> {
-    let path_arg = StringArg::coerce_js(&ctx, &path, "path")?;
-    let path_str = path_arg.as_str();
+pub async fn is_file<'js>(ctx: js::Ctx<'js>, path: StringArg) -> js::Result<bool> {
+    let path_str = path.as_str();
     read_metadata(&ctx, path_str, |p| p.is_file()).await
 }
 
 #[js::function]
 pub async fn metadata<'js>(
     ctx: js::Ctx<'js>,
-    path: js::Value<'js>,
+    path: StringArg,
 ) -> js::Result<Class<'js, FsStats>> {
-    let path_arg = StringArg::coerce_js(&ctx, &path, "path")?;
-    let path_str = path_arg.as_str();
+    let path_str = path.as_str();
     let meta = fs::symlink_metadata(path_str).await.map_err(|e| {
         SystemError::from_io(e, "metadata", Some(path_str.to_string())).into_exception(&ctx)
     })?;

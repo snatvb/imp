@@ -11,7 +11,7 @@ use tokio::io::{AsyncSeekExt, AsyncWriteExt, BufWriter, SeekFrom};
 use crate::error::Error;
 use js_core::ByteBuffer;
 use js_core::error::{JsError, SystemError};
-use js_core::utils::{JsStringArg, StringArg};
+use js_core::utils::StringArg;
 
 #[derive(js::class::Trace, js::JsLifetime)]
 #[js::class]
@@ -49,12 +49,11 @@ pub fn init<'js>(ctx: &Ctx<'js>) -> js::Result<()> {
 #[js::function]
 pub async fn open_write<'js>(
     ctx: Ctx<'js>,
-    path: Value<'js>,
+    path: StringArg,
     flags: Opt<String>,
     chunk_size: Opt<usize>,
 ) -> js::Result<WriteHandle<'js>> {
-    let path_arg = StringArg::coerce_js(&ctx, &path, "path")?;
-    let path_str = path_arg.as_str().to_string();
+    let path_str = path.as_str().to_string();
     let flags = flags.as_deref().unwrap_or("a");
     let chunk_size = chunk_size.0.unwrap_or(8192);
 
@@ -186,13 +185,12 @@ impl<'js> WriteHandle<'js> {
     }
 
     #[qjs()]
-    async fn seek(&mut self, ctx: Ctx<'js>, offset: i64, whence: Value<'js>) -> js::Result<u64> {
+    async fn seek(&mut self, ctx: Ctx<'js>, offset: i64, whence: StringArg) -> js::Result<u64> {
         if self.append {
             return Ok(0);
         }
 
-        let whence_arg = StringArg::coerce_js(&ctx, &whence, "whence")?;
-        let whence_str = whence_arg.as_str();
+        let whence_str = whence.as_str();
 
         let writer = self
             .file

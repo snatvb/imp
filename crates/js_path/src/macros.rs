@@ -19,29 +19,29 @@ macro_rules! make_path_wrappers {
         #[function]
         pub fn basename<'js>(
             ctx: js::Ctx<'js>,
-            path: js::Value<'js>,
-            suffix: js::prelude::Opt<js::Value<'js>>,
+            path: crate::prelude::StringArg,
+            suffix: js::prelude::Opt<crate::prelude::StringArg>,
         ) -> js::Result<String> {
             crate::path_impl::basename::<$B>(&ctx, path, suffix)
         }
 
         #[function]
-        pub fn dirname<'js>(ctx: js::Ctx<'js>, path: js::Value<'js>) -> js::Result<String> {
+        pub fn dirname<'js>(ctx: js::Ctx<'js>, path: crate::prelude::StringArg) -> js::Result<String> {
             crate::path_impl::dirname::<$B>(&ctx, path)
         }
 
         #[function]
-        pub fn extname<'js>(ctx: js::Ctx<'js>, path: js::Value<'js>) -> js::Result<String> {
+        pub fn extname<'js>(ctx: js::Ctx<'js>, path: crate::prelude::StringArg) -> js::Result<String> {
             crate::path_impl::extname::<$B>(&ctx, path)
         }
 
         #[function]
-        pub fn normalize<'js>(ctx: js::Ctx<'js>, path: js::Value<'js>) -> js::Result<String> {
+        pub fn normalize<'js>(ctx: js::Ctx<'js>, path: crate::prelude::StringArg) -> js::Result<String> {
             crate::path_impl::normalize::<$B>(&ctx, path)
         }
 
         #[function]
-        pub fn is_absolute<'js>(ctx: js::Ctx<'js>, path: js::Value<'js>) -> js::Result<bool> {
+        pub fn is_absolute<'js>(ctx: js::Ctx<'js>, path: crate::prelude::StringArg) -> js::Result<bool> {
             crate::path_impl::is_absolute::<$B>(&ctx, path)
         }
 
@@ -51,14 +51,14 @@ macro_rules! make_path_wrappers {
         }
 
         #[function]
-        pub fn parse<'js>(ctx: js::Ctx<'js>, path: js::Value<'js>) -> js::Result<js::Object<'js>> {
+        pub fn parse<'js>(ctx: js::Ctx<'js>, path: crate::prelude::StringArg) -> js::Result<js::Object<'js>> {
             crate::path_impl::parse::<$B>(&ctx, path)
         }
 
         #[function]
         pub fn to_namespaced_path<'js>(
             ctx: js::Ctx<'js>,
-            path: js::Value<'js>,
+            path: crate::prelude::StringArg,
         ) -> js::Result<js::Value<'js>> {
             crate::path_impl::to_namespaced_path::<$B>(&ctx, path)
         }
@@ -66,8 +66,8 @@ macro_rules! make_path_wrappers {
         #[function]
         pub fn relative<'js>(
             ctx: js::Ctx<'js>,
-            from: js::Value<'js>,
-            to: js::Value<'js>,
+            from: crate::prelude::StringArg,
+            to: crate::prelude::StringArg,
         ) -> js::Result<String> {
             crate::path_impl::relative::<$B>(&ctx, from, to)
         }

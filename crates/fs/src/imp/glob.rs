@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use globset::{Glob, GlobSetBuilder};
-use js_core::utils::{JsStringArg, StringArg};
+use js_core::utils::StringArg;
 use os_path::OsPathBuf;
 use rquickjs::{Ctx, Object};
 
@@ -12,17 +12,15 @@ use crate::prelude::*;
 #[js::function]
 pub async fn glob<'js>(
     ctx: Ctx<'js>,
-    dir: js::Value<'js>,
-    pattern: js::Value<'js>,
+    dir: StringArg,
+    pattern: StringArg,
     options: js::function::Opt<Object<'js>>,
 ) -> js::Result<js::Array<'js>> {
-    let dir_str = StringArg::coerce_js(&ctx, &dir, "dir")?;
-    let dir_buf = OsPathBuf::new(dir_str.as_str());
+    let dir_buf = OsPathBuf::new(dir.as_str());
 
-    let pattern_str = StringArg::coerce_js(&ctx, &pattern, "pattern")?;
     let glob_set = Arc::new(
         GlobSetBuilder::new()
-            .add(Glob::new(pattern_str.as_str()).into_js(&ctx)?)
+            .add(Glob::new(pattern.as_str()).into_js(&ctx)?)
             .build()
             .into_js(&ctx)?,
     );
@@ -54,17 +52,15 @@ pub async fn glob<'js>(
 #[js::function(rename = "globStream")]
 pub fn glob_stream<'js>(
     ctx: Ctx<'js>,
-    dir: js::Value<'js>,
-    pattern: js::Value<'js>,
+    dir: StringArg,
+    pattern: StringArg,
     options: js::function::Opt<Object<'js>>,
 ) -> js::Result<WalkIterator<'js>> {
-    let dir_str = StringArg::coerce_js(&ctx, &dir, "dir")?;
-    let dir_buf = OsPathBuf::new(dir_str.as_str());
+    let dir_buf = OsPathBuf::new(dir.as_str());
 
-    let pattern_str = StringArg::coerce_js(&ctx, &pattern, "pattern")?;
     let glob_set = Arc::new(
         GlobSetBuilder::new()
-            .add(Glob::new(pattern_str.as_str()).into_js(&ctx)?)
+            .add(Glob::new(pattern.as_str()).into_js(&ctx)?)
             .build()
             .into_js(&ctx)?,
     );

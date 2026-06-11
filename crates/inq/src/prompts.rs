@@ -13,9 +13,7 @@ async fn spawn_blocking<'js, R: Send + 'static>(
 }
 
 #[js::function]
-pub async fn prompt<'js>(ctx: js::Ctx<'js>, text: js::Value<'js>) -> js::Result<String> {
-    let text = StringArg::coerce_js(&ctx, &text, "text")?;
-
+pub async fn prompt<'js>(ctx: js::Ctx<'js>, text: StringArg) -> js::Result<String> {
     spawn_blocking(&ctx, move || Text::new(text.as_str()).prompt())
         .await?
         .into_js(&ctx)
@@ -23,10 +21,9 @@ pub async fn prompt<'js>(ctx: js::Ctx<'js>, text: js::Value<'js>) -> js::Result<
 
 fn to_string_select<'js>(
     ctx: &js::Ctx<'js>,
-    question: js::Value<'js>,
+    question: StringArg,
     variants: js::Array<'js>,
 ) -> js::Result<(StringArg, Vec<String>)> {
-    let question = StringArg::coerce_js(ctx, &question, "question")?;
     let iter = StringArg::coerce_array_iter(ctx, &variants, "variants");
     let variants: Vec<String> = iter
         .map(|arg| arg.map(|a| a.as_str().to_string()))
@@ -37,7 +34,7 @@ fn to_string_select<'js>(
 #[js::function]
 pub async fn select<'js>(
     ctx: js::Ctx<'js>,
-    question: js::Value<'js>,
+    question: StringArg,
     variants: js::Array<'js>,
 ) -> js::Result<String> {
     let (question, variants) = to_string_select(&ctx, question, variants)?;
@@ -52,7 +49,7 @@ pub async fn select<'js>(
 #[js::function]
 pub async fn multi_select<'js>(
     ctx: js::Ctx<'js>,
-    question: js::Value<'js>,
+    question: StringArg,
     variants: js::Array<'js>,
 ) -> js::Result<Vec<String>> {
     let (question, variants) = to_string_select(&ctx, question, variants)?;
@@ -67,11 +64,10 @@ pub async fn multi_select<'js>(
 #[inline(always)]
 pub async fn ask_password<'js>(
     ctx: js::Ctx<'js>,
-    question: js::Value<'js>,
+    question: StringArg,
     hidden: bool,
     with_confirm: bool,
 ) -> js::Result<String> {
-    let text = StringArg::coerce_js(&ctx, &question, "text")?;
     let mode = if hidden {
         inquire::PasswordDisplayMode::Hidden
     } else {
@@ -79,7 +75,7 @@ pub async fn ask_password<'js>(
     };
 
     spawn_blocking(&ctx, move || {
-        let pass = Password::new(text.as_str()).with_display_mode(mode);
+        let pass = Password::new(question.as_str()).with_display_mode(mode);
         let pass = if with_confirm {
             pass
         } else {
@@ -94,7 +90,7 @@ pub async fn ask_password<'js>(
 #[js::function]
 pub async fn password<'js>(
     ctx: js::Ctx<'js>,
-    question: js::Value<'js>,
+    question: StringArg,
     hidden: js::function::Opt<bool>,
 ) -> js::Result<String> {
     ask_password(ctx, question, hidden.unwrap_or(false), false).await
@@ -103,15 +99,14 @@ pub async fn password<'js>(
 #[js::function]
 pub async fn password_with_confirm<'js>(
     ctx: js::Ctx<'js>,
-    question: js::Value<'js>,
+    question: StringArg,
     hidden: js::function::Opt<bool>,
 ) -> js::Result<String> {
     ask_password(ctx, question, hidden.unwrap_or(false), true).await
 }
 
 #[js::function]
-pub async fn editor<'js>(ctx: js::Ctx<'js>, question: js::Value<'js>) -> js::Result<String> {
-    let question = StringArg::coerce_js(&ctx, &question, "text")?;
+pub async fn editor<'js>(ctx: js::Ctx<'js>, question: StringArg) -> js::Result<String> {
     spawn_blocking(&ctx, move || Editor::new(question.as_str()).prompt())
         .await?
         .into_js(&ctx)
@@ -147,10 +142,9 @@ impl DateOptions {
 #[js::function]
 pub async fn date_select<'js>(
     ctx: js::Ctx<'js>,
-    question: js::Value<'js>,
+    question: StringArg,
     options: js::function::Opt<js::Object<'js>>,
 ) -> js::Result<js::Object<'js>> {
-    let question = StringArg::coerce_js(&ctx, &question, "text")?;
     let opts = DateOptions::from_js(&ctx, options.into_inner())?;
 
     let result = spawn_blocking(&ctx, move || {
@@ -183,11 +177,9 @@ pub async fn date_select<'js>(
 #[js::function]
 pub async fn confirm<'js>(
     ctx: js::Ctx<'js>,
-    question: js::Value<'js>,
+    question: StringArg,
     default: js::function::Opt<bool>,
 ) -> js::Result<bool> {
-    let question = StringArg::coerce_js(&ctx, &question, "text")?;
-
     spawn_blocking(&ctx, move || {
         Confirm::new(question.as_str())
             .with_default(default.unwrap_or(false))

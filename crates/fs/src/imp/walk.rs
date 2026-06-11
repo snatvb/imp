@@ -286,11 +286,10 @@ impl<'js> WalkIterator<'js> {
 #[js::function]
 pub fn walk<'js>(
     ctx: Ctx<'js>,
-    dir: js::Value<'js>,
+    dir: StringArg,
     options: js::function::Opt<Object<'js>>,
 ) -> js::Result<WalkIterator<'js>> {
-    let dir_str = StringArg::coerce_js(&ctx, &dir, "dir")?;
-    let dir_buf = OsPathBuf::new(dir_str.as_str());
+    let dir_buf = OsPathBuf::new(dir.as_str());
     let opts = WalkOptions::from_js(&ctx, options.into_inner())?;
 
     create_iterator(ctx, dir_buf, opts)

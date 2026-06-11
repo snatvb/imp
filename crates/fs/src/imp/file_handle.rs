@@ -7,7 +7,7 @@ use tokio::io::{AsyncReadExt, AsyncSeekExt, BufReader, SeekFrom};
 use crate::error::Error;
 use js_core::ByteBuffer;
 use js_core::error::{JsError, SystemError};
-use js_core::utils::{JsStringArg, StringArg};
+use js_core::utils::StringArg;
 
 #[derive(js::class::Trace, js::JsLifetime)]
 #[js::class]
@@ -45,11 +45,10 @@ pub fn init<'js>(ctx: &Ctx<'js>) -> js::Result<()> {
 #[js::function]
 pub async fn open<'js>(
     ctx: Ctx<'js>,
-    path: Value<'js>,
+    path: StringArg,
     chunk_size: usize,
 ) -> js::Result<FileHandle<'js>> {
-    let path_arg = StringArg::coerce_js(&ctx, &path, "path")?;
-    let path_str = path_arg.as_str().to_string();
+    let path_str = path.as_str().to_string();
     let file = tokio::fs::File::open(&path_str).await.map_err(|e| {
         Error::System(SystemError::from_io(e, "open", Some(path_str.clone()))).into_exception(&ctx)
     })?;
@@ -109,9 +108,8 @@ impl<'js> FileHandle<'js> {
     }
 
     #[qjs()]
-    async fn seek(&mut self, ctx: Ctx<'js>, offset: i64, whence: Value<'js>) -> js::Result<u64> {
-        let whence_arg = StringArg::coerce_js(&ctx, &whence, "whence")?;
-        let whence_str = whence_arg.as_str();
+    async fn seek(&mut self, ctx: Ctx<'js>, offset: i64, whence: StringArg) -> js::Result<u64> {
+        let whence_str = whence.as_str();
 
         let reader = self
             .file
