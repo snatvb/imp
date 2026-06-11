@@ -97,10 +97,7 @@ pub async fn is_file<'js>(ctx: js::Ctx<'js>, path: StringArg) -> js::Result<bool
 }
 
 #[js::function]
-pub async fn metadata<'js>(
-    ctx: js::Ctx<'js>,
-    path: StringArg,
-) -> js::Result<Class<'js, FsStats>> {
+pub async fn metadata<'js>(ctx: js::Ctx<'js>, path: StringArg) -> js::Result<Class<'js, FsStats>> {
     let path_str = path.as_str();
     let meta = fs::symlink_metadata(path_str).await.map_err(|e| {
         SystemError::from_io(e, "metadata", Some(path_str.to_string())).into_exception(&ctx)

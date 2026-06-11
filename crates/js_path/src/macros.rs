@@ -26,22 +26,34 @@ macro_rules! make_path_wrappers {
         }
 
         #[function]
-        pub fn dirname<'js>(ctx: js::Ctx<'js>, path: crate::prelude::StringArg) -> js::Result<String> {
+        pub fn dirname<'js>(
+            ctx: js::Ctx<'js>,
+            path: crate::prelude::StringArg,
+        ) -> js::Result<String> {
             crate::path_impl::dirname::<$B>(&ctx, path)
         }
 
         #[function]
-        pub fn extname<'js>(ctx: js::Ctx<'js>, path: crate::prelude::StringArg) -> js::Result<String> {
+        pub fn extname<'js>(
+            ctx: js::Ctx<'js>,
+            path: crate::prelude::StringArg,
+        ) -> js::Result<String> {
             crate::path_impl::extname::<$B>(&ctx, path)
         }
 
         #[function]
-        pub fn normalize<'js>(ctx: js::Ctx<'js>, path: crate::prelude::StringArg) -> js::Result<String> {
+        pub fn normalize<'js>(
+            ctx: js::Ctx<'js>,
+            path: crate::prelude::StringArg,
+        ) -> js::Result<String> {
             crate::path_impl::normalize::<$B>(&ctx, path)
         }
 
         #[function]
-        pub fn is_absolute<'js>(ctx: js::Ctx<'js>, path: crate::prelude::StringArg) -> js::Result<bool> {
+        pub fn is_absolute<'js>(
+            ctx: js::Ctx<'js>,
+            path: crate::prelude::StringArg,
+        ) -> js::Result<bool> {
             crate::path_impl::is_absolute::<$B>(&ctx, path)
         }
 
@@ -51,7 +63,10 @@ macro_rules! make_path_wrappers {
         }
 
         #[function]
-        pub fn parse<'js>(ctx: js::Ctx<'js>, path: crate::prelude::StringArg) -> js::Result<js::Object<'js>> {
+        pub fn parse<'js>(
+            ctx: js::Ctx<'js>,
+            path: crate::prelude::StringArg,
+        ) -> js::Result<js::Object<'js>> {
             crate::path_impl::parse::<$B>(&ctx, path)
         }
 

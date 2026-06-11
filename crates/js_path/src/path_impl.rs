@@ -56,35 +56,23 @@ pub fn basename<'js, B: PathBackend>(
     Ok(base(&p, suffix.as_deref()).into())
 }
 
-pub fn dirname<'js, B: PathBackend>(
-    _ctx: &js::Ctx<'js>,
-    path: StringArg,
-) -> js::Result<String> {
+pub fn dirname<'js, B: PathBackend>(_ctx: &js::Ctx<'js>, path: StringArg) -> js::Result<String> {
     let p = PlatformPathBuf::<B>::new(path.as_str());
     Ok(dir(&p).into())
 }
 
-pub fn extname<'js, B: PathBackend>(
-    _ctx: &js::Ctx<'js>,
-    path: StringArg,
-) -> js::Result<String> {
+pub fn extname<'js, B: PathBackend>(_ctx: &js::Ctx<'js>, path: StringArg) -> js::Result<String> {
     let p = PlatformPathBuf::<B>::new(path.as_str());
     Ok(p.extension().unwrap_or("").into())
 }
 
-pub fn normalize<'js, B: PathBackend>(
-    _ctx: &js::Ctx<'js>,
-    path: StringArg,
-) -> js::Result<String> {
+pub fn normalize<'js, B: PathBackend>(_ctx: &js::Ctx<'js>, path: StringArg) -> js::Result<String> {
     Ok(PlatformPathBuf::<B>::new(path.as_str())
         .normalize()
         .into_string())
 }
 
-pub fn is_absolute<'js, B: PathBackend>(
-    _ctx: &js::Ctx<'js>,
-    path: StringArg,
-) -> js::Result<bool> {
+pub fn is_absolute<'js, B: PathBackend>(_ctx: &js::Ctx<'js>, path: StringArg) -> js::Result<bool> {
     Ok(PlatformPathBuf::<B>::new(path.as_str()).is_absolute())
 }
 
