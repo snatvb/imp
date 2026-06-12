@@ -128,7 +128,7 @@ async fn run_script(filepath: PathBuf, script_args: Vec<String>) {
     let code = if typescript::is_ts_ext(&filepath) {
         tracing::info!("stripping TS");
         typescript::strip_types_fast_default(&code)
-            .map(with_meta(&cwd, &filepath_str))
+            .map(with_meta(&cwd, filepath_str))
             .unwrap()
     } else {
         code
@@ -142,7 +142,7 @@ async fn run_script(filepath: PathBuf, script_args: Vec<String>) {
     setup::setup_loaders(&rt, resolver, cwd).await;
 
     ctx.async_with(async |ctx| {
-        setup::run_js_entry(&ctx, &rt, &filepath_str, &code, &script_args).await;
+        setup::run_js_entry(&ctx, &rt, filepath_str, &code, &script_args).await;
     })
     .await;
 

@@ -227,6 +227,7 @@ declare module "imp:fs" {
   function readFile(path: JsString): Promise<ArrayBuffer>;
   function readFile(path: JsString, encoding: "buffer" | "null"): Promise<ArrayBuffer>;
   function readFile(path: JsString, encoding: string): Promise<RsString>;
+  function writeFile(path: JsString, data: JsString | ByteBuffer | ArrayBuffer, flag?: 'w' | 'a'): Promise<number>;
   function mkdir(path: JsString): Promise<void>;
   function metadata(path: JsString): Promise<FsStats>;
   function metadataBatch(paths: JsString[]): Promise<FsStats[]>;
@@ -241,6 +242,7 @@ declare module "imp:fs" {
     open: typeof open;
     openWrite: typeof openWrite;
     readFile: typeof readFile;
+    writeFile: typeof writeFile;
     mkdir: typeof mkdir;
     metadata: typeof metadata;
     metadataBatch: typeof metadataBatch;
@@ -252,7 +254,7 @@ declare module "imp:fs" {
     globStream: typeof globStream;
   };
   export default _default;
-  export { open, openWrite, readFile, mkdir, metadata, metadataBatch, remove, removeAll, exists, walk, glob, globStream, FileHandle, WriteHandle, FsStats, WalkIterator, WalkOptions };
+  export { open, openWrite, readFile, writeFile, mkdir, metadata, metadataBatch, remove, removeAll, exists, walk, glob, globStream, FileHandle, WriteHandle, FsStats, WalkIterator, WalkOptions };
 }
 
 interface DateOptions {
@@ -368,14 +370,16 @@ declare module "path" {
 declare module "fs/promises" {
   function readFile(path: string, encoding: string): Promise<string>;
   function readFile(path: string): Promise<ArrayBuffer>;
+  function writeFile(path: string, data: JsString | ByteBuffer | ArrayBuffer, flag?: 'w' | 'a'): Promise<number>;
   function glob(pattern: string, options?: { cwd?: string }): AsyncIterableIterator<string>;
 
   const _default: {
     readFile: typeof readFile;
+    writeFile: typeof writeFile;
     glob: typeof glob;
   };
   export default _default;
-  export { readFile, glob };
+  export { readFile, writeFile, glob };
 }
 
 declare module "imp:sys/input_simulate" {

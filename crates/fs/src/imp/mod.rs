@@ -21,6 +21,7 @@ js_core::impl_module!(ImpFsModule,
         Ok(())
     },
     "readFile" => read::js_read_file,
+    "writeFile" => write::js_write_file,
     "open" => file_handle::js_open,
     "openWrite" => write::js_open_write,
     "mkdir" => dir::js_mkdir,

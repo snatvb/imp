@@ -2,7 +2,7 @@ use crate::prelude::*;
 use std::marker::PhantomData;
 
 use js::{
-    Ctx, Function, Value,
+    Ctx, FromJs, Function, Value,
     class::Class,
     function::{Opt, This},
 };
@@ -81,6 +81,7 @@ pub async fn open_write<'js>(
                 .read(true)
                 .write(true)
                 .create(true)
+                .truncate(false)
                 .open(&path_str)
                 .await,
             false,
@@ -103,6 +104,68 @@ pub async fn open_write<'js>(
         append,
         _marker: PhantomData,
     })
+}
+
+#[js::function]
+pub async fn write_file<'js>(
+    ctx: Ctx<'js>,
+    path: StringArg,
+    data: Value<'js>,
+    flag: Opt<String>,
+) -> js::Result<usize> {
+    let path_str = path.as_str().to_string();
+    let flag = flag.as_deref().unwrap_or("w");
+
+    let bytes = if let Ok(bb) = Class::<ByteBuffer>::from_value(&data) {
+        let bb = bb.borrow();
+        bb.as_slice().to_vec()
+    } else if let Ok(ab) = data.get::<js::ArrayBuffer<'js>>() {
+        ab.as_bytes()
+            .ok_or_else(|| js::Error::new_from_js("ArrayBuffer", "failed to read bytes"))?
+            .to_vec()
+    } else if let Ok(s) = StringArg::from_js(&ctx, data) {
+        s.as_str().as_bytes().to_vec()
+    } else {
+        return Err(js::Error::new_from_js(
+            "ByteBuffer, string, or ArrayBuffer",
+            "unsupported write data type",
+        ));
+    };
+
+    let file = match flag {
+        "w" => {
+            tokio::fs::OpenOptions::new()
+                .write(true)
+                .create(true)
+                .truncate(true)
+                .open(&path_str)
+                .await
+        }
+        "a" => {
+            tokio::fs::OpenOptions::new()
+                .write(true)
+                .create(true)
+                .append(true)
+                .open(&path_str)
+                .await
+        }
+        _ => {
+            return Err(
+                Error::Argument(format!("invalid flag: '{}', expected 'w' or 'a'", flag))
+                    .into_exception(&ctx),
+            );
+        }
+    };
+
+    let mut file = file.map_err(|e| {
+        Error::System(SystemError::from_io(e, "open", Some(path_str.clone()))).into_exception(&ctx)
+    })?;
+
+    file.write_all(&bytes).await.map_err(|e| {
+        Error::System(SystemError::from_io(e, "write", Some(path_str.clone()))).into_exception(&ctx)
+    })?;
+
+    Ok(bytes.len())
 }
 
 #[js::methods]
