@@ -36,4 +36,44 @@ import { json } from 'imp:parsers';
     console.assert(parsed.negative === -10, "negative should work");
 }
 
+{
+    let error = false;
+    try {
+        json.parse('invalid json');
+    } catch (e) {
+        error = true;
+    }
+    console.assert(error, "invalid JSON should throw error");
+}
+
+{
+    let error = false;
+    try {
+        json.parse('');
+    } catch (e) {
+        error = true;
+    }
+    console.assert(error, "empty string should throw error");
+}
+
+{
+    let error = false;
+    try {
+        json.parse('{"unclosed": "string');
+    } catch (e) {
+        error = true;
+    }
+    console.assert(error, "unclosed string should throw error");
+}
+
+{
+    let error = false;
+    try {
+        json.parse('{key: "value"}');
+    } catch (e) {
+        error = true;
+    }
+    console.assert(error, "unquoted key should throw error");
+}
+
 console.log("ALL PARSERS JSON TESTS PASSED");

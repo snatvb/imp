@@ -1,0 +1,94 @@
+import { msgpack } from 'imp:parsers';
+
+{
+    const data = { name: "test", value: 42 };
+    const buf = msgpack.stringify(data);
+    console.assert(buf instanceof ByteBuffer, "stringify should return ByteBuffer");
+    console.assert(buf.length > 0, "buffer should not be empty");
+}
+
+{
+    const data = { name: "test", value: 42 };
+    const buf = msgpack.stringify(data);
+    const parsed = msgpack.parse(buf) as any;
+    console.assert(parsed.name === "test", "name should be test");
+    console.assert(parsed.value === 42, "value should be 42");
+}
+
+{
+    const data = { nested: { a: true, b: "hello" } };
+    const buf = msgpack.stringify(data);
+    const parsed = msgpack.parse(buf) as any;
+    console.assert(parsed.nested.a === true, "nested.a should be true");
+    console.assert(parsed.nested.b === "hello", "nested.b should be hello");
+}
+
+{
+    const data = { array: [1, 2, 3] };
+    const buf = msgpack.stringify(data);
+    const parsed = msgpack.parse(buf) as any;
+    console.assert(Array.isArray(parsed.array), "array should be array");
+    console.assert(parsed.array.length === 3, "array length should be 3");
+    console.assert(parsed.array[0] === 1 && parsed.array[1] === 2 && parsed.array[2] === 3, "array values");
+}
+
+{
+    const data = { float: 3.14, negative: -10 };
+    const buf = msgpack.stringify(data);
+    const parsed = msgpack.parse(buf) as any;
+    console.assert(parsed.float === 3.14, "float should work");
+    console.assert(parsed.negative === -10, "negative should work");
+}
+
+{
+    const data = [1, "two", false, null];
+    const buf = msgpack.stringify(data);
+    const parsed = msgpack.parse(buf) as any[];
+    console.assert(Array.isArray(parsed), "should be array");
+    console.assert(parsed.length === 4, "length should be 4");
+    console.assert(parsed[0] === 1, "first element should be 1");
+    console.assert(parsed[1] === "two", "second element should be two");
+    console.assert(parsed[2] === false, "third element should be false");
+    console.assert(parsed[3] === null, "fourth element should be null");
+}
+
+{
+    const data = { empty: "", zero: 0, null: null };
+    const buf = msgpack.stringify(data);
+    const parsed = msgpack.parse(buf) as any;
+    console.assert(parsed.empty === "", "empty string should work");
+    console.assert(parsed.zero === 0, "zero should work");
+    console.assert(parsed.null === null, "null should work");
+}
+
+{
+    const large = new Array(1000).fill(0).map((_, i) => i);
+    const buf = msgpack.stringify(large);
+    const parsed = msgpack.parse(buf) as number[];
+    console.assert(parsed.length === 1000, "large array length should be 1000");
+    console.assert(parsed[0] === 0 && parsed[999] === 999, "large array values");
+}
+
+{
+    let error = false;
+    try {
+        const invalidBuf = new ByteBuffer(5);
+        msgpack.parse(invalidBuf);
+    } catch (e) {
+        error = true;
+    }
+    console.assert(error, "invalid msgpack should throw error");
+}
+
+{
+    let error = false;
+    try {
+        const emptyBuf = new ByteBuffer(0);
+        msgpack.parse(emptyBuf);
+    } catch (e) {
+        error = true;
+    }
+    console.assert(error, "empty buffer should throw error");
+}
+
+console.log("ALL PARSERS MSGPACK TESTS PASSED");

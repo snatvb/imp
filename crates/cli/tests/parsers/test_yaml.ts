@@ -40,4 +40,34 @@ import { yaml } from 'imp:parsers';
     console.assert(parsed.negative === -10, "negative should work");
 }
 
+{
+    let error = false;
+    try {
+        yaml.parse('invalid:\n  - yaml\n  bad: indent');
+    } catch (e) {
+        error = true;
+    }
+    console.assert(error, "invalid YAML should throw error");
+}
+
+{
+    let error = false;
+    try {
+        yaml.parse('');
+    } catch (e) {
+        error = true;
+    }
+    console.assert(!error, "empty YAML should not throw error");
+}
+
+{
+    let error = false;
+    try {
+        yaml.parse('key: "unclosed string');
+    } catch (e) {
+        error = true;
+    }
+    console.assert(error, "unclosed string should throw error");
+}
+
 console.log("ALL PARSERS YAML TESTS PASSED");

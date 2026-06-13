@@ -29,4 +29,44 @@ import { xml } from 'imp:parsers';
     console.assert(parsed.negative.$text === "-10", "negative should work");
 }
 
+{
+    let error = false;
+    try {
+        xml.parse('<unclosed>');
+    } catch (e) {
+        error = true;
+    }
+    console.assert(error, "unclosed XML should throw error");
+}
+
+{
+    let error = false;
+    try {
+        xml.parse('');
+    } catch (e) {
+        error = true;
+    }
+    console.assert(error, "empty XML should throw error");
+}
+
+{
+    let error = false;
+    try {
+        xml.parse('<root><unclosed></root>');
+    } catch (e) {
+        error = true;
+    }
+    console.assert(error, "mismatched tags should throw error");
+}
+
+{
+    let error = false;
+    try {
+        xml.parse('not xml at all');
+    } catch (e) {
+        error = true;
+    }
+    console.assert(error, "non-XML should throw error");
+}
+
 console.log("ALL PARSERS XML TESTS PASSED");

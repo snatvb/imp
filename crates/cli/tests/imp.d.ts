@@ -417,4 +417,20 @@ declare module "imp:parsers" {
     parse(input: JsString): unknown;
     stringify(value: unknown, root: JsString): RsString;
   };
+  export const toml: {
+    parse(input: JsString): unknown;
+    stringify(value: unknown): RsString;
+  };
+  export const ron: {
+    parse(input: JsString): unknown;
+    stringify(value: unknown): RsString;
+  };
+  export const csv: {
+    parse(input: JsString): unknown[];
+    stringify(value: unknown[]): RsString;
+  };
+  export const msgpack: {
+    parse(input: ByteBuffer): unknown;
+    stringify(value: unknown): ByteBuffer;
+  };
 }
