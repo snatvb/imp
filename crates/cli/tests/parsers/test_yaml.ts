@@ -70,4 +70,40 @@ import { yaml } from 'imp:parsers';
     console.assert(error, "unclosed string should throw error");
 }
 
+{
+    const set = new Set([1, 2, 3]);
+    const str = yaml.stringify(set as any).toString();
+    const parsed = yaml.parse(str) as any[];
+    console.assert(Array.isArray(parsed), "set should become array");
+    console.assert(parsed.length === 3, "set length should be 3");
+}
+
+{
+    const map = new Map([["a", 1], ["b", 2]]);
+    const str = yaml.stringify(map as any).toString();
+    const parsed = yaml.parse(str) as any;
+    console.assert(parsed.a === 1, "map key a");
+    console.assert(parsed.b === 2, "map key b");
+}
+
+{
+    const date = new Date("2025-01-01T00:00:00.000Z");
+    const str = yaml.stringify(date as any).toString();
+    console.assert(str.includes("2025-01-01"), "date should be serialized");
+}
+
+{
+    const regexp = /hello/gi;
+    const str = yaml.stringify(regexp as any).toString();
+    console.assert(str.includes("hello"), "regexp should be serialized");
+}
+
+{
+    const obj = { fn: () => {}, value: 42 };
+    const str = yaml.stringify(obj).toString();
+    const parsed = yaml.parse(str) as any;
+    console.assert(parsed.fn === undefined, "function should be omitted");
+    console.assert(parsed.value === 42, "other values should work");
+}
+
 console.log("ALL PARSERS YAML TESTS PASSED");

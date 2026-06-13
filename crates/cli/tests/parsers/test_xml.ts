@@ -69,4 +69,38 @@ import { xml } from 'imp:parsers';
     console.assert(error, "non-XML should throw error");
 }
 
+{
+    const set = new Set([1, 2, 3]);
+    const str = xml.stringify(set as any, "root").toString();
+    console.assert(str.includes("1"), "set should be serialized");
+    console.assert(str.includes("2"), "set should contain 2");
+    console.assert(str.includes("3"), "set should contain 3");
+}
+
+{
+    const map = new Map([["a", 1], ["b", 2]]);
+    const str = xml.stringify(map as any, "root").toString();
+    console.assert(str.includes("<a>1</a>"), "map key a");
+    console.assert(str.includes("<b>2</b>"), "map key b");
+}
+
+{
+    const date = new Date("2025-01-01T00:00:00.000Z");
+    const str = xml.stringify(date as any, "root").toString();
+    console.assert(str.includes("2025-01-01"), "date should be serialized");
+}
+
+{
+    const regexp = /hello/gi;
+    const str = xml.stringify(regexp as any, "root").toString();
+    console.assert(str.includes("hello"), "regexp should be serialized");
+}
+
+{
+    const obj = { fn: () => {}, value: 42 };
+    const str = xml.stringify(obj, "root").toString();
+    console.assert(!str.includes("<fn>"), "function should be omitted");
+    console.assert(str.includes("<value>42</value>"), "other values should work");
+}
+
 console.log("ALL PARSERS XML TESTS PASSED");

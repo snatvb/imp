@@ -74,4 +74,41 @@ import { toml } from 'imp:parsers';
     console.assert(error, "unclosed string should throw error");
 }
 
+{
+    const set = new Set([1, 2, 3]);
+    const obj = { items: set };
+    const str = toml.stringify(obj).toString();
+    console.assert(str.includes("1"), "set should be serialized");
+    console.assert(str.includes("2"), "set should contain 2");
+    console.assert(str.includes("3"), "set should contain 3");
+}
+
+{
+    const map = new Map([["a", 1], ["b", 2]]);
+    const str = toml.stringify(map as any).toString();
+    console.assert(str.includes("a = 1"), "map key a");
+    console.assert(str.includes("b = 2"), "map key b");
+}
+
+{
+    const date = new Date("2025-01-01T00:00:00.000Z");
+    const obj = { created: date };
+    const str = toml.stringify(obj).toString();
+    console.assert(str.includes("2025-01-01"), "date should be serialized as native datetime");
+}
+
+{
+    const regexp = /hello/gi;
+    const obj = { pattern: regexp };
+    const str = toml.stringify(obj).toString();
+    console.assert(str.includes("hello"), "regexp should be serialized");
+}
+
+{
+    const obj = { fn: () => {}, value: 42 };
+    const str = toml.stringify(obj).toString();
+    console.assert(!str.includes("fn"), "function should be omitted");
+    console.assert(str.includes("value = 42"), "other values should work");
+}
+
 console.log("ALL PARSERS TOML TESTS PASSED");

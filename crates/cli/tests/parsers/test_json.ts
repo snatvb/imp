@@ -127,7 +127,7 @@ import { json } from 'imp:parsers';
     const obj = { fn: () => {}, value: 42 };
     const str = json.stringify(obj).toString();
     const parsed = json.parse(str) as any;
-    console.assert(parsed.fn === null, "function should become null");
+    console.assert(parsed.fn === undefined, "function should be omitted");
     console.assert(parsed.value === 42, "other values should work");
 }
 
