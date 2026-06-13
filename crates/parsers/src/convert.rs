@@ -1,4 +1,6 @@
 use crate::prelude::*;
+use js_core::js::JsIterator;
+use js_core::object::ObjectMethodExt;
 use serde_json::{Map, Number};
 
 use crate::error::Error;
@@ -39,7 +41,20 @@ pub fn value_to_js<'js>(ctx: &Ctx<'js>, val: serde_json::Value) -> js::Result<Va
     }
 }
 
-pub fn js_to_value<'js>(_ctx: &Ctx<'js>, val: Value<'js>) -> Result<serde_json::Value, Error> {
+pub fn js_to_value<'js>(ctx: &Ctx<'js>, val: Value<'js>) -> Result<serde_json::Value, Error> {
+    js_to_value_depth(ctx, val, 0)
+}
+
+fn js_to_value_depth<'js>(
+    ctx: &Ctx<'js>,
+    val: Value<'js>,
+    depth: usize,
+) -> Result<serde_json::Value, Error> {
+    const MAX_DEPTH: usize = 256;
+    if depth > MAX_DEPTH {
+        return Err(Error::Parse("maximum nesting depth exceeded".into()));
+    }
+
     match val.type_of() {
         js::Type::Null | js::Type::Undefined => Ok(serde_json::Value::Null),
         js::Type::Bool => val
@@ -56,7 +71,7 @@ pub fn js_to_value<'js>(_ctx: &Ctx<'js>, val: Value<'js>) -> Result<serde_json::
             .map(serde_json::Value::Number)
             .ok_or_else(|| Error::Parse("invalid float".into())),
         js::Type::String => {
-            let s = StringArg::from_js(_ctx, val).map_err(|e| Error::Parse(e.to_string()))?;
+            let s = StringArg::from_js(ctx, val).map_err(|e| Error::Parse(e.to_string()))?;
             Ok(serde_json::Value::String(s.as_str().to_string()))
         }
         js::Type::Array => {
@@ -66,10 +81,11 @@ pub fn js_to_value<'js>(_ctx: &Ctx<'js>, val: Value<'js>) -> Result<serde_json::
             let mut result = Vec::with_capacity(arr.len());
             for item in arr.iter::<Value>() {
                 let item = item.map_err(|e| Error::Parse(e.to_string()))?;
-                result.push(js_to_value(_ctx, item)?);
+                result.push(js_to_value_depth(ctx, item, depth + 1)?);
             }
             Ok(serde_json::Value::Array(result))
         }
+        js::Type::Function => Ok(serde_json::Value::Null),
         js::Type::Object
         | js::Type::Constructor
         | js::Type::Promise
@@ -78,16 +94,83 @@ pub fn js_to_value<'js>(_ctx: &Ctx<'js>, val: Value<'js>) -> Result<serde_json::
             let obj = val
                 .as_object()
                 .ok_or_else(|| Error::Parse("invalid object".into()))?;
-            let mut map = Map::new();
-            for item in obj.props::<String, Value>() {
-                let (k, v) = item.map_err(|e| Error::Parse(e.to_string()))?;
-                map.insert(k, js_to_value(_ctx, v)?);
-            }
-            Ok(serde_json::Value::Object(map))
+            convert_object(ctx, obj, depth)
         }
         _ => Err(Error::Unsupported(format!(
             "cannot convert {:?} to JSON",
             val.type_of()
         ))),
+    }
+}
+
+fn convert_object<'js>(
+    ctx: &Ctx<'js>,
+    obj: &Object<'js>,
+    depth: usize,
+) -> Result<serde_json::Value, Error> {
+    if let Ok(date_ctor) = ctx.globals().get::<_, Object>("Date")
+        && obj.is_instance_of(&date_ctor)
+    {
+        if let Ok(json_str) = obj.call_method::<_, String>("toJSON", ()) {
+            return Ok(serde_json::Value::String(json_str));
+        }
+        return Ok(serde_json::Value::Null);
+    }
+
+    if let Ok(regexp_ctor) = ctx.globals().get::<_, Object>("RegExp")
+        && obj.is_instance_of(&regexp_ctor)
+    {
+        if let Ok(str_repr) = obj.call_method::<_, String>("toString", ()) {
+            return Ok(serde_json::Value::String(str_repr));
+        }
+        return Ok(serde_json::Value::Null);
+    }
+
+    if let Ok(set_ctor) = ctx.globals().get::<_, Object>("Set")
+        && obj.is_instance_of(&set_ctor)
+    {
+        let mut result = Vec::new();
+        if let Ok(values) = obj.call_method::<_, JsIterator<Value>>("values", ()) {
+            for val in values.flatten() {
+                result.push(js_to_value_depth(ctx, val, depth + 1)?);
+            }
+        }
+        return Ok(serde_json::Value::Array(result));
+    }
+
+    if let Ok(map_ctor) = ctx.globals().get::<_, Object>("Map")
+        && obj.is_instance_of(&map_ctor)
+    {
+        let mut map = Map::new();
+        if let Ok(entries) = obj.call_method::<_, JsIterator<Array>>("entries", ()) {
+            for entry in entries.flatten() {
+                if let (Ok(key), Ok(val)) = (entry.get::<Value>(0), entry.get::<Value>(1)) {
+                    let key_str = key_to_string(ctx, key)?;
+                    map.insert(key_str, js_to_value_depth(ctx, val, depth + 1)?);
+                }
+            }
+        }
+        return Ok(serde_json::Value::Object(map));
+    }
+
+    let mut map = Map::new();
+    for item in obj.props::<String, Value>() {
+        let (k, v) = item.map_err(|e| Error::Parse(e.to_string()))?;
+        map.insert(k, js_to_value_depth(ctx, v, depth + 1)?);
+    }
+    Ok(serde_json::Value::Object(map))
+}
+
+fn key_to_string<'js>(ctx: &Ctx<'js>, val: Value<'js>) -> Result<String, Error> {
+    match val.type_of() {
+        js::Type::String => {
+            let s = StringArg::from_js(ctx, val).map_err(|e| Error::Parse(e.to_string()))?;
+            Ok(s.as_str().to_string())
+        }
+        js::Type::Int => Ok(val.as_int().unwrap().to_string()),
+        js::Type::Float => Ok(val.as_float().unwrap().to_string()),
+        _ => Err(Error::Unsupported(
+            "Map key must be string or number".into(),
+        )),
     }
 }

@@ -76,4 +76,71 @@ import { json } from 'imp:parsers';
     console.assert(error, "unquoted key should throw error");
 }
 
+{
+    const set = new Set([1, 2, 3]);
+    const str = json.stringify(set as any).toString();
+    const parsed = json.parse(str) as any[];
+    console.assert(Array.isArray(parsed), "set should become array");
+    console.assert(parsed.length === 3, "set length should be 3");
+    console.assert(parsed[0] === 1 && parsed[1] === 2 && parsed[2] === 3, "set values");
+}
+
+{
+    const set = new Set([{ a: 1 }, { b: 2 }]);
+    const str = json.stringify(set as any).toString();
+    const parsed = json.parse(str) as any[];
+    console.assert(Array.isArray(parsed), "set of objects should become array");
+    console.assert(parsed.length === 2, "set length should be 2");
+    console.assert(parsed[0].a === 1, "set first object");
+    console.assert(parsed[1].b === 2, "set second object");
+}
+
+{
+    const map = new Map([["a", 1], ["b", 2]]);
+    const str = json.stringify(map as any).toString();
+    const parsed = json.parse(str) as any;
+    console.assert(parsed.a === 1, "map key a");
+    console.assert(parsed.b === 2, "map key b");
+}
+
+{
+    const map = new Map([[1, "one"], [2, "two"]]);
+    const str = json.stringify(map as any).toString();
+    const parsed = json.parse(str) as any;
+    console.assert(parsed["1"] === "one", "map numeric key 1");
+    console.assert(parsed["2"] === "two", "map numeric key 2");
+}
+
+{
+    const date = new Date("2025-01-01T00:00:00.000Z");
+    const str = json.stringify(date as any).toString();
+    console.assert(str === '"2025-01-01T00:00:00.000Z"', "date should become ISO string");
+}
+
+{
+    const regexp = /hello/gi;
+    const str = json.stringify(regexp as any).toString();
+    console.assert(str.includes("hello"), "regexp should contain pattern");
+}
+
+{
+    const obj = { fn: () => {}, value: 42 };
+    const str = json.stringify(obj).toString();
+    const parsed = json.parse(str) as any;
+    console.assert(parsed.fn === null, "function should become null");
+    console.assert(parsed.value === 42, "other values should work");
+}
+
+{
+    const obj: any = {};
+    obj.self = obj;
+    let error = false;
+    try {
+        json.stringify(obj);
+    } catch (e) {
+        error = true;
+    }
+    console.assert(error, "circular reference should throw error");
+}
+
 console.log("ALL PARSERS JSON TESTS PASSED");
