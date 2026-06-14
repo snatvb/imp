@@ -4,6 +4,7 @@ pub mod file_fetch;
 pub mod headers;
 pub mod request;
 pub mod response;
+pub mod url;
 
 use rquickjs::{self as js, Class};
 

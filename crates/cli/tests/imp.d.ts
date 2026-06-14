@@ -440,7 +440,7 @@ declare module "imp:parsers" {
   };
 }
 
-declare function fetch(input: string, init?: RequestInit): Promise<Response>;
+declare function fetch(input: string | URL, init?: RequestInit): Promise<Response>;
 
 interface RequestInit {
   method?: string;
@@ -463,7 +463,7 @@ declare class Headers {
 }
 
 declare class Request {
-  constructor(input: string, init?: RequestInit);
+  constructor(input: string | URL, init?: RequestInit);
   readonly method: string;
   readonly url: string;
   readonly headers: Headers;
@@ -520,7 +520,7 @@ declare class URLSearchParams {
 }
 
 declare class URL {
-  constructor(input: string, base?: string);
+  constructor(input: string | RsString, base?: string | RsString);
   href: string;
   readonly origin: string;
   protocol: string;
@@ -535,6 +535,6 @@ declare class URL {
   hash: string;
   toString(): string;
   toJSON(): string;
-  static canParse(input: string, base?: string): boolean;
-  static parse(input: string, base?: string): URL | null;
+  static canParse(input: string | RsString, base?: string | RsString): boolean;
+  static parse(input: string | RsString, base?: string | RsString): URL | null;
 }

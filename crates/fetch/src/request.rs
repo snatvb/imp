@@ -3,6 +3,7 @@ use rquickjs::function::Opt;
 use rquickjs::{self as js, Ctx, JsLifetime, Object, Result};
 
 use crate::headers::Headers;
+use crate::url::AnyURL;
 use js_core::abort::AbortSignal;
 use js_core::utils::StringArg;
 
@@ -23,7 +24,7 @@ impl<'js> Trace<'js> for Request {
 #[js::methods]
 impl Request {
     #[qjs(constructor)]
-    fn construct<'js>(_ctx: Ctx<'js>, url: StringArg, init: Opt<Object<'js>>) -> Result<Request> {
+    fn construct<'js>(_ctx: Ctx<'js>, url: AnyURL, init: Opt<Object<'js>>) -> Result<Request> {
         let mut method = String::from("GET");
         let mut headers = Headers::new();
         let mut body: Option<String> = None;

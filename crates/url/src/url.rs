@@ -8,6 +8,7 @@ use rquickjs::{self as js, Ctx, JsLifetime};
 use crate::error::Error;
 use crate::search_params::UrlSearchParams;
 use js_core::error::JsError as _;
+use js_core::utils::StringArg;
 
 fn invalid_url<'js>(ctx: &Ctx<'js>, msg: String) -> js::Error {
     Error::InvalidUrl(msg).into_exception(ctx)
@@ -20,37 +21,45 @@ fn invalid_base_url<'js>(ctx: &Ctx<'js>, msg: String) -> js::Error {
 #[js::class]
 #[qjs(rename = "URL")]
 #[derive(JsLifetime, Clone)]
-pub struct UrlUrl {
+pub struct JsUrl {
     #[qjs(skip_trace)]
     inner: Rc<RefCell<url::Url>>,
     #[qjs(skip_trace)]
     search_params: UrlSearchParams,
 }
 
-impl<'js> Trace<'js> for UrlUrl {
+impl<'js> Trace<'js> for JsUrl {
     fn trace<'a>(&self, _tracer: Tracer<'a, 'js>) {}
 }
 
+impl JsUrl {
+    pub fn as_str(&self) -> String {
+        self.inner.borrow().as_str().to_string()
+    }
+}
+
 #[js::methods]
-impl UrlUrl {
+impl JsUrl {
     #[qjs(constructor)]
-    fn construct<'js>(ctx: Ctx<'js>, input: String, base: Opt<String>) -> js::Result<UrlUrl> {
+    fn construct<'js>(ctx: Ctx<'js>, input: StringArg, base: Opt<StringArg>) -> js::Result<JsUrl> {
         let parsed = match base.0 {
             Some(b) => {
-                let base_url =
-                    url::Url::parse(&b).map_err(|e| invalid_base_url(&ctx, e.to_string()))?;
+                let base_url = url::Url::parse(b.as_str())
+                    .map_err(|e| invalid_base_url(&ctx, e.to_string()))?;
                 url::Url::options()
                     .base_url(Some(&base_url))
-                    .parse(&input)
+                    .parse(input.as_str())
                     .map_err(|e| invalid_url(&ctx, e.to_string()))?
             }
-            None => url::Url::parse(&input).map_err(|e| invalid_url(&ctx, e.to_string()))?,
+            None => {
+                url::Url::parse(input.as_str()).map_err(|e| invalid_url(&ctx, e.to_string()))?
+            }
         };
 
         let inner = Rc::new(RefCell::new(parsed));
         let search_params = UrlSearchParams::from_url(inner.clone());
 
-        Ok(UrlUrl {
+        Ok(JsUrl {
             inner,
             search_params,
         })
@@ -209,18 +218,18 @@ impl UrlUrl {
     }
 
     #[qjs(static, rename = "canParse")]
-    fn can_parse(input: String, base: Opt<String>) -> bool {
+    fn can_parse(input: StringArg, base: Opt<StringArg>) -> bool {
         match base.0 {
             Some(b) => url::Url::options()
-                .base_url(url::Url::parse(&b).ok().as_ref())
-                .parse(&input)
+                .base_url(url::Url::parse(b.as_str()).ok().as_ref())
+                .parse(input.as_str())
                 .is_ok(),
-            None => url::Url::parse(&input).is_ok(),
+            None => url::Url::parse(input.as_str()).is_ok(),
         }
     }
 
     #[qjs(static)]
-    fn parse<'js>(ctx: Ctx<'js>, input: String, base: Opt<String>) -> js::Result<UrlUrl> {
+    fn parse<'js>(ctx: Ctx<'js>, input: StringArg, base: Opt<StringArg>) -> js::Result<JsUrl> {
         Self::construct(ctx, input, base)
     }
 }

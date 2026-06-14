@@ -8,11 +8,12 @@ use crate::client::get_client;
 use crate::file_fetch::file_fetch;
 use crate::headers::Headers;
 use crate::response::Response;
+use crate::url::AnyURL;
 
 #[js::function]
 pub async fn fetch<'js>(
     ctx: js::Ctx<'js>,
-    url: js_core::utils::StringArg,
+    url: AnyURL,
     init: Opt<js::Object<'js>>,
 ) -> js::Result<Response> {
     let client = get_client();
@@ -51,13 +52,15 @@ pub async fn fetch<'js>(
         return Err(throw_abort_error(&ctx, "The operation was aborted"));
     }
 
-    if url.as_str().starts_with("file://") {
-        return file_fetch(ctx, url.as_str(), signal).await;
+    let url_str = url.as_str();
+
+    if url_str.starts_with("file://") {
+        return file_fetch(ctx, &url_str, signal).await;
     }
 
     let signal_token = signal.as_ref().map(|s| s.token().clone());
 
-    let mut builder = client.request(method, url.as_str()).headers(req_headers);
+    let mut builder = client.request(method, &url_str).headers(req_headers);
     if let Some(b) = body {
         builder = builder.body(b);
     }
