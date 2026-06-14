@@ -1,0 +1,10 @@
+const u = new URL("https://user:pass@example.com:8080/path?q=1#hash");
+console.log("origin:", JSON.stringify(u.origin));
+console.log("protocol:", JSON.stringify(u.protocol));
+console.log("username:", JSON.stringify(u.username));
+console.log("password:", JSON.stringify(u.password));
+console.log("hostname:", JSON.stringify(u.hostname));
+console.log("port:", JSON.stringify(u.port));
+console.log("pathname:", JSON.stringify(u.pathname));
+console.log("search:", JSON.stringify(u.search));
+console.log("hash:", JSON.stringify(u.hash));

@@ -292,6 +292,7 @@ dependencies = [
  "fetch",
  "fs",
  "imp_clap",
+ "imp_url",
  "inq",
  "js_core",
  "js_path",
@@ -1224,6 +1225,16 @@ dependencies = [
  "js_core",
  "rquickjs",
  "thiserror",
+]
+
+[[package]]
+name = "imp_url"
+version = "0.1.0"
+dependencies = [
+ "js_core",
+ "rquickjs",
+ "thiserror",
+ "url",
 ]
 
 [[package]]

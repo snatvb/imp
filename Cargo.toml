@@ -14,6 +14,7 @@ members = [
   "crates/embed",
   "crates/parsers",
   "crates/fetch",
+  "crates/url",
 ]
 resolver = "3"
 
@@ -60,6 +61,7 @@ camino = { version = "1.2.2", features = [] }
 chrono = "0.4.45"
 libc = "0.2.186"
 oxc_ast = "0.133.0"
+url = "2"
 
 js_core = { path = "crates/js_core" }
 console = { path = "crates/console" }
@@ -74,3 +76,4 @@ imp_clap = { path = "crates/clap" }
 embed = { path = "crates/embed" }
 parsers = { path = "crates/parsers" }
 fetch = { path = "crates/fetch" }
+imp_url = { path = "crates/url" }

@@ -501,3 +501,40 @@ declare class AbortSignal {
   readonly reason: string;
   static timeout(ms: number): AbortSignal;
 }
+
+declare class URLSearchParams {
+  constructor(init?: string);
+  append(name: string, value: string): void;
+  delete(name: string): void;
+  get(name: string): string | null;
+  getAll(name: string): string[];
+  has(name: string): boolean;
+  set(name: string, value: string): void;
+  sort(): void;
+  readonly size: number;
+  toString(): string;
+  keys(): string[];
+  values(): string[];
+  entries(): string[][];
+  forEach(callback: (value: string, key: string) => void): void;
+}
+
+declare class URL {
+  constructor(input: string, base?: string);
+  href: string;
+  readonly origin: string;
+  protocol: string;
+  username: string;
+  password: string;
+  host: string;
+  hostname: string;
+  port: string;
+  pathname: string;
+  search: string;
+  readonly searchParams: URLSearchParams;
+  hash: string;
+  toString(): string;
+  toJSON(): string;
+  static canParse(input: string, base?: string): boolean;
+  static parse(input: string, base?: string): URL | null;
+}

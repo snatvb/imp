@@ -1,0 +1,11 @@
+[package]
+name = "imp_url"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+
+[dependencies]
+rquickjs.workspace = true
+js_core.workspace = true
+url.workspace = true
+thiserror.workspace = true

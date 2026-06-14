@@ -114,6 +114,7 @@ pub fn setup_globals<'js>(
         panic!("Failed to enable DOMException intrinsic");
     }
     fetch::create_globals(ctx).unwrap();
+    imp_url::create_globals(ctx).unwrap();
     js_timers
 }
 
