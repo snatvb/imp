@@ -63,10 +63,7 @@ pub fn parse<'js>(
         let mut map = serde_json::Map::new();
         for (i, field) in row.iter().enumerate() {
             if let Some(key) = headers.get(i) {
-                map.insert(
-                    key.clone(),
-                    serde_json::Value::String(field.to_string()),
-                );
+                map.insert(key.clone(), serde_json::Value::String(field.to_string()));
             }
         }
         records.push(serde_json::Value::Object(map));
