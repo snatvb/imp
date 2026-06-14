@@ -18,7 +18,21 @@ pub async fn file_fetch<'js>(
 
     let path_str = file_path_from_url(url).map_err(|_| js::Error::Exception)?;
 
-    let raw = tokio::fs::read(&path_str).await.map_err(|e| {
+    let signal_token = signal.as_ref().map(|s| s.token().clone());
+
+    let raw = tokio::select! {
+        res = tokio::fs::read(&path_str) => res,
+        _ = async {
+            if let Some(t) = &signal_token {
+                t.cancelled().await
+            } else {
+                std::future::pending::<()>().await
+            }
+        } => {
+            return Err(js::Error::Exception);
+        }
+    }
+    .map_err(|e| {
         SystemError::from_io(e, "fetch", Some(path_str.clone())).into_exception(&ctx)
     })?;
 
