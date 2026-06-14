@@ -6,7 +6,7 @@ export const repoRoot = resolve(import.meta.dirname, "..", "..", "..", "..");
 export async function bench(
   label: string,
   iterations: number,
-  fn: () => Promise<void>,
+  fn: () => void | Promise<void>,
 ): Promise<{ avg: number; ops: number; elapsed: number }> {
   const warmup = Math.floor(iterations / 10);
   for (let i = 0; i < warmup; i++) await fn();
