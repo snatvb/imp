@@ -159,11 +159,20 @@ fn key_to_string<'js>(ctx: &Ctx<'js>, val: Value<'js>) -> Result<String, Error> 
     }
 }
 
-pub fn toml_value_to_js<'js>(ctx: &Ctx<'js>, val: toml::Value) -> js::Result<Value<'js>> {
+pub fn toml_value_to_js_ex<'js>(
+    ctx: &Ctx<'js>,
+    val: toml::Value,
+    native_strings: bool,
+) -> js::Result<Value<'js>> {
     match val {
         toml::Value::String(s) => {
-            let js_str = JsString::from_str(ctx.clone(), &s)?;
-            Ok(js_str.into_value())
+            if native_strings {
+                let js_str = JsString::from_str(ctx.clone(), &s)?;
+                Ok(js_str.into_value())
+            } else {
+                let rs = Class::instance(ctx.clone(), RsString::owned(s))?;
+                Ok(rs.into_value())
+            }
         }
         toml::Value::Integer(i) => {
             if i >= i32::MIN as i64 && i <= i32::MAX as i64 {
@@ -176,13 +185,18 @@ pub fn toml_value_to_js<'js>(ctx: &Ctx<'js>, val: toml::Value) -> js::Result<Val
         toml::Value::Boolean(b) => Ok(Value::new_bool(ctx.clone(), b)),
         toml::Value::Datetime(dt) => {
             let s = dt.to_string();
-            let js_str = JsString::from_str(ctx.clone(), &s)?;
-            Ok(js_str.into_value())
+            if native_strings {
+                let js_str = JsString::from_str(ctx.clone(), &s)?;
+                Ok(js_str.into_value())
+            } else {
+                let rs = Class::instance(ctx.clone(), RsString::owned(s))?;
+                Ok(rs.into_value())
+            }
         }
         toml::Value::Array(arr) => {
             let js_arr = Array::new(ctx.clone())?;
             for (i, item) in arr.into_iter().enumerate() {
-                let js_item = toml_value_to_js(ctx, item)?;
+                let js_item = toml_value_to_js_ex(ctx, item, native_strings)?;
                 js_arr.set(i, js_item)?;
             }
             Ok(js_arr.into_value())
@@ -190,10 +204,14 @@ pub fn toml_value_to_js<'js>(ctx: &Ctx<'js>, val: toml::Value) -> js::Result<Val
         toml::Value::Table(table) => {
             let js_obj = Object::new(ctx.clone())?;
             for (k, v) in table {
-                let js_v = toml_value_to_js(ctx, v)?;
+                let js_v = toml_value_to_js_ex(ctx, v, native_strings)?;
                 js_obj.set(k.as_str(), js_v)?;
             }
             Ok(js_obj.into_value())
         }
     }
+}
+
+pub fn toml_value_to_js<'js>(ctx: &Ctx<'js>, val: toml::Value) -> js::Result<Value<'js>> {
+    toml_value_to_js_ex(ctx, val, true)
 }

@@ -125,7 +125,8 @@ async function main() {
     };
 
     const jsonNativeRow: BenchRow = { name: "JSON (native)", parse: [], stringify: [] };
-    const jsonImpRow: BenchRow = { name: "JSON (imp)", parse: [], stringify: [] };
+    const jsonImpRsRow: BenchRow = { name: "JSON (imp+RsStr)", parse: [], stringify: [] };
+    const jsonImpNativeRow: BenchRow = { name: "JSON (imp+native)", parse: [], stringify: [] };
     const yamlRow: BenchRow = { name: "YAML", parse: [], stringify: [] };
     const xmlRow: BenchRow = { name: "XML", parse: [], stringify: [] };
     const tomlRow: BenchRow = { name: "TOML", parse: [], stringify: [] };
@@ -145,9 +146,13 @@ async function main() {
         jsonNativeRow.parse.push(r1);
         console.log(`  JSON native: ${fmt(r1)}`);
 
-        const r2 = await bench(`JSON imp parse ${size}`, n, () => { json.parse(SMALL_JSON); });
-        jsonImpRow.parse.push(r2);
-        console.log(`  JSON imp:    ${fmt(r2)}`);
+        const r2 = await bench(`JSON imp+RsStr parse ${size}`, n, () => { json.parse(SMALL_JSON); });
+        jsonImpRsRow.parse.push(r2);
+        console.log(`  JSON+RsStr:  ${fmt(r2)}`);
+
+        const r2n = await bench(`JSON imp+native parse ${size}`, n, () => { json.parse(SMALL_JSON, { nativeStrings: true }); });
+        jsonImpNativeRow.parse.push(r2n);
+        console.log(`  JSON+native: ${fmt(r2n)}`);
 
         const yamlStr = size === "small" ? SMALL_YAML : size === "medium" ? MEDIUM_YAML : LARGE_YAML;
         const r3 = await bench(`YAML parse ${size}`, n, () => { yaml.parse(yamlStr); });
@@ -196,9 +201,13 @@ async function main() {
         jsonNativeRow.stringify.push(r1);
         console.log(`  JSON native: ${fmt(r1)}`);
 
-        const r2 = await bench(`JSON imp stringify ${size}`, n, () => { json.stringify(obj); });
-        jsonImpRow.stringify.push(r2);
-        console.log(`  JSON imp:    ${fmt(r2)}`);
+        const r2 = await bench(`JSON imp+RsStr stringify ${size}`, n, () => { json.stringify(obj); });
+        jsonImpRsRow.stringify.push(r2);
+        console.log(`  JSON+RsStr:  ${fmt(r2)}`);
+
+        const r2n = await bench(`JSON imp+native stringify ${size}`, n, () => { json.stringify(obj); });
+        jsonImpNativeRow.stringify.push(r2n);
+        console.log(`  JSON+native: ${fmt(r2n)}`);
 
         const r3 = await bench(`YAML stringify ${size}`, n, () => { yaml.stringify(obj); });
         yamlRow.stringify.push(r3);
@@ -228,7 +237,7 @@ async function main() {
         console.log("");
     }
 
-    const allRows = [jsonNativeRow, jsonImpRow, yamlRow, xmlRow, tomlRow, ronRow, csvRow, msgpackRow];
+    const allRows = [jsonNativeRow, jsonImpRsRow, jsonImpNativeRow, yamlRow, xmlRow, tomlRow, ronRow, csvRow, msgpackRow];
     const sizes = ["small", "medium", "large"] as const;
 
     console.log("=== Summary Table ===");

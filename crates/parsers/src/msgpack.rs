@@ -2,16 +2,25 @@ use js_core::byte_buffer::ByteBuffer;
 
 use crate::prelude::*;
 
-use crate::convert::{js_to_value, value_to_js};
+use crate::convert::{js_to_value, value_to_js_ex};
 use crate::error::Error;
 
 #[js::function]
-pub fn parse<'js>(ctx: Ctx<'js>, input: js::Class<'js, ByteBuffer>) -> js::Result<Value<'js>> {
+pub fn parse<'js>(
+    ctx: Ctx<'js>,
+    input: js::Class<'js, ByteBuffer>,
+    options: Opt<Object<'js>>,
+) -> js::Result<Value<'js>> {
+    let native_strings = options
+        .into_inner()
+        .and_then(|o| o.get::<_, Option<bool>>("nativeStrings").ok())
+        .flatten()
+        .unwrap_or(true);
     let borrowed = input.borrow();
     let bytes = borrowed.as_slice();
     let val: serde_json::Value = rmp_serde::from_slice(bytes)
         .map_err(|e| Error::Parse(e.to_string()).into_exception(&ctx))?;
-    value_to_js(&ctx, val)
+    value_to_js_ex(&ctx, val, native_strings)
 }
 
 #[js::function]

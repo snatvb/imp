@@ -3,7 +3,7 @@ import { ron } from 'imp:parsers';
 {
     const input = '(name: "test", value: 42)';
     const parsed = ron.parse(input) as any;
-    console.assert(parsed.name === "test", "name should be test");
+    console.assert(RsString.equals(parsed.name, "test"), "name should be test");
     console.assert(parsed.value === 42, "value should be 42");
 }
 
@@ -11,7 +11,7 @@ import { ron } from 'imp:parsers';
     const input = '(nested: (a: true, b: "hello"))';
     const parsed = ron.parse(input) as any;
     console.assert(parsed.nested.a === true, "nested.a should be true");
-    console.assert(parsed.nested.b === "hello", "nested.b should be hello");
+    console.assert(RsString.equals(parsed.nested.b, "hello"), "nested.b should be hello");
 }
 
 {

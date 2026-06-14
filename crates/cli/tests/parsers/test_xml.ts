@@ -3,8 +3,8 @@ import { xml } from 'imp:parsers';
 {
     const input = '<person><name>test</name><value>42</value></person>';
     const parsed = xml.parse(input) as any;
-    console.assert(parsed.name.$text === "test", "name should be test");
-    console.assert(parsed.value.$text === "42", "value should be 42");
+    console.assert(RsString.equals(parsed.name.$text, "test"), "name should be test");
+    console.assert(RsString.equals(parsed.value.$text, "42"), "value should be 42");
 }
 
 {
@@ -25,8 +25,8 @@ import { xml } from 'imp:parsers';
 {
     const input = '<data><float>3.14</float><negative>-10</negative></data>';
     const parsed = xml.parse(input) as any;
-    console.assert(parsed.float.$text === "3.14", "float should work");
-    console.assert(parsed.negative.$text === "-10", "negative should work");
+    console.assert(RsString.equals(parsed.float.$text, "3.14"), "float should work");
+    console.assert(RsString.equals(parsed.negative.$text, "-10"), "negative should work");
 }
 
 {

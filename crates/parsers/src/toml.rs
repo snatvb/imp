@@ -2,15 +2,24 @@ use js_core::rs_string::RsString;
 
 use crate::prelude::*;
 
-use crate::convert_toml::{js_to_toml_value, toml_value_to_js};
+use crate::convert_toml::{js_to_toml_value, toml_value_to_js_ex};
 use crate::error::Error;
 
 #[js::function]
-pub fn parse<'js>(ctx: Ctx<'js>, input: StringArg) -> js::Result<Value<'js>> {
+pub fn parse<'js>(
+    ctx: Ctx<'js>,
+    input: StringArg,
+    options: Opt<Object<'js>>,
+) -> js::Result<Value<'js>> {
+    let native_strings = options
+        .into_inner()
+        .and_then(|o| o.get::<_, Option<bool>>("nativeStrings").ok())
+        .flatten()
+        .unwrap_or(true);
     let s = input.as_str();
     let val: toml::Value =
         toml::from_str(s).map_err(|e| Error::Parse(e.to_string()).into_exception(&ctx))?;
-    toml_value_to_js(&ctx, val)
+    toml_value_to_js_ex(&ctx, val, native_strings)
 }
 
 #[js::function]

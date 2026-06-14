@@ -3,7 +3,7 @@ import { json } from 'imp:parsers';
 {
     const input = '{"name":"test","value":42,"nested":{"a":true,"b":null}}';
     const parsed = json.parse(input) as any;
-    console.assert(parsed.name === "test", "name should be test");
+    console.assert(RsString.equals(parsed.name, "test"), "name should be test");
     console.assert(parsed.value === 42, "value should be 42");
     console.assert(parsed.nested.a === true, "nested.a should be true");
     console.assert(parsed.nested.b === null, "nested.b should be null");
@@ -107,8 +107,8 @@ import { json } from 'imp:parsers';
     const map = new Map([[1, "one"], [2, "two"]]);
     const str = json.stringify(map as any).toString();
     const parsed = json.parse(str) as any;
-    console.assert(parsed["1"] === "one", "map numeric key 1");
-    console.assert(parsed["2"] === "two", "map numeric key 2");
+    console.assert(RsString.equals(parsed["1"], "one"), "map numeric key 1");
+    console.assert(RsString.equals(parsed["2"], "two"), "map numeric key 2");
 }
 
 {
@@ -170,20 +170,20 @@ import { json } from 'imp:parsers';
 {
     const input = '{"text":"Привет мир"}';
     const parsed = json.parse(input) as any;
-    console.assert(parsed.text === "Привет мир", "cyrillic should parse");
+    console.assert(RsString.equals(parsed.text, "Привет мир"), "cyrillic should parse");
 }
 
 {
     const input = '{"emoji":"😀🚀🎉"}';
     const parsed = json.parse(input) as any;
-    console.assert(parsed.emoji === "😀🚀🎉", "emoji should parse");
+    console.assert(RsString.equals(parsed.emoji, "😀🚀🎉"), "emoji should parse");
 }
 
 {
     const obj = { mixed: "hello мир こんにちは 🌍" };
     const str = json.stringify(obj).toString();
     const parsed = json.parse(str) as any;
-    console.assert(parsed.mixed === "hello мир こんにちは 🌍", "unicode roundtrip");
+    console.assert(RsString.equals(parsed.mixed, "hello мир こんにちは 🌍"), "unicode roundtrip");
 }
 
 {

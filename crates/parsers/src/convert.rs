@@ -7,7 +7,11 @@ use std::collections::HashSet;
 
 use crate::error::Error;
 
-pub fn value_to_js<'js>(ctx: &Ctx<'js>, val: serde_json::Value) -> js::Result<Value<'js>> {
+pub fn value_to_js_ex<'js>(
+    ctx: &Ctx<'js>,
+    val: serde_json::Value,
+    native_strings: bool,
+) -> js::Result<Value<'js>> {
     match val {
         serde_json::Value::Null => Ok(Value::new_null(ctx.clone())),
         serde_json::Value::Bool(b) => Ok(Value::new_bool(ctx.clone(), b)),
@@ -25,13 +29,18 @@ pub fn value_to_js<'js>(ctx: &Ctx<'js>, val: serde_json::Value) -> js::Result<Va
             }
         }
         serde_json::Value::String(s) => {
-            let js_str = JsString::from_str(ctx.clone(), &s)?;
-            Ok(js_str.into_value())
+            if native_strings {
+                let js_str = JsString::from_str(ctx.clone(), &s)?;
+                Ok(js_str.into_value())
+            } else {
+                let rs = Class::instance(ctx.clone(), RsString::owned(s))?;
+                Ok(rs.into_value())
+            }
         }
         serde_json::Value::Array(arr) => {
             let js_arr = Array::new(ctx.clone())?;
             for (i, item) in arr.into_iter().enumerate() {
-                let js_item = value_to_js(ctx, item)?;
+                let js_item = value_to_js_ex(ctx, item, native_strings)?;
                 js_arr.set(i, js_item)?;
             }
             Ok(js_arr.into_value())
@@ -39,12 +48,16 @@ pub fn value_to_js<'js>(ctx: &Ctx<'js>, val: serde_json::Value) -> js::Result<Va
         serde_json::Value::Object(map) => {
             let js_obj = Object::new(ctx.clone())?;
             for (k, v) in map {
-                let js_v = value_to_js(ctx, v)?;
+                let js_v = value_to_js_ex(ctx, v, native_strings)?;
                 js_obj.set(k.as_str(), js_v)?;
             }
             Ok(js_obj.into_value())
         }
     }
+}
+
+pub fn value_to_js<'js>(ctx: &Ctx<'js>, val: serde_json::Value) -> js::Result<Value<'js>> {
+    value_to_js_ex(ctx, val, true)
 }
 
 pub fn js_to_value<'js>(ctx: &Ctx<'js>, val: Value<'js>) -> Result<serde_json::Value, Error> {

@@ -94,6 +94,7 @@ declare namespace RsString {
   function fromString(value?: any): RsString;
   function fromCharCode(...codes: number[]): RsString;
   function fromCodePoint(...points: number[]): RsString;
+  function equals(a: RsString | string, b: RsString | string, caseInsensitive?: boolean): boolean;
 }
 
 interface WalkOptions {
@@ -404,33 +405,37 @@ declare module "imp:sys/stdin" {
   export { readLine, readAll };
 }
 
+interface ParseOptions {
+  nativeStrings?: boolean;
+}
+
 declare module "imp:parsers" {
   export const json: {
-    parse(input: JsString): unknown;
+    parse(input: JsString, options?: ParseOptions): unknown;
     stringify(value: unknown): RsString;
   };
   export const yaml: {
-    parse(input: JsString): unknown;
+    parse(input: JsString, options?: ParseOptions): unknown;
     stringify(value: unknown): RsString;
   };
   export const xml: {
-    parse(input: JsString): unknown;
+    parse(input: JsString, options?: ParseOptions): unknown;
     stringify(value: unknown, root: JsString): RsString;
   };
   export const toml: {
-    parse(input: JsString): unknown;
+    parse(input: JsString, options?: ParseOptions): unknown;
     stringify(value: unknown): RsString;
   };
   export const ron: {
-    parse(input: JsString): unknown;
+    parse(input: JsString, options?: ParseOptions): unknown;
     stringify(value: unknown): RsString;
   };
   export const csv: {
-    parse(input: JsString): unknown[];
+    parse(input: JsString, options?: ParseOptions): unknown[];
     stringify(value: unknown[]): RsString;
   };
   export const msgpack: {
-    parse(input: ByteBuffer): unknown;
+    parse(input: ByteBuffer, options?: ParseOptions): unknown;
     stringify(value: unknown): ByteBuffer;
   };
 }

@@ -3,7 +3,7 @@ import { yaml } from 'imp:parsers';
 {
     const input = 'name: test\nvalue: 42\nnested:\n  a: true\n  b: null\n';
     const parsed = yaml.parse(input) as any;
-    console.assert(parsed.name === "test", "name should be test");
+    console.assert(RsString.equals(parsed.name, "test"), "name should be test");
     console.assert(parsed.value === 42, "value should be 42");
     console.assert(parsed.nested.a === true, "nested.a should be true");
     console.assert(parsed.nested.b === null, "nested.b should be null");
@@ -109,20 +109,20 @@ import { yaml } from 'imp:parsers';
 {
     const input = 'text: "Привет мир"\n';
     const parsed = yaml.parse(input) as any;
-    console.assert(parsed.text === "Привет мир", "cyrillic should parse");
+    console.assert(RsString.equals(parsed.text, "Привет мир"), "cyrillic should parse");
 }
 
 {
     const input = 'emoji: "😀🚀🎉"\n';
     const parsed = yaml.parse(input) as any;
-    console.assert(parsed.emoji === "😀🚀🎉", "emoji should parse");
+    console.assert(RsString.equals(parsed.emoji, "😀🚀🎉"), "emoji should parse");
 }
 
 {
     const obj = { mixed: "hello мир こんにちは 🌍" };
     const str = yaml.stringify(obj).toString();
     const parsed = yaml.parse(str) as any;
-    console.assert(parsed.mixed === "hello мир こんにちは 🌍", "unicode roundtrip");
+    console.assert(RsString.equals(parsed.mixed, "hello мир こんにちは 🌍"), "unicode roundtrip");
 }
 
 {

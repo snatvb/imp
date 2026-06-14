@@ -2,7 +2,7 @@ use js_core::rs_string::RsString;
 
 use crate::prelude::*;
 
-use crate::convert::{js_to_value, value_to_js};
+use crate::convert::{js_to_value, value_to_js_ex};
 use crate::error::Error;
 
 fn extract_headers(rows: &[serde_json::Value]) -> Vec<String> {
@@ -37,18 +37,41 @@ fn row_to_record(row: &serde_json::Value, headers: &[String]) -> Vec<String> {
 }
 
 #[js::function]
-pub fn parse<'js>(ctx: Ctx<'js>, input: StringArg) -> js::Result<Value<'js>> {
+pub fn parse<'js>(
+    ctx: Ctx<'js>,
+    input: StringArg,
+    options: Opt<Object<'js>>,
+) -> js::Result<Value<'js>> {
+    let native_strings = options
+        .into_inner()
+        .and_then(|o| o.get::<_, Option<bool>>("nativeStrings").ok())
+        .flatten()
+        .unwrap_or(true);
     let s = input.as_str();
     let mut reader = csv::ReaderBuilder::new()
         .has_headers(true)
         .from_reader(s.as_bytes());
+    let headers: Vec<String> = reader
+        .headers()
+        .map_err(|e| Error::Parse(e.to_string()).into_exception(&ctx))?
+        .iter()
+        .map(|h| h.to_string())
+        .collect();
     let mut records = Vec::new();
-    for result in reader.deserialize() {
-        let record: serde_json::Value =
-            result.map_err(|e| Error::Parse(e.to_string()).into_exception(&ctx))?;
-        records.push(record);
+    for result in reader.records() {
+        let row = result.map_err(|e| Error::Parse(e.to_string()).into_exception(&ctx))?;
+        let mut map = serde_json::Map::new();
+        for (i, field) in row.iter().enumerate() {
+            if let Some(key) = headers.get(i) {
+                map.insert(
+                    key.clone(),
+                    serde_json::Value::String(field.to_string()),
+                );
+            }
+        }
+        records.push(serde_json::Value::Object(map));
     }
-    value_to_js(&ctx, serde_json::Value::Array(records))
+    value_to_js_ex(&ctx, serde_json::Value::Array(records), native_strings)
 }
 
 #[js::function]

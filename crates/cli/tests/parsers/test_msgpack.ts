@@ -11,7 +11,7 @@ import { msgpack } from 'imp:parsers';
     const data = { name: "test", value: 42 };
     const buf = msgpack.stringify(data);
     const parsed = msgpack.parse(buf) as any;
-    console.assert(parsed.name === "test", "name should be test");
+    console.assert(RsString.equals(parsed.name, "test"), "name should be test");
     console.assert(parsed.value === 42, "value should be 42");
 }
 
@@ -20,7 +20,7 @@ import { msgpack } from 'imp:parsers';
     const buf = msgpack.stringify(data);
     const parsed = msgpack.parse(buf) as any;
     console.assert(parsed.nested.a === true, "nested.a should be true");
-    console.assert(parsed.nested.b === "hello", "nested.b should be hello");
+    console.assert(RsString.equals(parsed.nested.b, "hello"), "nested.b should be hello");
 }
 
 {
@@ -47,7 +47,7 @@ import { msgpack } from 'imp:parsers';
     console.assert(Array.isArray(parsed), "should be array");
     console.assert(parsed.length === 4, "length should be 4");
     console.assert(parsed[0] === 1, "first element should be 1");
-    console.assert(parsed[1] === "two", "second element should be two");
+    console.assert(RsString.equals(parsed[1], "two"), "second element should be two");
     console.assert(parsed[2] === false, "third element should be false");
     console.assert(parsed[3] === null, "fourth element should be null");
 }
@@ -56,7 +56,7 @@ import { msgpack } from 'imp:parsers';
     const data = { empty: "", zero: 0, null: null };
     const buf = msgpack.stringify(data);
     const parsed = msgpack.parse(buf) as any;
-    console.assert(parsed.empty === "", "empty string should work");
+    console.assert(RsString.equals(parsed.empty, ""), "empty string should work");
     console.assert(parsed.zero === 0, "zero should work");
     console.assert(parsed.null === null, "null should work");
 }

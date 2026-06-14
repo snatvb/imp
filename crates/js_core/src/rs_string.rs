@@ -7,6 +7,8 @@ use rquickjs::{
     function::{Opt, Rest},
 };
 
+use crate::utils::StringArg;
+
 #[js::class]
 #[derive(JsLifetime, Clone, Debug)]
 pub struct RsString {
@@ -282,8 +284,6 @@ impl RsString {
         )
     }
 
-    // --- search methods ---
-
     #[qjs(rename = "indexOf")]
     fn index_of(&self, search: String, from_index: Opt<usize>) -> isize {
         let start_pos = from_index.0.unwrap_or(0);
@@ -336,8 +336,6 @@ impl RsString {
     fn ends_with(&self, search: String) -> bool {
         self.get_slice().ends_with(&search)
     }
-
-    // --- transform / alloc methods ---
 
     fn concat<'js>(&self, ctx: Ctx<'js>, str1: js::String<'js>) -> Result<Class<'js, RsString>> {
         let s1 = str1.to_string()?;
@@ -576,8 +574,6 @@ impl RsString {
         Ok(js_arr)
     }
 
-    // --- primitives + symbols ---
-
     #[qjs(rename = "toString")]
     fn to_string_method<'js>(&self, ctx: Ctx<'js>) -> Result<js::String<'js>> {
         js::String::from_str(ctx, self.get_slice())
@@ -618,7 +614,13 @@ fn from_code_point<'js>(ctx: Ctx<'js>, points: Rest<u32>) -> Result<Class<'js, R
     Class::instance(ctx, RsString::owned(s))
 }
 
-// ── InternPool ──
+#[rquickjs::function]
+fn equals(a: StringArg, b: StringArg, case_insensitive: Opt<bool>) -> bool {
+    match case_insensitive.0.unwrap_or(false) {
+        false => a.as_str() == b.as_str(),
+        true => a.as_str().eq_ignore_ascii_case(b.as_str()),
+    }
+}
 
 pub struct InternPool {
     get_or_create: Persistent<Function<'static>>,
@@ -666,6 +668,7 @@ pub fn init_rs_string<'js>(ctx: &Ctx<'js>) -> Result<()> {
     ctor.set("fromString", js_from_string_impl)?;
     ctor.set("fromCharCode", js_from_char_code)?;
     ctor.set("fromCodePoint", js_from_code_point)?;
+    ctor.set("equals", js_equals)?;
 
     ctx.globals().set("RsString", ctor)?;
 

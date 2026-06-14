@@ -3,7 +3,7 @@ import { toml } from 'imp:parsers';
 {
     const input = 'name = "test"\nvalue = 42\n';
     const parsed = toml.parse(input) as any;
-    console.assert(parsed.name === "test", "name should be test");
+    console.assert(RsString.equals(parsed.name, "test"), "name should be test");
     console.assert(parsed.value === 42, "value should be 42");
 }
 
@@ -11,7 +11,7 @@ import { toml } from 'imp:parsers';
     const input = '[nested]\na = true\nb = "hello"\n';
     const parsed = toml.parse(input) as any;
     console.assert(parsed.nested.a === true, "nested.a should be true");
-    console.assert(parsed.nested.b === "hello", "nested.b should be hello");
+    console.assert(RsString.equals(parsed.nested.b, "hello"), "nested.b should be hello");
 }
 
 {
@@ -142,7 +142,7 @@ import { toml } from 'imp:parsers';
 {
     const emptyObj = {};
     const str = toml.stringify(emptyObj).toString();
-    console.assert(str.trim() === "", "empty object toml should be empty");
+    console.assert(RsString.equals(str.trim(), ""), "empty object toml should be empty");
 }
 
 {
@@ -155,7 +155,7 @@ import { toml } from 'imp:parsers';
 {
     const input = 'created = 2025-01-01T00:00:00Z\n';
     const parsed = toml.parse(input) as any;
-    console.assert(typeof parsed.created === "string", "datetime should parse as string");
+    console.assert(typeof parsed.created.valueOf?.() === "string" || typeof parsed.created === "string", "datetime should parse as string");
     console.assert(parsed.created.includes("2025-01-01"), "datetime should contain date");
 
     const str = toml.stringify({ created: parsed.created }).toString();
