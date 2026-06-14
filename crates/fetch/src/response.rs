@@ -106,8 +106,8 @@ impl Response {
         serde_value_to_js(&ctx, &val)
     }
 
-    #[qjs()]
-    async fn array_buffer<'js>(&self, ctx: Ctx<'js>) -> js::Result<ArrayBuffer<'js>> {
+    #[qjs(rename = "arrayBuffer")]
+    fn to_array_buffer<'js>(&self, ctx: Ctx<'js>) -> js::Result<ArrayBuffer<'js>> {
         ArrayBuffer::from_source(ctx, self.body.clone())
     }
 

@@ -1,3 +1,4 @@
+use js_core::abort::AbortSignal;
 use js_core::js;
 use js_core::js::function::Opt;
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
@@ -16,6 +17,7 @@ pub async fn fetch<'js>(
     let mut method = reqwest::Method::GET;
     let mut req_headers = HeaderMap::new();
     let mut body: Option<String> = None;
+    let mut signal: Option<AbortSignal> = None;
 
     if let Some(init) = init.0 {
         if let Ok(m) = init.get::<_, String>("method") {
@@ -35,14 +37,39 @@ pub async fn fetch<'js>(
         if let Ok(b) = init.get::<_, String>("body") {
             body = Some(b);
         }
+
+        if let Ok(s) = init.get::<_, AbortSignal>("signal") {
+            signal = Some(s);
+        }
     }
+
+    if let Some(ref sig) = signal
+        && sig.is_aborted()
+    {
+        return Err(js::Error::Exception);
+    }
+
+    let signal_token = signal.as_ref().map(|s| s.token().clone());
 
     let mut builder = client.request(method, url.as_str()).headers(req_headers);
     if let Some(b) = body {
         builder = builder.body(b);
     }
 
-    let response = builder.send().await.map_err(|_| js::Error::Exception)?;
+    let response = tokio::select! {
+        resp = builder.send() => resp,
+        _ = async {
+            if let Some(t) = &signal_token {
+                t.cancelled().await
+            } else {
+                std::future::pending::<()>().await
+            }
+        } => {
+            return Err(js::Error::Exception);
+        }
+    };
+
+    let response = response.map_err(|_| js::Error::Exception)?;
 
     let status = response.status().as_u16();
     let status_text = response

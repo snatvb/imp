@@ -481,7 +481,7 @@ declare class Response {
   readonly type: string;
   text(): Promise<string>;
   json(): Promise<any>;
-  arrayBuffer(): Promise<ArrayBuffer>;
+  arrayBuffer(): ArrayBuffer;
   clone(): Response;
 }
 
@@ -492,4 +492,5 @@ declare class AbortController {
 
 declare class AbortSignal {
   readonly aborted: boolean;
+  readonly reason: string;
 }

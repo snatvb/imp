@@ -1,23 +1,19 @@
 use crate::js;
 use crate::js::JsLifetime;
 use crate::js::class::{Trace, Tracer};
+use tokio_util::sync::CancellationToken;
 
 #[js::class]
 #[derive(JsLifetime, Clone)]
 pub struct AbortSignal {
     aborted: bool,
+    reason: String,
+    #[qjs(skip_trace)]
+    token: CancellationToken,
 }
 
 impl<'js> Trace<'js> for AbortSignal {
     fn trace<'a>(&self, _tracer: Tracer<'a, 'js>) {}
-}
-
-#[js::methods]
-impl AbortSignal {
-    #[qjs(get)]
-    fn aborted(&self) -> bool {
-        self.aborted
-    }
 }
 
 impl Default for AbortSignal {
@@ -28,11 +24,40 @@ impl Default for AbortSignal {
 
 impl AbortSignal {
     pub fn new() -> Self {
-        AbortSignal { aborted: false }
+        AbortSignal {
+            aborted: false,
+            reason: String::new(),
+            token: CancellationToken::new(),
+        }
     }
 
-    pub fn abort(&mut self) {
+    pub fn abort(&mut self, reason: &str) {
         self.aborted = true;
+        self.reason = reason.to_string();
+        self.token.cancel();
+    }
+
+    pub fn token(&self) -> &CancellationToken {
+        &self.token
+    }
+}
+
+#[js::methods]
+impl AbortSignal {
+    #[qjs(get)]
+    fn aborted(&self) -> bool {
+        self.aborted
+    }
+
+    #[qjs(get)]
+    fn reason(&self) -> String {
+        self.reason.clone()
+    }
+}
+
+impl AbortSignal {
+    pub fn is_aborted(&self) -> bool {
+        self.aborted
     }
 }
 
@@ -61,6 +86,6 @@ impl AbortController {
     }
 
     fn abort(&mut self) {
-        self.signal.abort();
+        self.signal.abort("The operation was aborted");
     }
 }
