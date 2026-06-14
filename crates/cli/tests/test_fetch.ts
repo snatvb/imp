@@ -62,6 +62,18 @@ async function testAbortReason() {
   console.assert(ctrl.signal.reason === "The operation was aborted", "AbortController: default reason");
 }
 
+async function testAbortCustomReason() {
+  const ctrl = new AbortController();
+  ctrl.abort("custom timeout");
+  try {
+    await fetch("https://httpbin.org/get", { signal: ctrl.signal });
+    console.assert(false, "Abort custom reason: should have thrown");
+  } catch (e) {
+    console.assert((e as Error).name === "AbortError", "Abort custom reason: must be AbortError");
+    console.log("PASS: Abort custom reason");
+  }
+}
+
 async function testFetchAbortBefore() {
   const ctrl = new AbortController();
   ctrl.abort();
@@ -69,6 +81,8 @@ async function testFetchAbortBefore() {
     await fetch("https://httpbin.org/get", { signal: ctrl.signal });
     console.assert(false, "Fetch abort before: should have thrown");
   } catch (e) {
+    console.assert((e as Error).name === "AbortError", "Fetch abort before: must be AbortError");
+    console.assert(e instanceof Error, "Fetch abort before: instanceof Error");
     console.log("PASS: Fetch abort before");
   }
 }
@@ -172,6 +186,7 @@ async function testFetchAbortDuring() {
     setTimeout(() => ctrl.abort(), 10);
     await p;
   } catch (e) {
+    console.assert((e as Error).name === "AbortError", "Abort during fetch: must be AbortError");
     console.log("PASS: Abort during fetch");
     return;
   }
@@ -190,6 +205,7 @@ async function main() {
 
   await testAbortController();
   await testAbortReason();
+  await testAbortCustomReason();
   await testFetchAbortBefore();
   console.log("PASS: All AbortController tests");
 

@@ -80,6 +80,7 @@ async function testAbortBeforeFileFetch() {
     await fetch("file:///C:\\some_file.txt", { signal: ctrl.signal });
     console.assert(false, "Abort before file fetch: should have thrown");
   } catch (e) {
+    console.assert((e as Error).name === "AbortError", "Abort before file fetch: must be AbortError");
     console.log("PASS: Abort before file fetch throws");
   }
 }

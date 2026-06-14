@@ -1,6 +1,7 @@
 use crate::js;
 use crate::js::JsLifetime;
 use crate::js::class::{Trace, Tracer};
+use crate::js::function::Opt;
 use tokio_util::sync::CancellationToken;
 
 #[js::class]
@@ -85,7 +86,11 @@ impl AbortController {
         self.signal.clone()
     }
 
-    fn abort(&mut self) {
-        self.signal.abort("The operation was aborted");
+    fn abort(&mut self, reason: Opt<String>) {
+        let msg = match reason.0 {
+            Some(val) => val,
+            None => "The operation was aborted".to_string(),
+        };
+        self.signal.abort(&msg);
     }
 }

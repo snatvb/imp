@@ -485,9 +485,15 @@ declare class Response {
   clone(): Response;
 }
 
+declare class DOMException extends Error {
+  constructor(message?: string, name?: string);
+  readonly name: string;
+  readonly code: number;
+}
+
 declare class AbortController {
   readonly signal: AbortSignal;
-  abort(): void;
+  abort(reason?: any): void;
 }
 
 declare class AbortSignal {

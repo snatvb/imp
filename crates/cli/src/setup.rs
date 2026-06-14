@@ -108,6 +108,11 @@ pub fn setup_globals<'js>(
     globals
         .set("performance", js_core::performance::create(ctx).unwrap())
         .unwrap();
+    // Enable DOMException intrinsic (AbortError, etc.)
+    let ret = unsafe { js::qjs::JS_AddIntrinsicDOMException(ctx.as_raw().as_ptr()) };
+    if ret != 0 {
+        panic!("Failed to enable DOMException intrinsic");
+    }
     fetch::create_globals(ctx).unwrap();
     js_timers
 }

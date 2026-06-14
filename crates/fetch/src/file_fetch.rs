@@ -1,5 +1,5 @@
 use js_core::abort::AbortSignal;
-use js_core::error::{JsError, SystemError};
+use js_core::error::{throw_abort_error, JsError, SystemError};
 use js_core::js;
 
 use crate::headers::Headers;
@@ -13,7 +13,7 @@ pub async fn file_fetch<'js>(
     if let Some(ref sig) = signal
         && sig.is_aborted()
     {
-        return Err(js::Error::Exception);
+        return Err(throw_abort_error(&ctx, "The operation was aborted"));
     }
 
     let path_str = file_path_from_url(url).map_err(|_| js::Error::Exception)?;
@@ -29,7 +29,7 @@ pub async fn file_fetch<'js>(
                 std::future::pending::<()>().await
             }
         } => {
-            return Err(js::Error::Exception);
+            return Err(throw_abort_error(&ctx, "The operation was aborted"));
         }
     }
     .map_err(|e| {

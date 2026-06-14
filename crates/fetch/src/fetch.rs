@@ -1,4 +1,5 @@
 use js_core::abort::AbortSignal;
+use js_core::error::throw_abort_error;
 use js_core::js;
 use js_core::js::function::Opt;
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
@@ -47,7 +48,7 @@ pub async fn fetch<'js>(
     if let Some(ref sig) = signal
         && sig.is_aborted()
     {
-        return Err(js::Error::Exception);
+        return Err(throw_abort_error(&ctx, "The operation was aborted"));
     }
 
     if url.as_str().starts_with("file://") {
@@ -70,7 +71,7 @@ pub async fn fetch<'js>(
                 std::future::pending::<()>().await
             }
         } => {
-            return Err(js::Error::Exception);
+            return Err(throw_abort_error(&ctx, "The operation was aborted"));
         }
     };
 
