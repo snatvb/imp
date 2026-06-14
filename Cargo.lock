@@ -693,6 +693,7 @@ name = "fetch"
 version = "0.1.0"
 dependencies = [
  "js_core",
+ "os-path",
  "reqwest",
  "rquickjs",
  "serde_json",

@@ -10,4 +10,5 @@ js_core.workspace = true
 tokio.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
+os-path.workspace = true
 reqwest = { version = "0.13.4", features = ["json", "rustls"] }

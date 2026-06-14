@@ -1,5 +1,6 @@
 pub mod client;
 pub mod fetch;
+pub mod file_fetch;
 pub mod headers;
 pub mod request;
 pub mod response;

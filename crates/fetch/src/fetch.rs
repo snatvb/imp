@@ -4,12 +4,13 @@ use js_core::js::function::Opt;
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 
 use crate::client::get_client;
+use crate::file_fetch::file_fetch;
 use crate::headers::Headers;
 use crate::response::Response;
 
 #[js::function]
 pub async fn fetch<'js>(
-    _ctx: js::Ctx<'js>,
+    ctx: js::Ctx<'js>,
     url: js_core::utils::StringArg,
     init: Opt<js::Object<'js>>,
 ) -> js::Result<Response> {
@@ -47,6 +48,10 @@ pub async fn fetch<'js>(
         && sig.is_aborted()
     {
         return Err(js::Error::Exception);
+    }
+
+    if url.as_str().starts_with("file://") {
+        return file_fetch(ctx, url.as_str(), signal).await;
     }
 
     let signal_token = signal.as_ref().map(|s| s.token().clone());
