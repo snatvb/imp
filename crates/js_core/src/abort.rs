@@ -2,13 +2,17 @@ use crate::js;
 use crate::js::JsLifetime;
 use crate::js::class::{Trace, Tracer};
 use crate::js::function::Opt;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
 use tokio_util::sync::CancellationToken;
 
 #[js::class]
 #[derive(JsLifetime, Clone)]
 pub struct AbortSignal {
-    aborted: bool,
-    reason: String,
+    #[qjs(skip_trace)]
+    aborted: Arc<AtomicBool>,
+    #[qjs(skip_trace)]
+    reason: Arc<Mutex<String>>,
     #[qjs(skip_trace)]
     token: CancellationToken,
 }
@@ -26,15 +30,15 @@ impl Default for AbortSignal {
 impl AbortSignal {
     pub fn new() -> Self {
         AbortSignal {
-            aborted: false,
-            reason: String::new(),
+            aborted: Arc::new(AtomicBool::new(false)),
+            reason: Arc::new(Mutex::new(String::new())),
             token: CancellationToken::new(),
         }
     }
 
     pub fn abort(&mut self, reason: &str) {
-        self.aborted = true;
-        self.reason = reason.to_string();
+        self.aborted.store(true, Ordering::Relaxed);
+        *self.reason.lock().unwrap() = reason.to_string();
         self.token.cancel();
     }
 
@@ -45,20 +49,42 @@ impl AbortSignal {
 
 #[js::methods]
 impl AbortSignal {
+    #[qjs(constructor)]
+    fn constructor() -> Self {
+        AbortSignal::new()
+    }
+
     #[qjs(get)]
     fn aborted(&self) -> bool {
-        self.aborted
+        self.aborted.load(Ordering::Relaxed)
     }
 
     #[qjs(get)]
     fn reason(&self) -> String {
-        self.reason.clone()
+        self.reason.lock().unwrap().clone()
+    }
+
+    #[qjs(static)]
+    fn timeout(ms: f64) -> AbortSignal {
+        let signal = AbortSignal::new();
+        let token = signal.token().clone();
+        let a = signal.aborted.clone();
+        let r = signal.reason.clone();
+
+        tokio::spawn(async move {
+            tokio::time::sleep(std::time::Duration::from_millis(ms as u64)).await;
+            a.store(true, Ordering::Relaxed);
+            *r.lock().unwrap() = "The operation timed out".to_string();
+            token.cancel();
+        });
+
+        signal
     }
 }
 
 impl AbortSignal {
     pub fn is_aborted(&self) -> bool {
-        self.aborted
+        self.aborted.load(Ordering::Relaxed)
     }
 }
 

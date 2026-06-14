@@ -21,3 +21,4 @@ os-path.workspace = true
 js_error_derive.workspace = true
 chrono.workspace = true
 tokio-util.workspace = true
+tokio.workspace = true

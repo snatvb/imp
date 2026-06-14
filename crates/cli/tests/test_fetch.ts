@@ -74,6 +74,27 @@ async function testAbortCustomReason() {
   }
 }
 
+async function testAbortSignalTimeout() {
+  const signal = AbortSignal.timeout(10);
+  console.assert(!signal.aborted, "AbortSignal.timeout: initially not aborted");
+
+  await new Promise<void>(resolve => setTimeout(resolve, 50));
+
+  console.assert(signal.aborted, "AbortSignal.timeout: aborted after timeout");
+  console.assert(signal.reason === "The operation timed out", "AbortSignal.timeout: reason is timeout message");
+  console.log("PASS: AbortSignal.timeout");
+}
+
+async function testFetchTimeout() {
+  try {
+    await fetch("https://httpbin.org/delay/10", { signal: AbortSignal.timeout(50) });
+    console.assert(false, "Fetch timeout: should have thrown");
+  } catch (e) {
+    console.assert((e as Error).name === "AbortError", "Fetch timeout: must be AbortError");
+    console.log("PASS: Fetch with AbortSignal.timeout");
+  }
+}
+
 async function testFetchAbortBefore() {
   const ctrl = new AbortController();
   ctrl.abort();
@@ -206,6 +227,8 @@ async function main() {
   await testAbortController();
   await testAbortReason();
   await testAbortCustomReason();
+  await testAbortSignalTimeout();
+  await testFetchTimeout();
   await testFetchAbortBefore();
   console.log("PASS: All AbortController tests");
 

@@ -27,6 +27,16 @@ pub fn throw_abort_error<'js>(ctx: &js::Ctx<'js>, reason: &str) -> js::Error {
     js::Error::Exception
 }
 
+pub fn throw_timeout_error<'js>(ctx: &js::Ctx<'js>, reason: &str) -> js::Error {
+    unsafe {
+        let name = std::ffi::CString::new("TimeoutError").unwrap();
+        let msg = std::ffi::CString::new(reason).unwrap();
+        let fmt = c"%s";
+        js::qjs::JS_ThrowDOMException(ctx.as_raw().as_ptr(), name.as_ptr(), fmt.as_ptr(), msg.as_ptr());
+    }
+    js::Error::Exception
+}
+
 pub fn make_type_error<'js>(ctx: &js::Ctx<'js>, msg: String) -> js::Result<js::Value<'js>> {
     let ctor: Constructor = ctx.globals().get("TypeError")?;
     let err: Object = ctor.construct((msg,))?;

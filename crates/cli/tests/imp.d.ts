@@ -499,4 +499,5 @@ declare class AbortController {
 declare class AbortSignal {
   readonly aborted: boolean;
   readonly reason: string;
+  static timeout(ms: number): AbortSignal;
 }
