@@ -66,8 +66,9 @@ impl JsUrl {
     }
 
     #[qjs(get, rename = "href")]
-    fn href(&self) -> String {
-        String::from(self.inner.borrow().as_str())
+    fn href<'js>(&self, ctx: Ctx<'js>) -> js::Result<js::String<'js>> {
+        let borrow = self.inner.borrow();
+        js::String::from_str(ctx, borrow.as_str())
     }
 
     #[qjs(set, rename = "href")]
@@ -80,13 +81,17 @@ impl JsUrl {
     }
 
     #[qjs(get)]
-    fn origin(&self) -> String {
-        self.inner.borrow().origin().ascii_serialization()
+    fn origin<'js>(&self, ctx: Ctx<'js>) -> js::Result<js::String<'js>> {
+        let borrow = self.inner.borrow();
+        let s = borrow.origin().ascii_serialization();
+        js::String::from_str(ctx, &s)
     }
 
     #[qjs(get, rename = "protocol")]
-    fn protocol(&self) -> String {
-        format!("{}:", self.inner.borrow().scheme())
+    fn protocol<'js>(&self, ctx: Ctx<'js>) -> js::Result<js::String<'js>> {
+        let borrow = self.inner.borrow();
+        let s = format!("{}:", borrow.scheme());
+        js::String::from_str(ctx, &s)
     }
 
     #[qjs(set, rename = "protocol")]
@@ -96,8 +101,9 @@ impl JsUrl {
     }
 
     #[qjs(get, rename = "username")]
-    fn username(&self) -> String {
-        self.inner.borrow().username().to_string()
+    fn username<'js>(&self, ctx: Ctx<'js>) -> js::Result<js::String<'js>> {
+        let borrow = self.inner.borrow();
+        js::String::from_str(ctx, borrow.username())
     }
 
     #[qjs(set, rename = "username")]
@@ -106,8 +112,9 @@ impl JsUrl {
     }
 
     #[qjs(get, rename = "password")]
-    fn password(&self) -> String {
-        self.inner.borrow().password().unwrap_or("").to_string()
+    fn password<'js>(&self, ctx: Ctx<'js>) -> js::Result<js::String<'js>> {
+        let borrow = self.inner.borrow();
+        js::String::from_str(ctx, borrow.password().unwrap_or(""))
     }
 
     #[qjs(set, rename = "password")]
@@ -116,8 +123,9 @@ impl JsUrl {
     }
 
     #[qjs(get, rename = "host")]
-    fn host(&self) -> String {
-        self.inner.borrow().host_str().unwrap_or("").to_string()
+    fn host<'js>(&self, ctx: Ctx<'js>) -> js::Result<js::String<'js>> {
+        let borrow = self.inner.borrow();
+        js::String::from_str(ctx, borrow.host_str().unwrap_or(""))
     }
 
     #[qjs(set, rename = "host")]
@@ -126,8 +134,9 @@ impl JsUrl {
     }
 
     #[qjs(get, rename = "hostname")]
-    fn hostname(&self) -> String {
-        self.inner.borrow().host_str().unwrap_or("").to_string()
+    fn hostname<'js>(&self, ctx: Ctx<'js>) -> js::Result<js::String<'js>> {
+        let borrow = self.inner.borrow();
+        js::String::from_str(ctx, borrow.host_str().unwrap_or(""))
     }
 
     #[qjs(set, rename = "hostname")]
@@ -136,10 +145,14 @@ impl JsUrl {
     }
 
     #[qjs(get, rename = "port")]
-    fn port(&self) -> String {
-        match self.inner.borrow().port() {
-            Some(p) => p.to_string(),
-            None => String::new(),
+    fn port<'js>(&self, ctx: Ctx<'js>) -> js::Result<js::String<'js>> {
+        let borrow = self.inner.borrow();
+        match borrow.port() {
+            Some(p) => {
+                let s = p.to_string();
+                js::String::from_str(ctx, &s)
+            }
+            None => js::String::from_str(ctx, ""),
         }
     }
 
@@ -153,8 +166,9 @@ impl JsUrl {
     }
 
     #[qjs(get, rename = "pathname")]
-    fn pathname(&self) -> String {
-        self.inner.borrow().path().to_string()
+    fn pathname<'js>(&self, ctx: Ctx<'js>) -> js::Result<js::String<'js>> {
+        let borrow = self.inner.borrow();
+        js::String::from_str(ctx, borrow.path())
     }
 
     #[qjs(set, rename = "pathname")]
@@ -163,15 +177,16 @@ impl JsUrl {
     }
 
     #[qjs(get, rename = "search")]
-    fn search(&self) -> String {
-        match self.inner.borrow().query() {
+    fn search<'js>(&self, ctx: Ctx<'js>) -> js::Result<js::String<'js>> {
+        let borrow = self.inner.borrow();
+        match borrow.query() {
             Some(q) if !q.is_empty() => {
                 let mut s = String::with_capacity(q.len() + 1);
                 s.push('?');
                 s.push_str(q);
-                s
+                js::String::from_str(ctx, &s)
             }
-            _ => String::new(),
+            _ => js::String::from_str(ctx, ""),
         }
     }
 
@@ -183,15 +198,16 @@ impl JsUrl {
     }
 
     #[qjs(get, rename = "hash")]
-    fn hash(&self) -> String {
-        match self.inner.borrow().fragment() {
+    fn hash<'js>(&self, ctx: Ctx<'js>) -> js::Result<js::String<'js>> {
+        let borrow = self.inner.borrow();
+        match borrow.fragment() {
             Some(f) if !f.is_empty() => {
                 let mut s = String::with_capacity(f.len() + 1);
                 s.push('#');
                 s.push_str(f);
-                s
+                js::String::from_str(ctx, &s)
             }
-            _ => String::new(),
+            _ => js::String::from_str(ctx, ""),
         }
     }
 
@@ -209,12 +225,14 @@ impl JsUrl {
     }
 
     #[qjs(rename = "toString")]
-    fn to_string_js(&self) -> String {
-        String::from(self.inner.borrow().as_str())
+    fn to_string_js<'js>(&self, ctx: Ctx<'js>) -> js::Result<js::String<'js>> {
+        let borrow = self.inner.borrow();
+        js::String::from_str(ctx, borrow.as_str())
     }
 
-    fn to_json(&self) -> String {
-        String::from(self.inner.borrow().as_str())
+    fn to_json<'js>(&self, ctx: Ctx<'js>) -> js::Result<js::String<'js>> {
+        let borrow = self.inner.borrow();
+        js::String::from_str(ctx, borrow.as_str())
     }
 
     #[qjs(static, rename = "canParse")]
