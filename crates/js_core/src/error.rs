@@ -22,7 +22,12 @@ pub fn throw_abort_error<'js>(ctx: &js::Ctx<'js>, reason: &str) -> js::Error {
         let name = std::ffi::CString::new("AbortError").unwrap();
         let msg = std::ffi::CString::new(reason).unwrap();
         let fmt = c"%s";
-        js::qjs::JS_ThrowDOMException(ctx.as_raw().as_ptr(), name.as_ptr(), fmt.as_ptr(), msg.as_ptr());
+        js::qjs::JS_ThrowDOMException(
+            ctx.as_raw().as_ptr(),
+            name.as_ptr(),
+            fmt.as_ptr(),
+            msg.as_ptr(),
+        );
     }
     js::Error::Exception
 }
@@ -32,7 +37,12 @@ pub fn throw_timeout_error<'js>(ctx: &js::Ctx<'js>, reason: &str) -> js::Error {
         let name = std::ffi::CString::new("TimeoutError").unwrap();
         let msg = std::ffi::CString::new(reason).unwrap();
         let fmt = c"%s";
-        js::qjs::JS_ThrowDOMException(ctx.as_raw().as_ptr(), name.as_ptr(), fmt.as_ptr(), msg.as_ptr());
+        js::qjs::JS_ThrowDOMException(
+            ctx.as_raw().as_ptr(),
+            name.as_ptr(),
+            fmt.as_ptr(),
+            msg.as_ptr(),
+        );
     }
     js::Error::Exception
 }

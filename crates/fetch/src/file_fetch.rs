@@ -1,5 +1,5 @@
 use js_core::abort::AbortSignal;
-use js_core::error::{throw_abort_error, JsError, SystemError};
+use js_core::error::{JsError, SystemError, throw_abort_error};
 use js_core::js;
 
 use crate::headers::Headers;
@@ -32,9 +32,7 @@ pub async fn file_fetch<'js>(
             return Err(throw_abort_error(&ctx, "The operation was aborted"));
         }
     }
-    .map_err(|e| {
-        SystemError::from_io(e, "fetch", Some(path_str.clone())).into_exception(&ctx)
-    })?;
+    .map_err(|e| SystemError::from_io(e, "fetch", Some(path_str.clone())).into_exception(&ctx))?;
 
     let content_type = guess_content_type(&path_str);
     let mut headers = Headers::new();
