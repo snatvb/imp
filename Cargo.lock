@@ -1381,6 +1381,7 @@ dependencies = [
  "oxc_span",
  "oxc_transformer",
  "rquickjs",
+ "tokio",
  "tokio-util",
  "tracing",
  "unicode-normalization",
