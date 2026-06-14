@@ -167,4 +167,37 @@ import { json } from 'imp:parsers';
     console.assert(parsed.over_i32 === 2147483648, "i32+1 should not truncate");
 }
 
+{
+    const input = '{"text":"Привет мир"}';
+    const parsed = json.parse(input) as any;
+    console.assert(parsed.text === "Привет мир", "cyrillic should parse");
+}
+
+{
+    const input = '{"emoji":"😀🚀🎉"}';
+    const parsed = json.parse(input) as any;
+    console.assert(parsed.emoji === "😀🚀🎉", "emoji should parse");
+}
+
+{
+    const obj = { mixed: "hello мир こんにちは 🌍" };
+    const str = json.stringify(obj).toString();
+    const parsed = json.parse(str) as any;
+    console.assert(parsed.mixed === "hello мир こんにちは 🌍", "unicode roundtrip");
+}
+
+{
+    const emptyObj = {};
+    const str = json.stringify(emptyObj).toString();
+    const parsed = json.parse(str) as any;
+    console.assert(JSON.stringify(parsed) === "{}", "empty object roundtrip");
+}
+
+{
+    const emptyArr: any[] = [];
+    const str = json.stringify(emptyArr).toString();
+    const parsed = json.parse(str) as any[];
+    console.assert(Array.isArray(parsed) && parsed.length === 0, "empty array roundtrip");
+}
+
 console.log("ALL PARSERS JSON TESTS PASSED");

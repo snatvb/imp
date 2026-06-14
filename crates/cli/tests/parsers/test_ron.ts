@@ -120,4 +120,11 @@ import { ron } from 'imp:parsers';
     console.assert(parsed.value === 42, "other values should work");
 }
 
+{
+    const emptyObj = {};
+    const str = ron.stringify(emptyObj).toString();
+    const parsed = ron.parse(str) as any;
+    console.assert(typeof parsed === "object" && parsed !== null, "empty object roundtrip ron");
+}
+
 console.log("ALL PARSERS RON TESTS PASSED");

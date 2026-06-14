@@ -106,4 +106,37 @@ import { yaml } from 'imp:parsers';
     console.assert(parsed.value === 42, "other values should work");
 }
 
+{
+    const input = 'text: "Привет мир"\n';
+    const parsed = yaml.parse(input) as any;
+    console.assert(parsed.text === "Привет мир", "cyrillic should parse");
+}
+
+{
+    const input = 'emoji: "😀🚀🎉"\n';
+    const parsed = yaml.parse(input) as any;
+    console.assert(parsed.emoji === "😀🚀🎉", "emoji should parse");
+}
+
+{
+    const obj = { mixed: "hello мир こんにちは 🌍" };
+    const str = yaml.stringify(obj).toString();
+    const parsed = yaml.parse(str) as any;
+    console.assert(parsed.mixed === "hello мир こんにちは 🌍", "unicode roundtrip");
+}
+
+{
+    const emptyObj = {};
+    const str = yaml.stringify(emptyObj).toString();
+    const parsed = yaml.parse(str) as any;
+    console.assert(typeof parsed === "object" && parsed !== null, "empty object roundtrip yaml");
+}
+
+{
+    const emptyArr: any[] = [];
+    const str = yaml.stringify(emptyArr).toString();
+    const parsed = yaml.parse(str) as any[];
+    console.assert(Array.isArray(parsed) && parsed.length === 0, "empty array roundtrip yaml");
+}
+
 console.log("ALL PARSERS YAML TESTS PASSED");

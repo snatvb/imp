@@ -2,24 +2,21 @@ use crate::prelude::*;
 use js_core::js::{Class, JsIterator};
 use js_core::object::ObjectMethodExt;
 use js_core::rs_string::RsString;
+use std::collections::HashSet;
 use toml::value::{Datetime, Table};
 
 use crate::error::Error;
 
 pub fn js_to_toml_value<'js>(ctx: &Ctx<'js>, val: Value<'js>) -> Result<toml::Value, Error> {
-    js_to_toml_value_depth(ctx, val, 0)
+    let mut visited = HashSet::new();
+    js_to_toml_value_inner(ctx, val, &mut visited)
 }
 
-fn js_to_toml_value_depth<'js>(
+fn js_to_toml_value_inner<'js>(
     ctx: &Ctx<'js>,
     val: Value<'js>,
-    depth: usize,
+    visited: &mut HashSet<js::Value<'js>>,
 ) -> Result<toml::Value, Error> {
-    const MAX_DEPTH: usize = 256;
-    if depth > MAX_DEPTH {
-        return Err(Error::Parse("maximum nesting depth exceeded".into()));
-    }
-
     match val.type_of() {
         js::Type::Null | js::Type::Undefined => Ok(toml::Value::String("null".to_string())),
         js::Type::Bool => val
@@ -45,7 +42,7 @@ fn js_to_toml_value_depth<'js>(
             let mut result = Vec::with_capacity(arr.len());
             for item in arr.iter::<Value>() {
                 let item = item.map_err(|e| Error::Parse(e.to_string()))?;
-                result.push(js_to_toml_value_depth(ctx, item, depth + 1)?);
+                result.push(js_to_toml_value_inner(ctx, item, visited)?);
             }
             Ok(toml::Value::Array(result))
         }
@@ -60,7 +57,7 @@ fn js_to_toml_value_depth<'js>(
             let obj = val
                 .as_object()
                 .ok_or_else(|| Error::Parse("invalid object".into()))?;
-            convert_toml_object(ctx, obj, depth)
+            convert_toml_object_inner(ctx, obj, visited)
         }
         _ => Err(Error::Unsupported(format!(
             "cannot convert {:?} to TOML",
@@ -69,10 +66,10 @@ fn js_to_toml_value_depth<'js>(
     }
 }
 
-fn convert_toml_object<'js>(
+fn convert_toml_object_inner<'js>(
     ctx: &Ctx<'js>,
     obj: &Object<'js>,
-    depth: usize,
+    visited: &mut HashSet<js::Value<'js>>,
 ) -> Result<toml::Value, Error> {
     if let Some(class) = Class::<RsString>::from_object(obj) {
         let borrowed = class.borrow();
@@ -100,15 +97,22 @@ fn convert_toml_object<'js>(
         return Ok(toml::Value::String("null".to_string()));
     }
 
+    let raw = obj.as_value().clone();
+    if !visited.insert(raw.clone()) {
+        return Err(Error::Parse("circular reference detected".into()));
+    }
+
     if let Ok(set_ctor) = ctx.globals().get::<_, Object>("Set")
         && obj.is_instance_of(&set_ctor)
     {
         let mut result = Vec::new();
         if let Ok(values) = obj.call_method::<_, JsIterator<Value>>("values", ()) {
-            for val in values.flatten() {
-                result.push(js_to_toml_value_depth(ctx, val, depth + 1)?);
+            for val in values {
+                let v = val.map_err(|e| Error::Parse(e.to_string()))?;
+                result.push(js_to_toml_value_inner(ctx, v, visited)?);
             }
         }
+        visited.remove(&raw);
         return Ok(toml::Value::Array(result));
     }
 
@@ -117,13 +121,15 @@ fn convert_toml_object<'js>(
     {
         let mut table = Table::new();
         if let Ok(entries) = obj.call_method::<_, JsIterator<Array>>("entries", ()) {
-            for entry in entries.flatten() {
+            for entry in entries {
+                let entry = entry.map_err(|e| Error::Parse(e.to_string()))?;
                 if let (Ok(key), Ok(val)) = (entry.get::<Value>(0), entry.get::<Value>(1)) {
                     let key_str = key_to_string(ctx, key)?;
-                    table.insert(key_str, js_to_toml_value_depth(ctx, val, depth + 1)?);
+                    table.insert(key_str, js_to_toml_value_inner(ctx, val, visited)?);
                 }
             }
         }
+        visited.remove(&raw);
         return Ok(toml::Value::Table(table));
     }
 
@@ -133,8 +139,9 @@ fn convert_toml_object<'js>(
         if v.type_of() == js::Type::Function {
             continue;
         }
-        table.insert(k, js_to_toml_value_depth(ctx, v, depth + 1)?);
+        table.insert(k, js_to_toml_value_inner(ctx, v, visited)?);
     }
+    visited.remove(&raw);
     Ok(toml::Value::Table(table))
 }
 

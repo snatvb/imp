@@ -103,4 +103,10 @@ import { xml } from 'imp:parsers';
     console.assert(str.includes("<value>42</value>"), "other values should work");
 }
 
+{
+    const input = '<root><item id="1">Alice</item><item id="2">Bob</item></root>';
+    const parsed = xml.parse(input) as any;
+    console.assert(parsed.item !== undefined, "items should exist");
+}
+
 console.log("ALL PARSERS XML TESTS PASSED");

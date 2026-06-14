@@ -139,4 +139,27 @@ import { toml } from 'imp:parsers';
     console.assert(error, "top-level function should throw error");
 }
 
+{
+    const emptyObj = {};
+    const str = toml.stringify(emptyObj).toString();
+    console.assert(str.trim() === "", "empty object toml should be empty");
+}
+
+{
+    const emptyArr: any[] = [];
+    const obj = { items: emptyArr };
+    const str = toml.stringify(obj).toString();
+    console.assert(str.includes("items = []"), "empty array in toml");
+}
+
+{
+    const input = 'created = 2025-01-01T00:00:00Z\n';
+    const parsed = toml.parse(input) as any;
+    console.assert(typeof parsed.created === "string", "datetime should parse as string");
+    console.assert(parsed.created.includes("2025-01-01"), "datetime should contain date");
+
+    const str = toml.stringify({ created: parsed.created }).toString();
+    console.assert(str.includes("2025-01-01"), "datetime should roundtrip through toml");
+}
+
 console.log("ALL PARSERS TOML TESTS PASSED");

@@ -3,6 +3,7 @@ use js_core::js::{Class, JsIterator};
 use js_core::object::ObjectMethodExt;
 use js_core::rs_string::RsString;
 use serde_json::{Map, Number};
+use std::collections::HashSet;
 
 use crate::error::Error;
 
@@ -47,19 +48,15 @@ pub fn value_to_js<'js>(ctx: &Ctx<'js>, val: serde_json::Value) -> js::Result<Va
 }
 
 pub fn js_to_value<'js>(ctx: &Ctx<'js>, val: Value<'js>) -> Result<serde_json::Value, Error> {
-    js_to_value_depth(ctx, val, 0)
+    let mut visited = HashSet::new();
+    js_to_value_inner(ctx, val, &mut visited)
 }
 
-fn js_to_value_depth<'js>(
+fn js_to_value_inner<'js>(
     ctx: &Ctx<'js>,
     val: Value<'js>,
-    depth: usize,
+    visited: &mut HashSet<js::Value<'js>>,
 ) -> Result<serde_json::Value, Error> {
-    const MAX_DEPTH: usize = 256;
-    if depth > MAX_DEPTH {
-        return Err(Error::Parse("maximum nesting depth exceeded".into()));
-    }
-
     match val.type_of() {
         js::Type::Null | js::Type::Undefined => Ok(serde_json::Value::Null),
         js::Type::Bool => val
@@ -86,7 +83,7 @@ fn js_to_value_depth<'js>(
             let mut result = Vec::with_capacity(arr.len());
             for item in arr.iter::<Value>() {
                 let item = item.map_err(|e| Error::Parse(e.to_string()))?;
-                result.push(js_to_value_depth(ctx, item, depth + 1)?);
+                result.push(js_to_value_inner(ctx, item, visited)?);
             }
             Ok(serde_json::Value::Array(result))
         }
@@ -99,7 +96,7 @@ fn js_to_value_depth<'js>(
             let obj = val
                 .as_object()
                 .ok_or_else(|| Error::Parse("invalid object".into()))?;
-            convert_object(ctx, obj, depth)
+            convert_object_inner(ctx, obj, visited)
         }
         _ => Err(Error::Unsupported(format!(
             "cannot convert {:?} to JSON",
@@ -108,10 +105,10 @@ fn js_to_value_depth<'js>(
     }
 }
 
-fn convert_object<'js>(
+fn convert_object_inner<'js>(
     ctx: &Ctx<'js>,
     obj: &Object<'js>,
-    depth: usize,
+    visited: &mut HashSet<js::Value<'js>>,
 ) -> Result<serde_json::Value, Error> {
     if let Some(class) = Class::<RsString>::from_object(obj) {
         let borrowed = class.borrow();
@@ -136,15 +133,22 @@ fn convert_object<'js>(
         return Ok(serde_json::Value::Null);
     }
 
+    let raw = obj.as_value().clone();
+    if !visited.insert(raw.clone()) {
+        return Err(Error::Parse("circular reference detected".into()));
+    }
+
     if let Ok(set_ctor) = ctx.globals().get::<_, Object>("Set")
         && obj.is_instance_of(&set_ctor)
     {
         let mut result = Vec::new();
         if let Ok(values) = obj.call_method::<_, JsIterator<Value>>("values", ()) {
-            for val in values.flatten() {
-                result.push(js_to_value_depth(ctx, val, depth + 1)?);
+            for val in values {
+                let v = val.map_err(|e| Error::Parse(e.to_string()))?;
+                result.push(js_to_value_inner(ctx, v, visited)?);
             }
         }
+        visited.remove(&raw);
         return Ok(serde_json::Value::Array(result));
     }
 
@@ -153,13 +157,15 @@ fn convert_object<'js>(
     {
         let mut map = Map::new();
         if let Ok(entries) = obj.call_method::<_, JsIterator<Array>>("entries", ()) {
-            for entry in entries.flatten() {
+            for entry in entries {
+                let entry = entry.map_err(|e| Error::Parse(e.to_string()))?;
                 if let (Ok(key), Ok(val)) = (entry.get::<Value>(0), entry.get::<Value>(1)) {
                     let key_str = key_to_string(ctx, key)?;
-                    map.insert(key_str, js_to_value_depth(ctx, val, depth + 1)?);
+                    map.insert(key_str, js_to_value_inner(ctx, val, visited)?);
                 }
             }
         }
+        visited.remove(&raw);
         return Ok(serde_json::Value::Object(map));
     }
 
@@ -169,8 +175,9 @@ fn convert_object<'js>(
         if v.type_of() == js::Type::Function {
             continue;
         }
-        map.insert(k, js_to_value_depth(ctx, v, depth + 1)?);
+        map.insert(k, js_to_value_inner(ctx, v, visited)?);
     }
+    visited.remove(&raw);
     Ok(serde_json::Value::Object(map))
 }
 
@@ -185,5 +192,25 @@ fn key_to_string<'js>(ctx: &Ctx<'js>, val: Value<'js>) -> Result<String, Error> 
         _ => Err(Error::Unsupported(
             "Map key must be string or number".into(),
         )),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_json::Number;
+
+    #[test]
+    fn test_nan_not_serializable() {
+        let nan = Number::from_f64(f64::NAN);
+        assert!(
+            nan.is_none(),
+            "NaN should not be representable as JSON Number"
+        );
+    }
+
+    #[test]
+    fn test_infinity_not_serializable() {
+        assert!(Number::from_f64(f64::INFINITY).is_none());
+        assert!(Number::from_f64(f64::NEG_INFINITY).is_none());
     }
 }

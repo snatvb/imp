@@ -84,3 +84,69 @@ pub fn stringify<'js>(ctx: Ctx<'js>, value: Value<'js>) -> js::Result<js::Class<
     .map_err(|e| Error::Serialize(e.to_string()).into_exception(&ctx))?;
     js::Class::instance(ctx, RsString::owned(s))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn test_extract_headers_sorted() {
+        let rows = vec![json!({"z": 1, "a": 2, "m": 3}), json!({"b": 4, "a": 5})];
+        let headers = extract_headers(&rows);
+        assert_eq!(headers, vec!["a", "b", "m", "z"]);
+    }
+
+    #[test]
+    fn test_extract_headers_empty() {
+        let rows: Vec<serde_json::Value> = vec![];
+        let headers = extract_headers(&rows);
+        assert!(headers.is_empty());
+    }
+
+    #[test]
+    fn test_value_to_field_string() {
+        assert_eq!(value_to_field(&json!("hello")), "hello");
+    }
+
+    #[test]
+    fn test_value_to_field_null() {
+        assert_eq!(value_to_field(&serde_json::Value::Null), "");
+    }
+
+    #[test]
+    fn test_value_to_field_number() {
+        assert_eq!(value_to_field(&json!(42)), "42");
+    }
+
+    #[test]
+    fn test_value_to_field_bool() {
+        assert_eq!(value_to_field(&json!(true)), "true");
+    }
+
+    #[test]
+    fn test_row_to_record() {
+        let row = json!({"a": "1", "b": "2"});
+        let headers = vec!["a".to_string(), "b".to_string(), "c".to_string()];
+        let record = row_to_record(&row, &headers);
+        assert_eq!(record, vec!["1", "2", ""]);
+    }
+
+    #[test]
+    fn test_row_to_record_non_object() {
+        let row = json!("not an object");
+        let headers = vec!["a".to_string()];
+        let record = row_to_record(&row, &headers);
+        assert!(record.is_empty());
+    }
+
+    #[test]
+    fn test_extract_headers_partial_rows() {
+        let rows = vec![
+            json!({"name": "Alice"}),
+            json!({"name": "Bob", "email": "bob@test.com"}),
+        ];
+        let headers = extract_headers(&rows);
+        assert_eq!(headers, vec!["email", "name"]);
+    }
+}
