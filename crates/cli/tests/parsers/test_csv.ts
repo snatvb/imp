@@ -96,4 +96,47 @@ import { csv } from 'imp:parsers';
     console.assert(!error, "header only CSV should not throw error");
 }
 
+{
+    let error = false;
+    try {
+        csv.stringify("not an array" as any);
+    } catch (e) {
+        error = true;
+    }
+    console.assert(error, "stringify non-array should throw error");
+}
+
+{
+    let error = false;
+    try {
+        csv.stringify({ a: 1 } as any);
+    } catch (e) {
+        error = true;
+    }
+    console.assert(error, "stringify object should throw error");
+}
+
+{
+    let error = false;
+    try {
+        csv.stringify(42 as any);
+    } catch (e) {
+        error = true;
+    }
+    console.assert(error, "stringify number should throw error");
+}
+
+{
+    const data = [
+        { name: "Alice" },
+        { name: "Bob", email: "bob@test.com" }
+    ];
+    const str = csv.stringify(data).toString();
+    console.assert(str.includes("name"), "should have name header");
+    console.assert(str.includes("email"), "should have email header from second row");
+    console.assert(str.includes("Alice"), "should have Alice");
+    console.assert(str.includes("Bob"), "should have Bob");
+    console.assert(str.includes("bob@test.com"), "should have email value");
+}
+
 console.log("ALL PARSERS CSV TESTS PASSED");

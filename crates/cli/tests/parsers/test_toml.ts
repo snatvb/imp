@@ -111,4 +111,32 @@ import { toml } from 'imp:parsers';
     console.assert(str.includes("value = 42"), "other values should work");
 }
 
+{
+    const input = 'big = 3000000000\n';
+    const parsed = toml.parse(input) as any;
+    console.assert(parsed.big === 3000000000, "large integer should not truncate");
+}
+
+{
+    const input = 'neg = -3000000000\n';
+    const parsed = toml.parse(input) as any;
+    console.assert(parsed.neg === -3000000000, "large negative integer should not truncate");
+}
+
+{
+    const input = 'over = 2147483648\n';
+    const parsed = toml.parse(input) as any;
+    console.assert(parsed.over === 2147483648, "i32+1 should not truncate");
+}
+
+{
+    let error = false;
+    try {
+        toml.stringify((() => {}) as any);
+    } catch (e) {
+        error = true;
+    }
+    console.assert(error, "top-level function should throw error");
+}
+
 console.log("ALL PARSERS TOML TESTS PASSED");

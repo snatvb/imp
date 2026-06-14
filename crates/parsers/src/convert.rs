@@ -12,7 +12,11 @@ pub fn value_to_js<'js>(ctx: &Ctx<'js>, val: serde_json::Value) -> js::Result<Va
         serde_json::Value::Bool(b) => Ok(Value::new_bool(ctx.clone(), b)),
         serde_json::Value::Number(n) => {
             if let Some(i) = n.as_i64() {
-                Ok(Value::new_int(ctx.clone(), i as i32))
+                if i >= i32::MIN as i64 && i <= i32::MAX as i64 {
+                    Ok(Value::new_int(ctx.clone(), i as i32))
+                } else {
+                    Ok(Value::new_float(ctx.clone(), i as f64))
+                }
             } else if let Some(f) = n.as_f64() {
                 Ok(Value::new_float(ctx.clone(), f))
             } else {

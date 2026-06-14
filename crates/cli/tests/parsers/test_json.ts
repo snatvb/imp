@@ -143,4 +143,28 @@ import { json } from 'imp:parsers';
     console.assert(error, "circular reference should throw error");
 }
 
+{
+    const input = '{"big":3000000000}';
+    const parsed = json.parse(input) as any;
+    console.assert(parsed.big === 3000000000, "large integer should not truncate");
+}
+
+{
+    const input = '{"neg":-3000000000}';
+    const parsed = json.parse(input) as any;
+    console.assert(parsed.neg === -3000000000, "large negative integer should not truncate");
+}
+
+{
+    const input = '{"max_i32":2147483647}';
+    const parsed = json.parse(input) as any;
+    console.assert(parsed.max_i32 === 2147483647, "max i32 should work");
+}
+
+{
+    const input = '{"over_i32":2147483648}';
+    const parsed = json.parse(input) as any;
+    console.assert(parsed.over_i32 === 2147483648, "i32+1 should not truncate");
+}
+
 console.log("ALL PARSERS JSON TESTS PASSED");

@@ -49,7 +49,9 @@ fn js_to_toml_value_depth<'js>(
             }
             Ok(toml::Value::Array(result))
         }
-        js::Type::Function => Ok(toml::Value::String("null".to_string())),
+        js::Type::Function => Err(Error::Unsupported(
+            "cannot serialize function to TOML".into(),
+        )),
         js::Type::Object
         | js::Type::Constructor
         | js::Type::Promise
@@ -156,7 +158,13 @@ pub fn toml_value_to_js<'js>(ctx: &Ctx<'js>, val: toml::Value) -> js::Result<Val
             let js_str = JsString::from_str(ctx.clone(), &s)?;
             Ok(js_str.into_value())
         }
-        toml::Value::Integer(i) => Ok(Value::new_int(ctx.clone(), i as i32)),
+        toml::Value::Integer(i) => {
+            if i >= i32::MIN as i64 && i <= i32::MAX as i64 {
+                Ok(Value::new_int(ctx.clone(), i as i32))
+            } else {
+                Ok(Value::new_float(ctx.clone(), i as f64))
+            }
+        }
         toml::Value::Float(f) => Ok(Value::new_float(ctx.clone(), f)),
         toml::Value::Boolean(b) => Ok(Value::new_bool(ctx.clone(), b)),
         toml::Value::Datetime(dt) => {

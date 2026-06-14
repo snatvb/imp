@@ -6,10 +6,15 @@ use crate::convert::{js_to_value, value_to_js};
 use crate::error::Error;
 
 fn extract_headers(rows: &[serde_json::Value]) -> Vec<String> {
-    rows.first()
-        .and_then(|v| v.as_object())
-        .map(|m| m.keys().cloned().collect())
-        .unwrap_or_default()
+    let mut seen = std::collections::BTreeSet::new();
+    for row in rows {
+        if let Some(obj) = row.as_object() {
+            for key in obj.keys() {
+                seen.insert(key.clone());
+            }
+        }
+    }
+    seen.into_iter().collect()
 }
 
 fn value_to_field(v: &serde_json::Value) -> String {
@@ -49,19 +54,26 @@ pub fn parse<'js>(ctx: Ctx<'js>, input: StringArg) -> js::Result<Value<'js>> {
 #[js::function]
 pub fn stringify<'js>(ctx: Ctx<'js>, value: Value<'js>) -> js::Result<js::Class<'js, RsString>> {
     let val = js_to_value(&ctx, value).map_err(|e| e.into_exception(&ctx))?;
+    let rows = match &val {
+        serde_json::Value::Array(rows) => rows,
+        _ => {
+            return Err(
+                Error::Serialize("csv.stringify expects an array of objects".into())
+                    .into_exception(&ctx),
+            );
+        }
+    };
     let mut writer = csv::Writer::from_writer(Vec::new());
-    if let serde_json::Value::Array(rows) = &val {
-        let headers = extract_headers(rows);
-        if !headers.is_empty() {
+    let headers = extract_headers(rows);
+    if !headers.is_empty() {
+        writer
+            .write_record(&headers)
+            .map_err(|e| Error::Serialize(e.to_string()).into_exception(&ctx))?;
+        for row in rows {
+            let record = row_to_record(row, &headers);
             writer
-                .write_record(&headers)
+                .write_record(&record)
                 .map_err(|e| Error::Serialize(e.to_string()).into_exception(&ctx))?;
-            for row in rows {
-                let record = row_to_record(row, &headers);
-                writer
-                    .write_record(&record)
-                    .map_err(|e| Error::Serialize(e.to_string()).into_exception(&ctx))?;
-            }
         }
     }
     let s = String::from_utf8(
