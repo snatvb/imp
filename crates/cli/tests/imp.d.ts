@@ -439,3 +439,57 @@ declare module "imp:parsers" {
     stringify(value: unknown): ByteBuffer;
   };
 }
+
+declare function fetch(input: string, init?: RequestInit): Promise<Response>;
+
+interface RequestInit {
+  method?: string;
+  headers?: Headers | Record<string, string>;
+  body?: string;
+  signal?: AbortSignal;
+}
+
+declare class Headers {
+  constructor(init?: Record<string, string> | [string, string][]);
+  get(name: string): string | null;
+  set(name: string, value: string): void;
+  append(name: string, value: string): void;
+  has(name: string): boolean;
+  delete(name: string): void;
+  entries(): [string, string][];
+  keys(): string[];
+  values(): string[];
+  forEach(cb: (value: string, key: string) => void): void;
+}
+
+declare class Request {
+  constructor(input: string, init?: RequestInit);
+  readonly method: string;
+  readonly url: string;
+  readonly headers: Headers;
+  readonly body: string | null;
+  readonly signal: AbortSignal | null;
+  clone(): Request;
+}
+
+declare class Response {
+  readonly status: number;
+  readonly statusText: string;
+  readonly ok: boolean;
+  readonly headers: Headers;
+  readonly url: string;
+  readonly type: string;
+  text(): Promise<string>;
+  json(): Promise<any>;
+  arrayBuffer(): Promise<ArrayBuffer>;
+  clone(): Response;
+}
+
+declare class AbortController {
+  readonly signal: AbortSignal;
+  abort(): void;
+}
+
+declare class AbortSignal {
+  readonly aborted: boolean;
+}

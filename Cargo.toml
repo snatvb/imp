@@ -13,6 +13,7 @@ members = [
   "crates/clap",
   "crates/embed",
   "crates/parsers",
+  "crates/fetch",
 ]
 resolver = "3"
 
@@ -71,3 +72,4 @@ js_error_derive = { path = "crates/js_error_derive" }
 imp_clap = { path = "crates/clap" }
 embed = { path = "crates/embed" }
 parsers = { path = "crates/parsers" }
+fetch = { path = "crates/fetch" }

@@ -108,6 +108,7 @@ pub fn setup_globals<'js>(
     globals
         .set("performance", js_core::performance::create(ctx).unwrap())
         .unwrap();
+    fetch::create_globals(ctx).unwrap();
     js_timers
 }
 
