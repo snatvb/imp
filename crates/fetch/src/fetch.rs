@@ -1,10 +1,11 @@
 use js_core::abort::AbortSignal;
-use js_core::error::throw_abort_error;
+use js_core::error::JsError;
 use js_core::js;
 use js_core::js::function::Opt;
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 
 use crate::client::get_client;
+use crate::error::Error;
 use crate::file_fetch::file_fetch;
 use crate::headers::Headers;
 use crate::response::Response;
@@ -30,9 +31,10 @@ pub async fn fetch<'js>(
         if let Ok(headers_obj) = init.get::<_, js::Object>("headers") {
             for prop in headers_obj.props::<String, String>() {
                 let (key, value) = prop?;
-                let name =
-                    HeaderName::from_bytes(key.as_bytes()).map_err(|_| js::Error::Exception)?;
-                let val = HeaderValue::from_str(&value).map_err(|_| js::Error::Exception)?;
+                let name = HeaderName::from_bytes(key.as_bytes())
+                    .map_err(|e| Error::from(e).into_exception(&ctx))?;
+                let val = HeaderValue::from_str(&value)
+                    .map_err(|e| Error::from(e).into_exception(&ctx))?;
                 req_headers.insert(name, val);
             }
         }
@@ -49,7 +51,7 @@ pub async fn fetch<'js>(
     if let Some(ref sig) = signal
         && sig.is_aborted()
     {
-        return Err(throw_abort_error(&ctx, "The operation was aborted"));
+        return Err(Error::Aborted("The operation was aborted".into()).into_exception(&ctx));
     }
 
     let url_str = url.as_str();
@@ -74,11 +76,13 @@ pub async fn fetch<'js>(
                 std::future::pending::<()>().await
             }
         } => {
-            return Err(throw_abort_error(&ctx, "The operation was aborted"));
+            return Err(
+                Error::Aborted("The operation was aborted".into()).into_exception(&ctx),
+            );
         }
     };
 
-    let response = response.map_err(|_| js::Error::Exception)?;
+    let response = response.map_err(|e| Error::from(e).into_exception(&ctx))?;
 
     let status = response.status().as_u16();
     let status_text = response
@@ -98,7 +102,7 @@ pub async fn fetch<'js>(
     let resp_body = response
         .bytes()
         .await
-        .map_err(|_| js::Error::Exception)?
+        .map_err(|e| Error::from(e).into_exception(&ctx))?
         .to_vec();
 
     Ok(Response::new(

@@ -1,7 +1,8 @@
 use js_core::abort::AbortSignal;
-use js_core::error::{JsError, SystemError, throw_abort_error};
+use js_core::error::JsError;
 use js_core::js;
 
+use crate::error::Error;
 use crate::headers::Headers;
 use crate::response::Response;
 
@@ -13,10 +14,10 @@ pub async fn file_fetch<'js>(
     if let Some(ref sig) = signal
         && sig.is_aborted()
     {
-        return Err(throw_abort_error(&ctx, "The operation was aborted"));
+        return Err(Error::Aborted("The operation was aborted".into()).into_exception(&ctx));
     }
 
-    let path_str = file_path_from_url(url).map_err(|_| js::Error::Exception)?;
+    let path_str = file_path_from_url(url).map_err(|e| Error::Exception(e).into_exception(&ctx))?;
 
     let signal_token = signal.as_ref().map(|s| s.token().clone());
 
@@ -29,10 +30,19 @@ pub async fn file_fetch<'js>(
                 std::future::pending::<()>().await
             }
         } => {
-            return Err(throw_abort_error(&ctx, "The operation was aborted"));
+            return Err(
+                Error::Aborted("The operation was aborted".into()).into_exception(&ctx),
+            );
         }
     }
-    .map_err(|e| SystemError::from_io(e, "fetch", Some(path_str.clone())).into_exception(&ctx))?;
+    .map_err(|e| {
+        Error::System(js_core::error::SystemError::from_io(
+            e,
+            "fetch",
+            Some(path_str.clone()),
+        ))
+        .into_exception(&ctx)
+    })?;
 
     let content_type = guess_content_type(&path_str);
     let mut headers = Headers::new();

@@ -136,3 +136,20 @@ impl JsError for SystemError {
         Ok(err.into_value())
     }
 }
+
+#[derive(Debug)]
+pub struct Exception(pub String);
+
+impl std::fmt::Display for Exception {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl std::error::Error for Exception {}
+
+impl JsError for Exception {
+    fn into_js<'js>(self, ctx: &js::Ctx<'js>) -> js::Result<js::Value<'js>> {
+        make_error(ctx, self.0)
+    }
+}
