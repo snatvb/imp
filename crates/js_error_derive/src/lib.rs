@@ -24,23 +24,24 @@ pub fn derive_js_error(input: TokenStream) -> TokenStream {
         let kind = attr
             .parse_args::<syn::Ident>()
             .expect("Expected #[js(system)], #[js(type_error)], or #[js(error)]");
-        let kind_str = kind.to_string();
+            let kind_str = kind.to_string();
 
-        match &variant.fields {
-            Fields::Unnamed(fields) if fields.unnamed.len() == 1 => {
-                let body = match kind_str.as_str() {
-                    "system" => quote! { js_core::error::JsError::into_js(e, ctx) },
-                    "type_error" => quote! { js_core::error::make_type_error(ctx, e.to_string()) },
-                    "error" => quote! { js_core::error::make_error(ctx, e.to_string()) },
-                    _ => panic!("Expected #[js(system)], #[js(type_error)], or #[js(error)]"),
-                };
-                quote! {
-                    #name::#variant_name(e) => #body,
+            match &variant.fields {
+                Fields::Unnamed(fields) if fields.unnamed.len() == 1 => {
+                    let body = match kind_str.as_str() {
+                        "system" => quote! { js_core::error::JsError::into_js(e, ctx) },
+                        "type_error" => quote! { js_core::error::make_type_error(ctx, e.to_string()) },
+                        "range_error" => quote! { js_core::error::make_range_error(ctx, e.to_string()) },
+                        "error" => quote! { js_core::error::make_error(ctx, e.to_string()) },
+                        _ => panic!("Expected #[js(system)], #[js(type_error)], #[js(range_error)], or #[js(error)]"),
+                    };
+                    quote! {
+                        #name::#variant_name(e) => #body,
+                    }
                 }
+                _ => panic!("JsError variants must have exactly one unnamed field"),
             }
-            _ => panic!("JsError variants must have exactly one unnamed field"),
-        }
-    });
+        });
 
     let expanded = quote! {
         impl js_core::error::JsError for #name {

@@ -1,0 +1,11 @@
+[package]
+name = "imp_chrono"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+
+[dependencies]
+chrono.workspace = true
+js_core.workspace = true
+rquickjs.workspace = true
+thiserror.workspace = true

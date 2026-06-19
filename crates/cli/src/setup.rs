@@ -13,6 +13,7 @@ pub fn native_module_names() -> &'static [&'static str] {
         "imp:sys/stdin",
         "imp:clap",
         "imp:parsers",
+        "imp:time",
     ]
 }
 
@@ -31,6 +32,7 @@ pub fn register_all_native_modules(
         ("imp:sys/stdin", sys::StdinModule),
         ("imp:clap", imp_clap::ClapModule),
         ("imp:parsers", parsers::ParsersModule),
+        ("imp:time", imp_chrono::TimeModule),
     );
 }
 
@@ -115,6 +117,7 @@ pub fn setup_globals<'js>(
     }
     fetch::create_globals(ctx).unwrap();
     imp_url::create_globals(ctx).unwrap();
+    imp_chrono::create_globals(ctx).unwrap();
     js_timers
 }
 

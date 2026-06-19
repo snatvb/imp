@@ -2,6 +2,7 @@
 members = [
   "crates/cli",
   "crates/js_core",
+  "crates/chrono",
   "crates/fs",
   "crates/console",
   "crates/process",
@@ -20,7 +21,7 @@ resolver = "3"
 
 [profile.release]
 opt-level = 3
-lto = true
+lto = "fat"
 codegen-units = 1
 strip = true
 panic = "abort"
@@ -77,3 +78,4 @@ embed = { path = "crates/embed" }
 parsers = { path = "crates/parsers" }
 fetch = { path = "crates/fetch" }
 imp_url = { path = "crates/url" }
+imp_chrono = { path = "crates/chrono" }

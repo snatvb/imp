@@ -22,5 +22,6 @@ embed.workspace = true
 parsers.workspace = true
 fetch.workspace = true
 imp_url.workspace = true
+imp_chrono.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true

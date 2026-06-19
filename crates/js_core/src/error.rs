@@ -59,6 +59,12 @@ pub fn make_error<'js>(ctx: &js::Ctx<'js>, msg: String) -> js::Result<js::Value<
     Ok(err.into_value())
 }
 
+pub fn make_range_error<'js>(ctx: &js::Ctx<'js>, msg: String) -> js::Result<js::Value<'js>> {
+    let ctor: Constructor = ctx.globals().get("RangeError")?;
+    let err: Object = ctor.construct((msg,))?;
+    Ok(err.into_value())
+}
+
 pub trait IntoJsResult<T> {
     fn into_js(self, ctx: &js::Ctx<'_>) -> js::Result<T>;
 }

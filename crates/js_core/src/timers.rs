@@ -1,6 +1,7 @@
 use std::{cell::RefCell, collections::VecDeque, rc::Rc, time::Duration};
 
 use crate::js;
+use crate::utils::DurationArg;
 
 #[derive(Debug, Clone)]
 pub enum TimerKind {
@@ -105,13 +106,14 @@ impl Timers {
         }
     }
 
-    #[tracing::instrument(level = "debug", skip(self, ctx, callback), fields(delay_ms = delay.as_millis() as u64))]
+    #[tracing::instrument(level = "debug", skip(self, ctx, callback), fields(delay_ms = delay.as_millis()))]
     pub fn set_timeout<'js>(
         &mut self,
         ctx: &js::Ctx<'js>,
         callback: js::Function<'js>,
-        delay: Duration,
+        delay: DurationArg,
     ) -> TimerId {
+        let delay: Duration = delay.into();
         let id = self.next_id.take_next();
         self.timers.push(Timer {
             id,
@@ -123,13 +125,14 @@ impl Timers {
         id
     }
 
-    #[tracing::instrument(level = "debug", skip(self, ctx, callback), fields(delay_ms = delay.as_millis() as u64))]
+    #[tracing::instrument(level = "debug", skip(self, ctx, callback), fields(delay_ms = delay.as_millis()))]
     pub fn set_interval<'js>(
         &mut self,
         ctx: &js::Ctx<'js>,
         callback: js::Function<'js>,
-        delay: Duration,
+        delay: DurationArg,
     ) -> TimerId {
+        let delay: Duration = delay.into();
         let id = self.next_id.take_next();
         self.timers.push(Timer {
             id,
@@ -182,13 +185,9 @@ impl JsTimers {
             "setTimeout",
             js::Function::new(
                 ctx.clone(),
-                move |cb: js::Function<'js>, delay: f64| -> f64 {
+                move |cb: js::Function<'js>, delay: DurationArg| -> f64 {
                     let ctx = cb.ctx().clone();
-                    let id = timers.borrow_mut().set_timeout(
-                        &ctx,
-                        cb,
-                        Duration::from_millis(delay as u64),
-                    );
+                    let id = timers.borrow_mut().set_timeout(&ctx, cb, delay);
                     id.into()
                 },
             )?,
@@ -199,13 +198,9 @@ impl JsTimers {
             "setInterval",
             js::Function::new(
                 ctx.clone(),
-                move |cb: js::Function<'js>, delay: f64| -> f64 {
+                move |cb: js::Function<'js>, delay: DurationArg| -> f64 {
                     let ctx = cb.ctx().clone();
-                    let id = timers.borrow_mut().set_interval(
-                        &ctx,
-                        cb,
-                        Duration::from_millis(delay as u64),
-                    );
+                    let id = timers.borrow_mut().set_interval(&ctx, cb, delay);
                     id.into()
                 },
             )?,

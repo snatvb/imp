@@ -20,9 +20,9 @@ interface Performance {
   now(): number;
 }
 
-declare function setTimeout(callback: () => void, delay?: number): number;
+declare function setTimeout(callback: () => void, delay?: number | Duration): number;
 declare function clearTimeout(id: number): void;
-declare function setInterval(callback: () => void, delay?: number): number;
+declare function setInterval(callback: () => void, delay?: number | Duration): number;
 declare function clearInterval(id: number): void;
 
 declare const console: Console;
@@ -537,4 +537,131 @@ declare class URL {
   toJSON(): string;
   static canParse(input: string | RsString, base?: string | RsString): boolean;
   static parse(input: string | RsString, base?: string | RsString): URL | null;
+}
+
+declare class Duration {
+  constructor();
+  static zero(): Duration;
+  static nanos(n: number): Duration;
+  static micros(n: number): Duration;
+  static millis(n: number): Duration;
+  static seconds(n: number): Duration;
+  static minutes(n: number): Duration;
+  static hours(n: number): Duration;
+  static days(n: number): Duration;
+  static weeks(n: number): Duration;
+  static parse(input: string): Duration;
+  asNanos(): number;
+  asMicros(): number;
+  asMillis(): number;
+  asSeconds(): number;
+  asMinutes(): number;
+  asHours(): number;
+  asDays(): number;
+  add(other: Duration): Duration;
+  sub(other: Duration): Duration;
+  mul(n: number): Duration;
+  neg(): Duration;
+  abs(): Duration;
+  isZero(): boolean;
+  isNegative(): boolean;
+  eq(other: Duration): boolean;
+  lt(other: Duration): boolean;
+  lte(other: Duration): boolean;
+  gt(other: Duration): boolean;
+  gte(other: Duration): boolean;
+  toString(): string;
+}
+
+declare class ImpDate {
+  constructor();
+  static today(): ImpDate;
+  static fromYmd(year: number, month: number, day: number): ImpDate;
+  static fromIso(input: string): ImpDate;
+  static fromTimestamp(ms: number): ImpDate;
+  getYear(): number;
+  getMonth(): number;
+  getDay(): number;
+  getDayOfWeek(): number;
+  getDayOfYear(): number;
+  addDays(d: Duration): ImpDate;
+  addMonths(n: number): ImpDate;
+  addYears(n: number): ImpDate;
+  daysBetween(other: ImpDate): Duration;
+  toIso(): string;
+  toJsDate(): Date;
+  toString(): string;
+  equals(other: ImpDate): boolean;
+}
+
+declare class ImpTime {
+  constructor();
+  static fromHms(hour: number, minute: number, second: number): ImpTime;
+  static fromHmsNano(hour: number, minute: number, second: number, nano: number): ImpTime;
+  getHour(): number;
+  getMinute(): number;
+  getSecond(): number;
+  getNano(): number;
+  add(d: Duration): ImpTime;
+  toIso(): string;
+  toJsDate(): Date;
+  toString(): string;
+  equals(other: ImpTime): boolean;
+}
+
+declare class ImpDateTime {
+  constructor();
+  static now(): ImpDateTime;
+  static fromTimestamp(ms: number): ImpDateTime;
+  static fromIso(input: string): ImpDateTime;
+  getYear(): number;
+  getMonth(): number;
+  getDay(): number;
+  getHour(): number;
+  getMinute(): number;
+  getSecond(): number;
+  getNano(): number;
+  getDate(): ImpDate;
+  add(d: Duration): ImpDateTime;
+  sub(d: Duration): ImpDateTime;
+  diff(other: ImpDateTime): Duration;
+  format(fmt: string): string;
+  toIso(): string;
+  toJsDate(): Date;
+  toString(): string;
+  equals(other: ImpDateTime): boolean;
+}
+
+declare class ImpLocalDateTime {
+  constructor();
+  static nowLocal(): ImpLocalDateTime;
+  static fromTimestamp(ms: number): ImpLocalDateTime;
+  static fromIso(input: string): ImpLocalDateTime;
+  getYear(): number;
+  getMonth(): number;
+  getDay(): number;
+  getHour(): number;
+  getMinute(): number;
+  getSecond(): number;
+  getNano(): number;
+  add(d: Duration): ImpLocalDateTime;
+  sub(d: Duration): ImpLocalDateTime;
+  diff(other: ImpLocalDateTime): Duration;
+  format(fmt: string): string;
+  toIso(): string;
+  toUtc(): ImpDateTime;
+  toJsDate(): Date;
+  toString(): string;
+  equals(other: ImpLocalDateTime): boolean;
+}
+
+declare module "imp:time" {
+  export const Duration: typeof Duration;
+  export const ImpDate: typeof ImpDate;
+  export const ImpTime: typeof ImpTime;
+  export const ImpDateTime: typeof ImpDateTime;
+  export const ImpLocalDateTime: typeof ImpLocalDateTime;
+  export default {
+    Duration, ImpDate, ImpTime, ImpDateTime, ImpLocalDateTime,
+  };
 }
