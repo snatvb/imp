@@ -123,6 +123,16 @@ impl ImpDate {
         Ok(Self { inner: new_date })
     }
 
+    #[qjs(rename = "addWeeks")]
+    fn add_weeks<'js>(&self, ctx: Ctx<'js>, d: Value<'js>) -> Result<Self> {
+        let dur = extract_duration(&ctx, &d, "d")?;
+        let new_date = self
+            .inner
+            .checked_add_signed(dur)
+            .ok_or_else(|| Error::OutOfRange("date overflow".to_string()).into_exception(&ctx))?;
+        Ok(Self { inner: new_date })
+    }
+
     #[qjs(rename = "addMonths")]
     fn add_months<'js>(&self, ctx: Ctx<'js>, n: i32) -> Result<Self> {
         let new_date = self

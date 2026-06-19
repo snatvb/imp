@@ -499,7 +499,7 @@ declare class AbortController {
 declare class AbortSignal {
   readonly aborted: boolean;
   readonly reason: string;
-  static timeout(ms: number): AbortSignal;
+  static timeout(ms: number | Duration): AbortSignal;
 }
 
 declare class URLSearchParams {
@@ -585,6 +585,7 @@ declare class ImpDate {
   getDayOfWeek(): number;
   getDayOfYear(): number;
   addDays(d: Duration): ImpDate;
+  addWeeks(d: Duration): ImpDate;
   addMonths(n: number): ImpDate;
   addYears(n: number): ImpDate;
   daysBetween(other: ImpDate): Duration;

@@ -2,6 +2,7 @@ use crate::js;
 use crate::js::JsLifetime;
 use crate::js::class::{Trace, Tracer};
 use crate::js::function::Opt;
+use crate::utils::DurationArg;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use tokio_util::sync::CancellationToken;
@@ -65,14 +66,15 @@ impl AbortSignal {
     }
 
     #[qjs(static)]
-    fn timeout(ms: f64) -> AbortSignal {
+    fn timeout(d: DurationArg) -> AbortSignal {
         let signal = AbortSignal::new();
         let token = signal.token().clone();
         let a = signal.aborted.clone();
         let r = signal.reason.clone();
+        let delay: std::time::Duration = d.into();
 
         tokio::spawn(async move {
-            tokio::time::sleep(std::time::Duration::from_millis(ms as u64)).await;
+            tokio::time::sleep(delay).await;
             a.store(true, Ordering::Relaxed);
             *r.lock().unwrap() = "The operation timed out".to_string();
             token.cancel();
