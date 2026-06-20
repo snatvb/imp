@@ -16,6 +16,7 @@ members = [
   "crates/parsers",
   "crates/fetch",
   "crates/url",
+  "crates/subprocess",
 ]
 resolver = "3"
 
@@ -36,10 +37,22 @@ serde = { version = "1.0.228", features = ["derive"] }
 serde_json = { version = "1.0.150" }
 serde_yml = { package = "yaml_serde", version = "0.10.4" }
 toml = { version = "1.1.2", features = ["serde"] }
-quick-xml = { version = "0.40.1", features = ["serde-types", "serialize", "escape-html", "async-tokio"] }
+quick-xml = { version = "0.40.1", features = [
+  "serde-types",
+  "serialize",
+  "escape-html",
+  "async-tokio",
+] }
 rquickjs = { version = "0.12.0", features = ["full-async", "macro", "loader"] }
 clap = { version = "4.6.1", features = ["color", "derive", "string"] }
-tokio = { version = "1.52.3", features = ["process", "fs", "io-util", "rt-multi-thread", "macros", "time"] }
+tokio = { version = "1.52.3", features = [
+  "process",
+  "fs",
+  "io-util",
+  "rt-multi-thread",
+  "macros",
+  "time",
+] }
 tokio-util = "0.7.18"
 futures = "0.3.32"
 thiserror = { version = "2.0.18", features = ["std"] }
@@ -51,6 +64,8 @@ chrono = "0.4.45"
 libc = "0.2.186"
 oxc_ast = "0.133.0"
 url = "2"
+parking_lot = "0.12.5"
+async-stream = "0.3.6"
 
 js_core = { path = "crates/js_core" }
 console = { path = "crates/console" }
@@ -67,3 +82,4 @@ parsers = { path = "crates/parsers" }
 fetch = { path = "crates/fetch" }
 imp_url = { path = "crates/url" }
 imp_chrono = { path = "crates/chrono" }
+subprocess = { path = "crates/subprocess" }

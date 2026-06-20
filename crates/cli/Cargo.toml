@@ -29,3 +29,4 @@ imp_url.workspace = true
 imp_chrono.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
+subprocess.workspace = true

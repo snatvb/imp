@@ -1,0 +1,13 @@
+[package]
+name = "subprocess"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+
+[dependencies]
+rquickjs.workspace = true
+js_core = { path = "../js_core" }
+tokio.workspace = true
+thiserror.workspace = true
+parking_lot.workspace = true
+async-stream.workspace = true

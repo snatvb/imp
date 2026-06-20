@@ -14,6 +14,7 @@ pub fn native_module_names() -> &'static [&'static str] {
         "imp:clap",
         "imp:parsers",
         "imp:time",
+        "imp:subprocess",
     ]
 }
 
@@ -33,6 +34,7 @@ pub fn register_all_native_modules(
         ("imp:clap", imp_clap::ClapModule),
         ("imp:parsers", parsers::ParsersModule),
         ("imp:time", imp_chrono::TimeModule),
+        ("imp:subprocess", subprocess::SubprocessModule),
     );
 }
 
