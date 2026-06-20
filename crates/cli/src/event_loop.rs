@@ -3,8 +3,14 @@ use std::time::{Duration, Instant};
 use js_core::timers::JsTimers;
 
 use crate::prelude::*;
+use js::promise::PromiseState;
 
-pub async fn run_event_loop<'js>(ctx: &js::Ctx<'js>, _rt: &js::AsyncRuntime, js_timers: JsTimers) {
+pub async fn run_event_loop<'js>(
+    ctx: &js::Ctx<'js>,
+    _rt: &js::AsyncRuntime,
+    js_timers: JsTimers,
+    early_exit: Option<js::Promise<'js>>,
+) {
     let mut last = Instant::now();
     let mut released = Vec::with_capacity(8);
     loop {
@@ -31,11 +37,16 @@ pub async fn run_event_loop<'js>(ctx: &js::Ctx<'js>, _rt: &js::AsyncRuntime, js_
             }
         }
 
-        tokio::task::yield_now().await;
-
+        let early_done = early_exit
+            .as_ref()
+            .map(|p| !matches!(p.state(), PromiseState::Pending))
+            .unwrap_or(false);
         {
             let timers = js_timers.borrow();
-            if timers.timers.is_empty() && timers.released.is_empty() {
+            if (early_done || early_exit.is_none())
+                && timers.timers.is_empty()
+                && timers.released.is_empty()
+            {
                 break;
             }
         }

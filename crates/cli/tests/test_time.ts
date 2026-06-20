@@ -1,5 +1,7 @@
 import { Duration, ImpDate, ImpTime, ImpDateTime, ImpLocalDateTime } from "imp:time";
 
+export {};
+
 // ---------- Duration factories ----------
 {
   console.assert(Duration.zero().asMillis() === 0, "Duration.zero()");
@@ -260,6 +262,46 @@ import { Duration, ImpDate, ImpTime, ImpDateTime, ImpLocalDateTime } from "imp:t
 
   // format
   console.assert(back.format("%Y") === "1970", "ImpLocalDateTime format");
+}
+
+// ---------- ImpDate.addWeeks ----------
+{
+  const d = ImpDate.fromYmd(2025, 6, 19);
+  const twoWeeksLater = d.addWeeks(Duration.weeks(2));
+  console.assert(twoWeeksLater.getMonth() === 7, "addWeeks crosses month");
+  console.assert(twoWeeksLater.getDay() === 3, "addWeeks correct day");
+
+  const oneWeekBack = d.addWeeks(Duration.weeks(-1));
+  console.assert(oneWeekBack.getDay() === 12, "addWeeks negative");
+
+  // addWeeks also accepts fractional via Duration
+  const halfWeek = d.addWeeks(Duration.days(3));
+  console.assert(halfWeek.getDay() === 22, "addWeeks via days Duration");
+}
+
+// ---------- AbortSignal.timeout ----------
+{
+  const sig1 = AbortSignal.timeout(20);
+  console.assert(sig1.aborted === false, "AbortSignal.timeout(number): initially not aborted");
+  console.assert(sig1.reason === "", "AbortSignal.timeout(number): empty reason initially");
+
+  const sig2 = AbortSignal.timeout(Duration.millis(30));
+  console.assert(sig2.aborted === false, "AbortSignal.timeout(Duration): initially not aborted");
+  console.assert(sig2.reason === "", "AbortSignal.timeout(Duration): empty reason initially");
+
+  await new Promise<void>(resolve => setTimeout(resolve, 100));
+  console.assert(sig1.aborted === true, "AbortSignal.timeout(number): fired after delay");
+  console.assert(sig1.reason === "The operation timed out", "AbortSignal.timeout(number): reason");
+  console.assert(sig2.aborted === true, "AbortSignal.timeout(Duration): fired after delay");
+  console.assert(sig2.reason === "The operation timed out", "AbortSignal.timeout(Duration): reason");
+
+  let threw = false;
+  try { AbortSignal.timeout("100" as unknown as number); } catch { threw = true; }
+  console.assert(threw, "AbortSignal.timeout(string) must throw");
+
+  threw = false;
+  try { AbortSignal.timeout(-1); } catch { threw = true; }
+  console.assert(threw, "AbortSignal.timeout(negative) must throw");
 }
 
 console.log("ALL TIME TESTS PASSED");

@@ -139,20 +139,12 @@ pub async fn run_js_entry<'js>(
     );
 
     tracing::info!(file = %entry_name, "evaluating module");
-    let Some(promise) = error::try_js(
+    let promise = error::try_js(
         ctx,
         js::Module::evaluate(ctx.clone(), entry_name.to_string(), entry_code),
         "module evaluation failed",
-    ) else {
-        return;
-    };
-    error::try_js(
-        ctx,
-        promise.into_future::<js::Value<'_>>().await,
-        "promise rejected",
     );
-    tokio::task::yield_now().await;
     tracing::info!("module evaluated");
 
-    event_loop::run_event_loop(ctx, rt, js_timers).await;
+    event_loop::run_event_loop(ctx, rt, js_timers, promise).await;
 }
