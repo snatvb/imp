@@ -4,6 +4,10 @@ name = "cli"
 edition.workspace = true
 authors.workspace = true
 
+[[bin]]
+name = "imp"
+path = "src/main.rs"
+
 [dependencies]
 tokio.workspace = true
 clap.workspace = true
