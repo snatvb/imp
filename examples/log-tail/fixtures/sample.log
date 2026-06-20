@@ -1,0 +1,29 @@
+2025-01-15 10:23:45 INFO  Server starting on port 8080
+2025-01-15 10:23:46 INFO  Connected to database
+2025-01-15 10:23:47 INFO  Loaded 142 modules
+2025-01-15 10:24:12 INFO  GET /api/users 200 23ms
+2025-01-15 10:24:15 INFO  GET /api/users/1 200 12ms
+2025-01-15 10:24:23 WARN  Slow query detected: SELECT * FROM orders (340ms)
+2025-01-15 10:25:01 INFO  GET /api/products 200 18ms
+2025-01-15 10:25:34 INFO  POST /api/login 200 145ms
+2025-01-15 10:26:11 ERROR Failed to send email: SMTP timeout
+2025-01-15 10:26:15 INFO  GET /api/users/2 200 8ms
+2025-01-15 10:27:00 INFO  Scheduled job: cleanup-tmp started
+2025-01-15 10:27:02 INFO  Scheduled job: cleanup-tmp completed (12 files removed)
+2025-01-15 10:28:45 INFO  GET /api/orders 200 89ms
+2025-01-15 10:29:12 WARN  Rate limit threshold reached for user 42
+2025-01-15 10:29:18 INFO  GET /api/health 200 2ms
+2025-01-15 10:30:00 INFO  Heartbeat
+2025-01-15 10:30:34 ERROR Database connection lost, reconnecting...
+2025-01-15 10:30:35 INFO  Database reconnected
+2025-01-15 10:31:00 INFO  GET /api/users 200 19ms
+2025-01-15 10:31:45 INFO  POST /api/orders 201 234ms
+2025-01-15 10:32:11 INFO  GET /api/products/5 200 11ms
+2025-01-15 10:33:00 INFO  Heartbeat
+2025-01-15 10:33:28 WARN  Memory usage at 78%
+2025-01-15 10:34:00 INFO  Heartbeat
+2025-01-15 10:34:45 INFO  GET /api/users/3 200 14ms
+2025-01-15 10:35:12 INFO  GET /api/orders/recent 200 67ms
+2025-01-15 10:35:34 ERROR Failed to write to cache: disk full
+2025-01-15 10:36:00 INFO  Heartbeat
+2025-01-15 10:36:45 INFO  GET /api/users 200 21ms

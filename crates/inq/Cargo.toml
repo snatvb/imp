@@ -5,12 +5,7 @@ edition.workspace = true
 authors.workspace = true
 
 [dependencies]
-inquire = { version = "0.9.4", features = [
-  "fuzzy",
-  "date",
-  "macros",
-  "editor",
-] }
+inquire = { version = "0.9.4", features = ["fuzzy", "date", "macros", "editor"] }
 
 chrono.workspace = true
 rquickjs.workspace = true
