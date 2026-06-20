@@ -1,5 +1,9 @@
 {
+  "scripts": {
+    "fmt": "oxfmt"
+  },
   "devDependencies": {
+    "oxfmt": "0.55.0",
     "typescript": "6.0.3"
   }
 }
