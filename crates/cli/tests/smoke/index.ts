@@ -10,5 +10,6 @@ import "../url/index"
 import "../fs/index"
 import "../fetch/index"
 import "../rs_string/index"
+import "../subprocess/index.ts"
 
 console.log("ALL SMOKE TESTS PASSED")

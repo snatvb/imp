@@ -707,3 +707,27 @@ declare module "imp:time" {
     ImpLocalDateTime,
   }
 }
+
+declare module "imp:subprocess" {
+  interface RunOptions {
+    cwd?: string
+    env?: Record<string, string>
+    input?: string
+    timeout?: number
+    maxOutput?: number
+  }
+
+  interface RunResult {
+    code: number
+    stdout: string
+    stderr: string
+    success: boolean
+    durationMs: number
+  }
+
+  function run(cmd: JsString, args?: JsString[], options?: RunOptions): Promise<RunResult>
+
+  const _default: { run: typeof run }
+  export default _default
+  export { run, RunOptions, RunResult }
+}
