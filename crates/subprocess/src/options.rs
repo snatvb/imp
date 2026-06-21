@@ -2,18 +2,35 @@ use std::collections::HashMap;
 
 use js_core::abort::AbortSignal;
 use js_core::js::{Ctx, FromJs, Value};
-use js_core::utils::{JsStringArg, StringArg};
+use js_core::utils::{DurationArg, JsStringArg, StringArg};
 
 const DEFAULT_MAX_OUTPUT: usize = 10 * 1024 * 1024;
+
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Encoding {
+    #[default]
+    Utf8,
+    Binary,
+}
+
+impl Encoding {
+    fn from_str(s: &str) -> Self {
+        match s {
+            "binary" => Encoding::Binary,
+            _ => Encoding::Utf8,
+        }
+    }
+}
 
 #[derive(Default, Clone)]
 pub struct RunOptions {
     pub cwd: Option<String>,
     pub env: Option<HashMap<String, String>>,
     pub input: Option<String>,
-    pub timeout: Option<u64>,
+    pub timeout: Option<DurationArg>,
     pub max_output: Option<usize>,
     pub signal: Option<AbortSignal>,
+    pub encoding: Encoding,
 }
 
 impl RunOptions {
@@ -44,10 +61,10 @@ impl<'js> FromJs<'js> for RunOptions {
             result.input = Some(<StringArg as JsStringArg>::coerce_string(ctx, &v, "input")?);
         }
 
-        if let Some(n) = opts.get::<_, Option<i64>>("timeout")?
-            && n > 0
+        if let Some(d) = opts.get::<_, Option<DurationArg>>("timeout")?
+            && d.as_millis() > 0
         {
-            result.timeout = Some(n as u64);
+            result.timeout = Some(d);
         }
 
         if let Some(n) = opts.get::<_, Option<i64>>("maxOutput")?
@@ -61,6 +78,14 @@ impl<'js> FromJs<'js> for RunOptions {
         }
 
         result.signal = opts.get::<_, Option<AbortSignal>>("signal")?;
+
+        if let Some(v) = opts.get::<_, Option<Value>>("encoding")?
+            && !v.is_null()
+            && !v.is_undefined()
+        {
+            let s = <StringArg as JsStringArg>::coerce_string(ctx, &v, "encoding")?;
+            result.encoding = Encoding::from_str(s.as_str());
+        }
 
         Ok(result)
     }

@@ -9,11 +9,12 @@ function sh(
   cmd: string,
   options?: {
     input?: string
-    timeout?: number
+    timeout?: number | Duration
     maxOutput?: number
     env?: Record<string, string>
     cwd?: string
     signal?: AbortSignal
+    encoding?: "utf8" | "binary"
   },
 ) {
   return run(SH, [SH_FLAG, cmd], options)
@@ -24,13 +25,13 @@ console.assert(typeof run === "function", "run is a function")
 {
   const r = await run(SH, [SH_FLAG, "echo no_opts"])
   console.assert(r.code === 0, `no options: code=${r.code}`)
-  console.assert(r.stdout.toLowerCase().includes("no_opts"), `no options: stdout=${r.stdout}`)
+  console.assert(String(r.stdout).toLowerCase().includes("no_opts"), `no options: stdout=${r.stdout}`)
 }
 
 {
   const r = await sh("echo hello")
   console.assert(r.code === 0, `echo: code=${r.code}`)
-  console.assert(r.stdout.toLowerCase().includes("hello"), `echo: stdout=${r.stdout}`)
+  console.assert(String(r.stdout).toLowerCase().includes("hello"), `echo: stdout=${r.stdout}`)
   console.assert(r.success === true, "echo: success")
 }
 
@@ -48,14 +49,14 @@ console.assert(typeof run === "function", "run is a function")
 
 {
   const r = await sh("echo to_stderr 1>&2")
-  console.assert(r.stderr.toLowerCase().includes("to_stderr"), `stderr: ${r.stderr}`)
-  console.assert(!r.stdout.toLowerCase().includes("to_stderr"), `stdout clean: ${r.stdout}`)
+  console.assert(String(r.stderr).toLowerCase().includes("to_stderr"), `stderr: ${r.stderr}`)
+  console.assert(!String(r.stdout).toLowerCase().includes("to_stderr"), `stdout clean: ${r.stdout}`)
 }
 
 {
   const stdinCmd = isWindows ? "C:\\Windows\\System32\\more.com" : "cat"
   const r = await run(stdinCmd, [], { input: "piped data" })
-  console.assert(r.stdout.toLowerCase().includes("piped"), `stdin: ${r.stdout}`)
+  console.assert(String(r.stdout).toLowerCase().includes("piped"), `stdin: ${r.stdout}`)
 }
 
 {
@@ -70,6 +71,20 @@ console.assert(typeof run === "function", "run is a function")
   const elapsed = Date.now() - start
   console.assert(threw, "timeout: threw")
   console.assert(elapsed < 2000, `timeout: elapsed=${elapsed}ms`)
+}
+
+{
+  const start = Date.now()
+  let threw = false
+  try {
+    const longCmd = isWindows ? "C:\\Windows\\System32\\ping.exe -n 5 127.0.0.1" : "sleep 5"
+    await sh(longCmd, { timeout: Duration.millis(200) })
+  } catch (e) {
+    threw = true
+  }
+  const elapsed = Date.now() - start
+  console.assert(threw, "timeout Duration: threw")
+  console.assert(elapsed < 2000, `timeout Duration: elapsed=${elapsed}ms`)
 }
 
 {
@@ -95,12 +110,12 @@ console.assert(typeof run === "function", "run is a function")
   if (process.env && process.env.SystemRoot) env.SystemRoot = process.env.SystemRoot
   if (process.env && process.env.ComSpec) env.ComSpec = process.env.ComSpec
   const r = await sh(isWindows ? "echo %IMP_TEST_VAR%" : "echo $IMP_TEST_VAR", { env })
-  console.assert(r.stdout.includes("unique_value_42"), `env: ${r.stdout}`)
+  console.assert(String(r.stdout).includes("unique_value_42"), `env: ${r.stdout}`)
 }
 
 {
   const r = await sh(isWindows ? "cd" : "pwd", { cwd: process.cwd() })
-  console.assert(r.stdout.length > 0, `cwd: ${r.stdout}`)
+  console.assert(String(r.stdout).length > 0, `cwd: ${r.stdout}`)
 }
 
 {
@@ -128,6 +143,23 @@ console.assert(typeof run === "function", "run is a function")
   const elapsed = Date.now() - start
   console.assert(threw, "signal during run: threw")
   console.assert(elapsed < 2000, `signal during run: elapsed=${elapsed}ms`)
+}
+
+{
+  const r = await sh("echo hi", { encoding: "binary" })
+  const out = r.stdout as ByteBuffer
+  const err = r.stderr as ByteBuffer
+  console.assert(out !== null, "binary: stdout is object")
+  console.assert(typeof out.toArray === "function", "binary: stdout has toArray method")
+  const arr = out.toArray()
+  console.assert(arr.length >= 2, `binary: stdout length=${arr.length}`)
+  console.assert(err !== null, "binary: stderr is object")
+}
+
+{
+  const r = await sh("echo hi")
+  console.assert(typeof r.stdout === "string", "utf8 default: stdout is string")
+  console.assert(String(r.stdout).toLowerCase().includes("hi"), `utf8 default: stdout contains hi: ${r.stdout}`)
 }
 
 console.log("ALL SUBPROCESS RUN TESTS PASSED")

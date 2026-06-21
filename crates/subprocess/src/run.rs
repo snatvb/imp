@@ -1,13 +1,14 @@
 use std::process::Stdio;
 use std::time::Instant;
 
+use js_core::byte_buffer::ByteBuffer;
 use js_core::js;
 use js_core::utils::{JsStringArg, StringArg};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::process::{Child, ChildStderr, ChildStdin, ChildStdout, Command};
 
 use crate::error::SubprocessError;
-use crate::options::RunOptions;
+use crate::options::{Encoding, RunOptions};
 
 #[inline]
 fn io_err<'js>(
@@ -127,13 +128,28 @@ fn build_result<'js>(
     out: Vec<u8>,
     err: Vec<u8>,
     elapsed_ms: i64,
+    encoding: Encoding,
 ) -> js::Result<js::Object<'js>> {
     let result = js::Object::new(ctx.clone())?;
     result.set("code", status.code().unwrap_or(-1))?;
     result.set("success", status.success())?;
-    result.set("stdout", String::from_utf8_lossy(&out).into_owned())?;
-    result.set("stderr", String::from_utf8_lossy(&err).into_owned())?;
     result.set("durationMs", elapsed_ms)?;
+    match encoding {
+        Encoding::Utf8 => {
+            result.set("stdout", String::from_utf8_lossy(&out).into_owned())?;
+            result.set("stderr", String::from_utf8_lossy(&err).into_owned())?;
+        }
+        Encoding::Binary => {
+            result.set(
+                "stdout",
+                js::Class::instance(ctx.clone(), ByteBuffer::new(out))?,
+            )?;
+            result.set(
+                "stderr",
+                js::Class::instance(ctx.clone(), ByteBuffer::new(err))?,
+            )?;
+        }
+    }
     Ok(result)
 }
 
@@ -172,7 +188,9 @@ pub async fn run<'js>(
     let read_err = read_capped(stderr, max_output);
     let join_fut = async { tokio::join!(read_out, read_err) };
 
-    let timeout_dur = opts.timeout.map(std::time::Duration::from_millis);
+    let timeout_dur = opts
+        .timeout
+        .map(|d| std::time::Duration::from_millis(d.as_millis()));
     let timeout_fut = async {
         match timeout_dur {
             Some(d) => tokio::time::sleep(d).await,
@@ -191,8 +209,10 @@ pub async fn run<'js>(
         v = join_fut => v,
         _ = timeout_fut => {
             force_kill(&mut child).await;
-            return Err(SubprocessError::Timeout(opts.timeout.unwrap_or(0))
-                .into_exception(&ctx));
+            return Err(SubprocessError::Timeout(
+                opts.timeout.map(|d| d.as_millis()).unwrap_or(0),
+            )
+            .into_exception(&ctx));
         }
         _ = signal_fut => {
             force_kill(&mut child).await;
@@ -218,5 +238,12 @@ pub async fn run<'js>(
         eprintln!("subprocess: stdin task join failed: {e}");
     }
 
-    build_result(&ctx, status, out, err, start.elapsed().as_millis() as i64)
+    build_result(
+        &ctx,
+        status,
+        out,
+        err,
+        start.elapsed().as_millis() as i64,
+        opts.encoding,
+    )
 }

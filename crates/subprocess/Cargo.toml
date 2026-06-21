@@ -6,7 +6,7 @@ authors.workspace = true
 
 [dependencies]
 rquickjs.workspace = true
-js_core = { path = "../js_core" }
+js_core.workspace = true
 tokio.workspace = true
 tokio-util.workspace = true
 thiserror.workspace = true

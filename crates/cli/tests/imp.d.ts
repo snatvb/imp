@@ -713,15 +713,16 @@ declare module "imp:subprocess" {
     cwd?: string
     env?: Record<string, string>
     input?: string
-    timeout?: number
+    timeout?: number | Duration
     maxOutput?: number
     signal?: AbortSignal
+    encoding?: "utf8" | "binary"
   }
 
   interface RunResult {
     code: number
-    stdout: string
-    stderr: string
+    stdout: string | ByteBuffer
+    stderr: string | ByteBuffer
     success: boolean
     durationMs: number
   }
