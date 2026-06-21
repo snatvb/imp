@@ -34,6 +34,10 @@ folder and hope the user has the right Node version. With imp you ship
 ## Quick start
 
 ```bash
+# scaffold TypeScript types (optional — for IDE support)
+imp init
+
+# run a script
 imp run hello.ts
 imp run path/to/script.ts arg1 arg2
 ```
