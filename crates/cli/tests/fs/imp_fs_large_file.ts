@@ -29,8 +29,8 @@ const pattern = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
     }
   }
 
-  console.assert(totalRead === fileSize, `Expected ${fileSize} bytes, got ${totalRead}`)
-  console.assert(
+  assert(totalRead === fileSize, `Expected ${fileSize} bytes, got ${totalRead}`)
+  assert(
     chunkCount === Math.ceil(fileSize / chunkSize),
     `Expected ${Math.ceil(fileSize / chunkSize)} chunks, got ${chunkCount}`,
   )
@@ -52,8 +52,8 @@ const pattern = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
     totalRead += chunk.length
   }
 
-  console.assert(totalRead === fileSize, `Expected ${fileSize} bytes, got ${totalRead}`)
-  console.assert(
+  assert(totalRead === fileSize, `Expected ${fileSize} bytes, got ${totalRead}`)
+  assert(
     chunkCount === Math.ceil(fileSize / chunkSize),
     `Expected ${Math.ceil(fileSize / chunkSize)} chunks, got ${chunkCount}`,
   )
@@ -75,8 +75,8 @@ const pattern = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
     totalRead += chunk.length
   }
 
-  console.assert(totalRead === fileSize, `Expected ${fileSize} bytes, got ${totalRead}`)
-  console.assert(
+  assert(totalRead === fileSize, `Expected ${fileSize} bytes, got ${totalRead}`)
+  assert(
     chunkCount === Math.ceil(fileSize / chunkSize),
     `Expected ${Math.ceil(fileSize / chunkSize)} chunks, got ${chunkCount}`,
   )
@@ -91,11 +91,11 @@ const pattern = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
   const midPoint = Math.floor(fileSize / 2)
   const pos = await fh.seek(midPoint, "start")
-  console.assert(pos === midPoint, `Expected position ${midPoint}, got ${pos}`)
+  assert(pos === midPoint, `Expected position ${midPoint}, got ${pos}`)
 
   const chunk = await fh.read()
-  console.assert(chunk !== undefined, "Should read chunk after seek")
-  console.assert(chunk.length === 4096, `Expected 4096 bytes, got ${chunk.length}`)
+  assert(chunk !== undefined, "Should read chunk after seek")
+  assert(chunk.length === 4096, `Expected 4096 bytes, got ${chunk.length}`)
 
   const str = chunk.toString()
   for (let i = 0; i < str.length; i++) {

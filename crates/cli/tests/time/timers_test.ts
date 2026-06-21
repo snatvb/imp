@@ -53,12 +53,12 @@ setTimeout(() => {
 
 // wait for all timers
 setTimeout(() => {
-  console.assert(timeoutFired, "setTimeout should fire")
-  console.assert(zeroFired, "setTimeout 0ms should fire")
-  console.assert(!clearedFired, "cleared timeout should NOT fire")
-  console.assert(intervalCount >= 2, `interval should fire >=2 times, got ${intervalCount}`)
-  console.assert(nestedFired, "nested setTimeout should fire")
-  console.assert(largeIntervalCount >= 1, `large interval should fire >=1 times, got ${largeIntervalCount}`)
-  console.assert(largeIntervalCount <= 3, `large interval should fire <=3 times, got ${largeIntervalCount}`)
+  assert(timeoutFired, "setTimeout should fire")
+  assert(zeroFired, "setTimeout 0ms should fire")
+  assert(!clearedFired, "cleared timeout should NOT fire")
+  assert(intervalCount >= 2, `interval should fire >=2 times, got ${intervalCount}`)
+  assert(nestedFired, "nested setTimeout should fire")
+  assert(largeIntervalCount >= 1, `large interval should fire >=1 times, got ${largeIntervalCount}`)
+  assert(largeIntervalCount <= 3, `large interval should fire <=3 times, got ${largeIntervalCount}`)
   console.log("ALL TIMER TESTS PASSED")
 }, 100)

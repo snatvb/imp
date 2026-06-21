@@ -11,13 +11,13 @@ console.log("after second await, dt:", dt.getYear())
 
 const sig = AbortSignal.timeout(5)
 await new Promise<void>((resolve) => setTimeout(resolve, 50))
-console.assert(sig.aborted === true, "top-level await + AbortSignal.timeout")
+assert(sig.aborted === true, "top-level await + AbortSignal.timeout")
 
 const d = Duration.seconds(2)
 await new Promise<void>((resolve) => setTimeout(resolve, 10))
-console.assert(d.asSeconds() === 2, "Duration survives across top-level awaits")
+assert(d.asSeconds() === 2, "Duration survives across top-level awaits")
 
 const d2 = Duration.parse("1h 30m")
-console.assert(d2.asMinutes() === 90, "Duration.parse works at top level")
+assert(d2.asMinutes() === 90, "Duration.parse works at top level")
 
 console.log("ALL TOP LEVEL AWAIT TESTS PASSED")

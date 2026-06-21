@@ -13,32 +13,32 @@ const parser = new clap.Parser()
 // Тест обычного парсинга
 console.log("Test 1: normal parsing")
 const result1 = parser.parse(["-n", "Alice", "-vvv"])
-console.assert(result1.type === "result", "type should be result")
+assert(result1.type === "result", "type should be result")
 if (result1.type === "result") {
-  console.assert(result1.name === "Alice", "name should be Alice")
-  console.assert(result1.verbose === 3, "verbose should be 3")
+  assert(result1.name === "Alice", "name should be Alice")
+  assert(result1.verbose === 3, "verbose should be 3")
 }
 console.log("Test 1 passed")
 
 // Тест help (автогенерация clap)
 console.log("Test 2: help")
 const result2 = parser.parse(["--help"])
-console.assert(result2.type === "help", "type should be help")
+assert(result2.type === "help", "type should be help")
 if (result2.type === "help") {
-  console.assert(result2.message !== undefined, "message should exist")
+  assert(result2.message !== undefined, "message should exist")
   const helpText = String(result2.message)
-  console.assert(helpText.includes("Your name"), "message should contain help text")
+  assert(helpText.includes("Your name"), "message should contain help text")
 }
 console.log("Test 2 passed")
 
 // Тест version (автогенерация clap)
 console.log("Test 3: version")
 const result3 = parser.parse(["--version"])
-console.assert(result3.type === "version", "type should be version")
+assert(result3.type === "version", "type should be version")
 if (result3.type === "version") {
-  console.assert(result3.message !== undefined, "message should exist")
+  assert(result3.message !== undefined, "message should exist")
   const versionText = String(result3.message)
-  console.assert(versionText.includes("1.0.0"), "message should contain version")
+  assert(versionText.includes("1.0.0"), "message should contain version")
 }
 console.log("Test 3 passed")
 

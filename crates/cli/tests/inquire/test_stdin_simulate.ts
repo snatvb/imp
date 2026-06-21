@@ -6,6 +6,6 @@ setTimeout(async () => {
 }, 100)
 
 const line = await readLine()
-console.assert(line.toString() === "hello", "readLine with injectKeys should return 'hello'")
+assert(line.toString() === "hello", "readLine with injectKeys should return 'hello'")
 
 console.log("ALL STDIN SIMULATE TESTS PASSED")

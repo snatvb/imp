@@ -11,17 +11,17 @@ const fixture = (name: string) => resolve(import.meta.dirname, "fixtures", name)
 
   const chunk = await fh.read()
 
-  console.assert(chunk !== undefined, "read returns chunk")
+  assert(chunk !== undefined, "read returns chunk")
 
-  console.assert(chunk.length === 11, `chunk size is 11, got ${chunk.length}`)
+  assert(chunk.length === 11, `chunk size is 11, got ${chunk.length}`)
 
   const text = chunk.toString()
 
-  console.assert(text === "hello world", `content: "${text}"`)
+  assert(text === "hello world", `content: "${text}"`)
 
   const eof = await fh.read()
 
-  console.assert(eof === undefined, "read returns undefined at EOF")
+  assert(eof === undefined, "read returns undefined at EOF")
 
   await fh.close()
 
@@ -34,29 +34,29 @@ const fixture = (name: string) => resolve(import.meta.dirname, "fixtures", name)
 
   const c1 = await fh.read()
 
-  console.assert(c1 !== undefined, "first read")
+  assert(c1 !== undefined, "first read")
 
-  console.assert(c1.length === 5, `first chunk size 5, got ${c1.length}`)
+  assert(c1.length === 5, `first chunk size 5, got ${c1.length}`)
 
   const c2 = await fh.read()
 
-  console.assert(c2 !== undefined, "second read")
+  assert(c2 !== undefined, "second read")
 
-  console.assert(c2.length === 5, `second chunk size 5, got ${c2.length}`)
+  assert(c2.length === 5, `second chunk size 5, got ${c2.length}`)
 
   const c3 = await fh.read()
 
-  console.assert(c3 !== undefined, "third read")
+  assert(c3 !== undefined, "third read")
 
-  console.assert(c3.length === 1, `third chunk size 1, got ${c3.length}`)
+  assert(c3.length === 1, `third chunk size 1, got ${c3.length}`)
 
   const eof = await fh.read()
 
-  console.assert(eof === undefined, "EOF after all chunks")
+  assert(eof === undefined, "EOF after all chunks")
 
   const full = c1.toString() + c2.toString() + c3.toString()
 
-  console.assert(full === "hello world", `reassembled: "${full}"`)
+  assert(full === "hello world", `reassembled: "${full}"`)
 
   await fh.close()
 
@@ -74,9 +74,9 @@ const fixture = (name: string) => resolve(import.meta.dirname, "fixtures", name)
 
   const t1 = c1.toString()
   const t2 = c2.toString()
-  console.assert(t1 === "hello", `first: "${t1}"`)
+  assert(t1 === "hello", `first: "${t1}"`)
 
-  console.assert(t2 === " worl", `second: "${t2}"`)
+  assert(t2 === " worl", `second: "${t2}"`)
 
   await fh.close()
 
@@ -90,13 +90,13 @@ const fixture = (name: string) => resolve(import.meta.dirname, "fixtures", name)
 
   const pos = await fh.seek(6, "start")
 
-  console.assert(pos === 6, `seek start returns 6, got ${pos}`)
+  assert(pos === 6, `seek start returns 6, got ${pos}`)
 
   const chunk = await fh.read()
 
   const text = chunk.toString()
 
-  console.assert(text === "world", `after seek: "${text}"`)
+  assert(text === "world", `after seek: "${text}"`)
 
   await fh.close()
 
@@ -112,13 +112,13 @@ const fixture = (name: string) => resolve(import.meta.dirname, "fixtures", name)
 
   const pos = await fh.seek(2, "current")
 
-  console.assert(pos === 5, `seek current returns 5, got ${pos}`)
+  assert(pos === 5, `seek current returns 5, got ${pos}`)
 
   const chunk = await fh.read()
 
   const text = chunk.toString()
 
-  console.assert(text === " world", `after seek current: "${text}"`)
+  assert(text === " world", `after seek current: "${text}"`)
 
   await fh.close()
 
@@ -154,7 +154,7 @@ const fixture = (name: string) => resolve(import.meta.dirname, "fixtures", name)
     threw = true
   }
 
-  console.assert(threw === true, "read after close throws")
+  assert(threw === true, "read after close throws")
 
   console.log("PASS: read after close")
 }
@@ -174,7 +174,7 @@ const fixture = (name: string) => resolve(import.meta.dirname, "fixtures", name)
     threw = true
   }
 
-  console.assert(threw === true, "seek after close throws")
+  assert(threw === true, "seek after close throws")
 
   console.log("PASS: seek after close")
 }
@@ -190,7 +190,7 @@ const fixture = (name: string) => resolve(import.meta.dirname, "fixtures", name)
     threw = true
   }
 
-  console.assert(threw === true, "open non-existent throws")
+  assert(threw === true, "open non-existent throws")
 
   console.log("PASS: open non-existent")
 }
@@ -202,13 +202,13 @@ const fixture = (name: string) => resolve(import.meta.dirname, "fixtures", name)
 
   const pos = await fh.seek(-5, "end")
 
-  console.assert(pos === 6, `seek end returns 6, got ${pos}`)
+  assert(pos === 6, `seek end returns 6, got ${pos}`)
 
   const chunk = await fh.read()
 
   const text = chunk.toString()
 
-  console.assert(text === "world", `after seek end: "${text}"`)
+  assert(text === "world", `after seek end: "${text}"`)
 
   await fh.close()
 
@@ -228,7 +228,7 @@ const fixture = (name: string) => resolve(import.meta.dirname, "fixtures", name)
     all += chunk.toString()
   }
 
-  console.assert(all === "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz\n", `larger file: "${all}"`)
+  assert(all === "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz\n", `larger file: "${all}"`)
 
   await fh.close()
 
@@ -248,7 +248,7 @@ const fixture = (name: string) => resolve(import.meta.dirname, "fixtures", name)
     threw = true
   }
 
-  console.assert(threw === true, "invalid whence throws")
+  assert(threw === true, "invalid whence throws")
 
   await fh.close()
 
@@ -264,9 +264,9 @@ const fixture = (name: string) => resolve(import.meta.dirname, "fixtures", name)
 
   const rs = chunk.toStr()
 
-  console.assert(rs.length === 11, `RsString length 11, got ${rs.length}`)
+  assert(rs.length === 11, `RsString length 11, got ${rs.length}`)
 
-  console.assert(rs.toString() === "hello world", `RsString content: "${rs}"`)
+  assert(rs.toString() === "hello world", `RsString content: "${rs}"`)
 
   await fh.close()
 
@@ -282,9 +282,9 @@ const fixture = (name: string) => resolve(import.meta.dirname, "fixtures", name)
 
   const ab = chunk.toArrayBuffer()
 
-  console.assert(ab instanceof ArrayBuffer, "toArrayBuffer returns ArrayBuffer")
+  assert(ab instanceof ArrayBuffer, "toArrayBuffer returns ArrayBuffer")
 
-  console.assert(ab.byteLength === 11, `ArrayBuffer byteLength 11, got ${ab.byteLength}`)
+  assert(ab.byteLength === 11, `ArrayBuffer byteLength 11, got ${ab.byteLength}`)
 
   await fh.close()
 
@@ -300,9 +300,9 @@ const fixture = (name: string) => resolve(import.meta.dirname, "fixtures", name)
 
   const sliced = chunk.slice(0, 5)
 
-  console.assert(sliced.length === 5, `sliced length 5, got ${sliced.length}`)
+  assert(sliced.length === 5, `sliced length 5, got ${sliced.length}`)
 
-  console.assert(sliced.toString() === "hello", `sliced content: "${sliced.toString()}"`)
+  assert(sliced.toString() === "hello", `sliced content: "${sliced.toString()}"`)
 
   await fh.close()
 

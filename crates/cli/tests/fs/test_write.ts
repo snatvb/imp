@@ -5,7 +5,7 @@ const testPath = process.cwd() + "\\test_write_output.tmp"
 {
   using wh = await openWrite(testPath, "w", 8192)
   const n1 = await wh.write("hello world")
-  console.assert(n1 === 11, "write string returns byte count")
+  assert(n1 === 11, "write string returns byte count")
 
   const bb = new ByteBuffer(5)
   const arr = bb.toArray()
@@ -15,7 +15,7 @@ const testPath = process.cwd() + "\\test_write_output.tmp"
   arr[3] = 33
   arr[4] = 33
   const n2 = await wh.write(bb)
-  console.assert(n2 === 5, "write ByteBuffer returns byte count")
+  assert(n2 === 5, "write ByteBuffer returns byte count")
 }
 
 {
@@ -31,7 +31,7 @@ const testPath = process.cwd() + "\\test_write_output.tmp"
       }
     }
   }
-  console.assert(match, "file content matches")
+  assert(match, "file content matches")
 }
 
 {
@@ -39,7 +39,7 @@ const testPath = process.cwd() + "\\test_write_output.tmp"
   await wh.write("abcdefghij")
   await wh.seek(0, "start")
   const n = await wh.write("XY")
-  console.assert(n === 2, "overwrite write returns byte count")
+  assert(n === 2, "overwrite write returns byte count")
 
   const buf = await readFile(testPath, "buffer")
   const view = new Uint8Array(buf)
@@ -53,7 +53,7 @@ const testPath = process.cwd() + "\\test_write_output.tmp"
       }
     }
   }
-  console.assert(match, "overwrite content matches after seek+write")
+  assert(match, "overwrite content matches after seek+write")
 }
 
 await remove(testPath)
@@ -64,14 +64,14 @@ await remove(testPath)
   const arr = bb.toArray()
   for (let i = 0; i < 10; i++) arr[i] = 65 + i
   const n = await wh.writeFrom(bb, 2, 5)
-  console.assert(n === 5, "writeFrom returns correct byte count")
+  assert(n === 5, "writeFrom returns correct byte count")
 }
 
 {
   const buf = await readFile(testPath, "buffer")
   const view = new Uint8Array(buf)
-  console.assert(view.length === 5, "writeFrom wrote correct length")
-  console.assert(view[0] === 67, "writeFrom offset correct")
+  assert(view.length === 5, "writeFrom wrote correct length")
+  assert(view[0] === 67, "writeFrom offset correct")
 }
 
 await remove(testPath)
@@ -99,7 +99,7 @@ await remove(testPath)
       }
     }
   }
-  console.assert(match, "append mode: file content matches")
+  assert(match, "append mode: file content matches")
 }
 
 {
@@ -121,7 +121,7 @@ await remove(testPath)
       }
     }
   }
-  console.assert(match, "append mode: seek is no-op, write at end")
+  assert(match, "append mode: seek is no-op, write at end")
 }
 
 await remove(testPath)
@@ -150,7 +150,7 @@ await remove(testPath)
       }
     }
   }
-  console.assert(match, "rw mode: seek+write in middle works")
+  assert(match, "rw mode: seek+write in middle works")
 }
 
 await remove(testPath)
@@ -178,7 +178,7 @@ await remove(testPath)
       }
     }
   }
-  console.assert(match, "default flags (undefined) = append")
+  assert(match, "default flags (undefined) = append")
 }
 
 await remove(testPath)

@@ -31,6 +31,8 @@ declare const console: Console
 declare const process: Process
 declare const performance: Performance
 
+declare function assert(condition: any, ...args: any[]): asserts condition
+
 declare class ByteBuffer {
   constructor(size: number)
 
@@ -183,20 +185,20 @@ declare module "imp:clap" {
   type ArgValueKind<O extends ArgOptions> = O["action"] extends "count"
     ? number
     : O["action"] extends "flag" | "set_false"
-      ? boolean
-      : O["action"] extends "append"
-        ? O["choices"] extends readonly (infer C)[]
-          ? C[]
-          : RsString[]
-        : O["action"] extends "help" | "help_short" | "help_long" | "version"
-          ? never
-          : O["num_args"] extends [number, number] | [number]
-            ? O["choices"] extends readonly (infer C)[]
-              ? C[]
-              : RsString[]
-            : O["choices"] extends readonly (infer C)[]
-              ? C
-              : RsString | undefined
+    ? boolean
+    : O["action"] extends "append"
+    ? O["choices"] extends readonly (infer C)[]
+    ? C[]
+    : RsString[]
+    : O["action"] extends "help" | "help_short" | "help_long" | "version"
+    ? never
+    : O["num_args"] extends [number, number] | [number]
+    ? O["choices"] extends readonly (infer C)[]
+    ? C[]
+    : RsString[]
+    : O["choices"] extends readonly (infer C)[]
+    ? C
+    : RsString | undefined
 
   interface ParseResultSuccess<T> {
     type: "result"

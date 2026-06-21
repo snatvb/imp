@@ -107,6 +107,7 @@ pub fn setup_globals<'js>(
     globals
         .set("console", console::create(ctx).unwrap())
         .unwrap();
+    globals.set("assert", js_core::assert::js_assert).unwrap();
     globals
         .set(
             "process",

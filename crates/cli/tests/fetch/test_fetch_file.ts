@@ -6,10 +6,10 @@ async function testBasicFileRead() {
   const filePath = `${TMP_DIR}\\_test_fetch_basic.txt`
   await writeFile(filePath, "hello file fetch")
   const r = await fetch(`file:///${filePath}`)
-  console.assert(r.ok, "Basic file read: ok")
-  console.assert(r.status === 200, "Basic file read: status 200")
+  assert(r.ok, "Basic file read: ok")
+  assert(r.status === 200, "Basic file read: status 200")
   const t = await r.text()
-  console.assert(t === "hello file fetch", "Basic file read: content matches")
+  assert(t === "hello file fetch", "Basic file read: content matches")
   await remove(filePath)
 }
 
@@ -29,22 +29,22 @@ async function testContentType() {
   await writeFile(unknownPath, "bin")
 
   const rJson = await fetch(`file:///${jsonPath}`)
-  console.assert(rJson.headers.get("content-type") === "application/json", "Content-Type: .json")
+  assert(rJson.headers.get("content-type") === "application/json", "Content-Type: .json")
 
   const rHtml = await fetch(`file:///${htmlPath}`)
-  console.assert(rHtml.headers.get("content-type") === "text/html", "Content-Type: .html")
+  assert(rHtml.headers.get("content-type") === "text/html", "Content-Type: .html")
 
   const rCss = await fetch(`file:///${cssPath}`)
-  console.assert(rCss.headers.get("content-type") === "text/css", "Content-Type: .css")
+  assert(rCss.headers.get("content-type") === "text/css", "Content-Type: .css")
 
   const rJs = await fetch(`file:///${jsPath}`)
-  console.assert(rJs.headers.get("content-type") === "application/javascript", "Content-Type: .js")
+  assert(rJs.headers.get("content-type") === "application/javascript", "Content-Type: .js")
 
   const rTxt = await fetch(`file:///${txtPath}`)
-  console.assert(rTxt.headers.get("content-type") === "text/plain", "Content-Type: .txt")
+  assert(rTxt.headers.get("content-type") === "text/plain", "Content-Type: .txt")
 
   const rUnknown = await fetch(`file:///${unknownPath}`)
-  console.assert(rUnknown.headers.get("content-type") === "application/octet-stream", "Content-Type: unknown ext")
+  assert(rUnknown.headers.get("content-type") === "application/octet-stream", "Content-Type: unknown ext")
 
   await remove(jsonPath)
   await remove(htmlPath)
@@ -59,15 +59,15 @@ async function testJsonFile() {
   await writeFile(filePath, '{"key":"value","num":42}')
   const r = await fetch(`file:///${filePath}`)
   const j = await r.json()
-  console.assert(j.key === "value", "JSON file: key=value")
-  console.assert(j.num === 42, "JSON file: num=42")
+  assert(j.key === "value", "JSON file: key=value")
+  assert(j.num === 42, "JSON file: num=42")
   await remove(filePath)
 }
 
 async function testFileNotFound() {
   try {
     await fetch("file:///C:\\nonexistent_path_12345.txt")
-    console.assert(false, "File not found: should have thrown")
+    assert(false, "File not found: should have thrown")
   } catch (e) {
     console.log("PASS: File not found throws")
   }
@@ -78,9 +78,9 @@ async function testAbortBeforeFileFetch() {
   ctrl.abort()
   try {
     await fetch("file:///C:\\some_file.txt", { signal: ctrl.signal })
-    console.assert(false, "Abort before file fetch: should have thrown")
+    assert(false, "Abort before file fetch: should have thrown")
   } catch (e) {
-    console.assert((e as Error).name === "AbortError", "Abort before file fetch: must be AbortError")
+    assert((e as Error).name === "AbortError", "Abort before file fetch: must be AbortError")
     console.log("PASS: Abort before file fetch throws")
   }
 }
@@ -90,10 +90,10 @@ async function testResponseProperties() {
   await writeFile(filePath, "props test")
   const url = `file:///${filePath}`
   const r = await fetch(url)
-  console.assert(r.status === 200, "Response: status=200")
-  console.assert(r.statusText === "OK", "Response: statusText=OK")
-  console.assert(r.url === url, "Response: url matches input")
-  console.assert(r.ok, "Response: ok=true")
+  assert(r.status === 200, "Response: status=200")
+  assert(r.statusText === "OK", "Response: statusText=OK")
+  assert(r.url === url, "Response: url matches input")
+  assert(r.ok, "Response: ok=true")
   await remove(filePath)
 }
 
@@ -103,7 +103,7 @@ async function testPercentEncodedPath() {
   const encoded = encodeURI(`file:///${filePath}`)
   const r = await fetch(encoded)
   const t = await r.text()
-  console.assert(t === "spaced file content", "Percent-encoded path: content matches")
+  assert(t === "spaced file content", "Percent-encoded path: content matches")
   await remove(filePath)
 }
 

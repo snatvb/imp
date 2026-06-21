@@ -1,6 +1,7 @@
 pub use js_error_derive::JsError;
 
 pub mod abort;
+pub mod assert;
 pub mod bundler;
 pub mod byte_buffer;
 pub mod coerce;

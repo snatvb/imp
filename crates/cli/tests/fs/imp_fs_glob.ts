@@ -11,7 +11,7 @@ const globDir = fixture("glob")
     results.push(p.toString())
   }
   console.log("walk all:", results)
-  console.assert(results.length > 0, "walk returns entries")
+  assert(results.length > 0, "walk returns entries")
   console.log("PASS: walk returns all entries")
 }
 
@@ -21,8 +21,8 @@ const globDir = fixture("glob")
     results.push(p.toString())
   }
   console.log("walk files:", results)
-  console.assert(results.length > 0, "walk files returns entries")
-  console.assert(!results.some((r) => r.includes("subdir")), "no directories in files filter")
+  assert(results.length > 0, "walk files returns entries")
+  assert(!results.some((r) => r.includes("subdir")), "no directories in files filter")
   console.log("PASS: walk filter files only")
 }
 
@@ -32,7 +32,7 @@ const globDir = fixture("glob")
     results.push(p.toString())
   }
   console.log("walk dirs:", results)
-  console.assert(results.length > 0, "walk dirs returns entries")
+  assert(results.length > 0, "walk dirs returns entries")
   console.log("PASS: walk filter directories only")
 }
 
@@ -42,7 +42,7 @@ const globDir = fixture("glob")
     results.push(p.toString())
   }
   console.log("walk no dot:", results)
-  console.assert(!results.some((r) => r.includes(".hidden")), "no dot files by default")
+  assert(!results.some((r) => r.includes(".hidden")), "no dot files by default")
   console.log("PASS: walk dot files excluded by default")
 }
 
@@ -52,7 +52,7 @@ const globDir = fixture("glob")
     results.push(p.toString())
   }
   console.log("walk with dot:", results)
-  console.assert(
+  assert(
     results.some((r) => r.includes(".hidden")),
     "dot files included with dot: true",
   )
@@ -65,7 +65,7 @@ const globDir = fixture("glob")
     results.push(p.toString())
   }
   console.log("walk ignore js:", results)
-  console.assert(!results.some((r) => r.endsWith(".js")), "no .js files with ignore")
+  assert(!results.some((r) => r.endsWith(".js")), "no .js files with ignore")
   console.log("PASS: walk ignore patterns")
 }
 
@@ -75,7 +75,7 @@ const globDir = fixture("glob")
     results.push(p.toString())
   }
   console.log("walk absolute:", results)
-  console.assert(results.length > 0, "walk absolute returns entries")
+  assert(results.length > 0, "walk absolute returns entries")
   console.log("PASS: walk absolute paths")
 }
 
@@ -83,8 +83,8 @@ const globDir = fixture("glob")
   const results = await glob(globDir, "**/*.txt")
   const strResults = results.map((r) => r.toString())
   console.log("glob *.txt:", strResults)
-  console.assert(strResults.length === 2, `expected 2 .txt files, got ${strResults.length}`)
-  console.assert(
+  assert(strResults.length === 2, `expected 2 .txt files, got ${strResults.length}`)
+  assert(
     strResults.every((r) => r.endsWith(".txt")),
     "all results are .txt",
   )
@@ -95,8 +95,8 @@ const globDir = fixture("glob")
   const results = await glob(globDir, "**/*.js")
   const strResults = results.map((r) => r.toString())
   console.log("glob *.js:", strResults)
-  console.assert(strResults.length === 2, `expected 2 .js files, got ${strResults.length}`)
-  console.assert(
+  assert(strResults.length === 2, `expected 2 .js files, got ${strResults.length}`)
+  assert(
     strResults.every((r) => r.endsWith(".js")),
     "all results are .js",
   )
@@ -107,7 +107,7 @@ const globDir = fixture("glob")
   const results = await glob(globDir, "**/*", { ignore: ["**/*.js"] })
   const strResults = results.map((r) => r.toString())
   console.log("glob with ignore:", strResults)
-  console.assert(!strResults.some((r) => r.endsWith(".js")), "no .js files with ignore")
+  assert(!strResults.some((r) => r.endsWith(".js")), "no .js files with ignore")
   console.log("PASS: glob with ignore")
 }
 
@@ -115,7 +115,7 @@ const globDir = fixture("glob")
   const results = await glob(globDir, "**/*", { filter: "files" })
   const strResults = results.map((r) => r.toString())
   console.log("glob filter files:", strResults)
-  console.assert(strResults.length > 0, "glob filter files returns entries")
+  assert(strResults.length > 0, "glob filter files returns entries")
   console.log("PASS: glob with filter files")
 }
 
@@ -123,7 +123,7 @@ const globDir = fixture("glob")
   const results = await glob(globDir, "**/*", { filter: "directories" })
   const strResults = results.map((r) => r.toString())
   console.log("glob filter dirs:", strResults)
-  console.assert(strResults.length > 0, "glob filter dirs returns entries")
+  assert(strResults.length > 0, "glob filter dirs returns entries")
   console.log("PASS: glob with filter directories")
 }
 
@@ -131,7 +131,7 @@ const globDir = fixture("glob")
   const results = await glob(globDir, "**/*", { dot: true, filter: "files" })
   const strResults = results.map((r) => r.toString())
   console.log("glob with dot:", strResults)
-  console.assert(
+  assert(
     strResults.some((r) => r.includes(".hidden")),
     "dot files included",
   )
@@ -144,7 +144,7 @@ const globDir = fixture("glob")
     results.push(p.toString())
   }
   console.log("globStream *.txt:", results)
-  console.assert(results.length === 2, `expected 2 .txt files, got ${results.length}`)
+  assert(results.length === 2, `expected 2 .txt files, got ${results.length}`)
   console.log("PASS: globStream basic")
 }
 
@@ -154,7 +154,7 @@ const globDir = fixture("glob")
     results.push(p.toString())
   }
   console.log("globStream with options:", results)
-  console.assert(!results.some((r) => r.endsWith(".js")), "no .js files")
+  assert(!results.some((r) => r.endsWith(".js")), "no .js files")
   console.log("PASS: globStream with options")
 }
 
@@ -165,7 +165,7 @@ const globDir = fixture("glob")
     if (results.length >= 2) break
   }
   console.log("globStream early break:", results)
-  console.assert(results.length === 2, "early break works")
+  assert(results.length === 2, "early break works")
   console.log("PASS: globStream early break")
 }
 
@@ -176,12 +176,12 @@ const globDir = fixture("glob")
   } catch (e) {
     threw = true
     console.log("invalid pattern error:", String(e))
-    console.assert(
+    assert(
       String(e).includes("pattern") || String(e).includes("glob") || String(e).includes("error"),
       "error message mentions pattern/glob/error",
     )
   }
-  console.assert(threw, "invalid glob pattern throws")
+  assert(threw, "invalid glob pattern throws")
   console.log("PASS: invalid glob pattern throws")
 }
 
@@ -193,7 +193,7 @@ const globDir = fixture("glob")
     threw = true
     console.log("invalid ignore error:", String(e))
   }
-  console.assert(threw, "invalid ignore pattern throws")
+  assert(threw, "invalid ignore pattern throws")
   console.log("PASS: invalid ignore pattern throws")
 }
 
@@ -204,9 +204,9 @@ const globDir = fixture("glob")
   } catch (e) {
     threw = true
     console.log("invalid filter error:", String(e))
-    console.assert(String(e).includes("filter"), "error message mentions filter")
+    assert(String(e).includes("filter"), "error message mentions filter")
   }
-  console.assert(threw, "invalid filter value throws")
+  assert(threw, "invalid filter value throws")
   console.log("PASS: invalid filter value throws")
 }
 
@@ -217,12 +217,12 @@ const globDir = fixture("glob")
   } catch (e) {
     threw = true
     console.log("non-existent dir error:", String(e))
-    console.assert(
+    assert(
       String(e).includes("ENOENT") || String(e).includes("not found") || String(e).includes("error"),
       "error message mentions ENOENT/not found/error",
     )
   }
-  console.assert(threw, "non-existent directory throws")
+  assert(threw, "non-existent directory throws")
   console.log("PASS: non-existent directory throws")
 }
 
@@ -237,7 +237,7 @@ const globDir = fixture("glob")
     threw = true
     console.log("globStream invalid pattern error:", String(e))
   }
-  console.assert(threw, "globStream with invalid pattern throws")
+  assert(threw, "globStream with invalid pattern throws")
   console.log("PASS: globStream with invalid pattern throws")
 }
 
@@ -252,7 +252,7 @@ const globDir = fixture("glob")
     threw = true
     console.log("walk invalid filter error:", String(e))
   }
-  console.assert(threw, "walk with invalid filter throws")
+  assert(threw, "walk with invalid filter throws")
   console.log("PASS: walk with invalid filter throws")
 }
 
@@ -261,8 +261,8 @@ const globDir = fixture("glob")
   for await (const p of walk(globDir, { filter: "files" })) {
     results.push(p.toString())
   }
-  console.assert(!results.some((r) => r.startsWith("..")), "no paths start with ..")
-  console.assert(
+  assert(!results.some((r) => r.startsWith("..")), "no paths start with ..")
+  assert(
     results.some((r) => r.includes("subdir")),
     "subdir files present",
   )
@@ -272,31 +272,31 @@ const globDir = fixture("glob")
 {
   const results = await glob(globDir, "**/*.txt")
   const strResults = results.map((r) => r.toString())
-  console.assert(strResults.length === 2, `expected 2 .txt files, got ${strResults.length}`)
-  console.assert(
+  assert(strResults.length === 2, `expected 2 .txt files, got ${strResults.length}`)
+  assert(
     strResults.some((r) => r.includes("subdir")),
     "found file in subdir",
   )
-  console.assert(!strResults.some((r) => r === "subdir"), "no directories in results")
+  assert(!strResults.some((r) => r === "subdir"), "no directories in results")
   console.log("PASS: regression — glob finds files in subdirs, no dirs")
 }
 
 {
   const stream = globStream(globDir, "**/*.txt")
-  console.assert(typeof stream[Symbol.asyncIterator] === "function", "globStream returns async iterable")
+  assert(typeof stream[Symbol.asyncIterator] === "function", "globStream returns async iterable")
   const results: string[] = []
   for await (const p of stream) {
     results.push(p.toString())
   }
-  console.assert(results.length === 2, `expected 2 results, got ${results.length}`)
+  assert(results.length === 2, `expected 2 results, got ${results.length}`)
   console.log("PASS: regression — globStream is sync, returns async iterable")
 }
 
 {
   const results = await glob(globDir, "subdir/*.txt")
   const strResults = results.map((r) => r.toString())
-  console.assert(strResults.length === 1, `expected 1 file, got ${strResults.length}`)
-  console.assert(strResults[0].includes("file3"), "found file3.txt")
+  assert(strResults.length === 1, `expected 1 file, got ${strResults.length}`)
+  assert(strResults[0].includes("file3"), "found file3.txt")
   console.log("PASS: regression — glob with subdir pattern")
 }
 

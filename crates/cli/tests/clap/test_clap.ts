@@ -12,15 +12,15 @@ const parser = new clap.Parser()
 
 const result = parser.parse(["-n", "Alice", "-vvv", "-o", "out.txt", "--debug", "file1.txt", "file2.txt"])
 
-console.assert(result.type === "result", "type should be result")
+assert(result.type === "result", "type should be result")
 if (result.type === "result") {
-  console.assert(result.name === "Alice", "name should be Alice")
-  console.assert(result.verbose === 3, "verbose should be 3")
-  console.assert(result.output === "out.txt", "output should be out.txt")
-  console.assert(result.debug === true, "debug should be true")
-  console.assert(result.files.length === 2, "files should have 2 elements")
-  console.assert(result.files[0] === "file1.txt", "files[0] should be file1.txt")
-  console.assert(result.files[1] === "file2.txt", "files[1] should be file2.txt")
+  assert(result.name === "Alice", "name should be Alice")
+  assert(result.verbose === 3, "verbose should be 3")
+  assert(result.output === "out.txt", "output should be out.txt")
+  assert(result.debug === true, "debug should be true")
+  assert(result.files.length === 2, "files should have 2 elements")
+  assert(result.files[0] === "file1.txt", "files[0] should be file1.txt")
+  assert(result.files[1] === "file2.txt", "files[1] should be file2.txt")
 }
 
 console.log("ALL CLAP TESTS PASSED")
