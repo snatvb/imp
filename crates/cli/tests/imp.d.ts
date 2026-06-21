@@ -715,6 +715,7 @@ declare module "imp:subprocess" {
     input?: string
     timeout?: number
     maxOutput?: number
+    signal?: AbortSignal
   }
 
   interface RunResult {

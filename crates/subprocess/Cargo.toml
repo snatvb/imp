@@ -8,6 +8,7 @@ authors.workspace = true
 rquickjs.workspace = true
 js_core = { path = "../js_core" }
 tokio.workspace = true
+tokio-util.workspace = true
 thiserror.workspace = true
 parking_lot.workspace = true
 async-stream.workspace = true

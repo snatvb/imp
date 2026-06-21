@@ -17,6 +17,10 @@ pub enum SubprocessError {
     #[error("subprocess timed out after {0}ms")]
     #[js(error)]
     Timeout(u64),
+
+    #[error("{0}")]
+    #[js(error)]
+    Aborted(String),
 }
 
 impl SubprocessError {

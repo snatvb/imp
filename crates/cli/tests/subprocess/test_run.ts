@@ -7,7 +7,14 @@ const SH_FLAG = isWindows ? "/c" : "-c"
 
 function sh(
   cmd: string,
-  options?: { input?: string; timeout?: number; maxOutput?: number; env?: Record<string, string>; cwd?: string },
+  options?: {
+    input?: string
+    timeout?: number
+    maxOutput?: number
+    env?: Record<string, string>
+    cwd?: string
+    signal?: AbortSignal
+  },
 ) {
   return run(SH, [SH_FLAG, cmd], options)
 }
@@ -55,7 +62,8 @@ console.assert(typeof run === "function", "run is a function")
   const start = Date.now()
   let threw = false
   try {
-    await sh(isWindows ? "ping -n 5 127.0.0.1" : "sleep 5", { timeout: 200 })
+    const longCmd = isWindows ? "C:\\Windows\\System32\\ping.exe -n 5 127.0.0.1" : "sleep 5"
+    await sh(longCmd, { timeout: 200 })
   } catch (e) {
     threw = true
   }
@@ -93,6 +101,33 @@ console.assert(typeof run === "function", "run is a function")
 {
   const r = await sh(isWindows ? "cd" : "pwd", { cwd: process.cwd() })
   console.assert(r.stdout.length > 0, `cwd: ${r.stdout}`)
+}
+
+{
+  const ctrl = new AbortController()
+  ctrl.abort()
+  let threw = false
+  try {
+    await sh("echo hi", { signal: ctrl.signal })
+  } catch (e) {
+    threw = true
+  }
+  console.assert(threw, "pre-aborted signal: threw")
+}
+
+{
+  const sig = AbortSignal.timeout(100)
+  const start = Date.now()
+  let threw = false
+  try {
+    const longCmd = isWindows ? "C:\\Windows\\System32\\ping.exe -n 10 127.0.0.1" : "sleep 10"
+    await sh(longCmd, { signal: sig })
+  } catch (e) {
+    threw = true
+  }
+  const elapsed = Date.now() - start
+  console.assert(threw, "signal during run: threw")
+  console.assert(elapsed < 2000, `signal during run: elapsed=${elapsed}ms`)
 }
 
 console.log("ALL SUBPROCESS RUN TESTS PASSED")

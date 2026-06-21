@@ -121,44 +121,6 @@ where
     Ok((buf, hit_cap))
 }
 
-async fn read_outputs<'js>(
-    ctx: &js::Ctx<'js>,
-    child: &mut Child,
-    stdout: ChildStdout,
-    stderr: ChildStderr,
-    timeout: Option<u64>,
-    cap: usize,
-    cmd: &str,
-) -> js::Result<(Vec<u8>, Vec<u8>)> {
-    use js_core::error::JsError;
-
-    let read_out = read_capped(stdout, cap);
-    let read_err = read_capped(stderr, cap);
-
-    let (out_res, err_res) = if let Some(ms) = timeout {
-        match tokio::time::timeout(std::time::Duration::from_millis(ms), async {
-            tokio::join!(read_out, read_err)
-        })
-        .await
-        {
-            Ok(v) => v,
-            Err(_) => {
-                force_kill(child).await;
-                return Err(SubprocessError::Timeout(ms).into_exception(ctx));
-            }
-        }
-    } else {
-        tokio::join!(read_out, read_err)
-    };
-
-    let (out, out_capped) = out_res.map_err(|e| io_err(ctx, e, "read", cmd))?;
-    let (err, err_capped) = err_res.map_err(|e| io_err(ctx, e, "read", cmd))?;
-    if out_capped || err_capped {
-        force_kill(child).await;
-    }
-    Ok((out, err))
-}
-
 fn build_result<'js>(
     ctx: &js::Ctx<'js>,
     status: std::process::ExitStatus,
@@ -182,9 +144,19 @@ pub async fn run<'js>(
     args: js::Array<'js>,
     options: js::function::Opt<RunOptions>,
 ) -> js::Result<js::Object<'js>> {
+    use js_core::error::JsError;
+
     let cmd_str = cmd.as_str().to_string();
     let opts = options.0.unwrap_or_default();
     let arg_strs = parse_args(&ctx, args)?;
+
+    if let Some(sig) = &opts.signal
+        && sig.is_aborted()
+    {
+        return Err(
+            SubprocessError::Aborted("The operation was aborted".into()).into_exception(&ctx)
+        );
+    }
 
     let start = Instant::now();
     let mut command = build_command(&cmd_str, &arg_strs, &opts);
@@ -195,16 +167,45 @@ pub async fn run<'js>(
     let (stdin, stdout, stderr) = take_pipes(&ctx, &mut child)?;
     let stdin_task = spawn_stdin_writer(stdin, opts.input.clone());
 
-    let (out, err) = read_outputs(
-        &ctx,
-        &mut child,
-        stdout,
-        stderr,
-        opts.timeout,
-        opts.max_output(),
-        &cmd_str,
-    )
-    .await?;
+    let max_output = opts.max_output();
+    let read_out = read_capped(stdout, max_output);
+    let read_err = read_capped(stderr, max_output);
+    let join_fut = async { tokio::join!(read_out, read_err) };
+
+    let timeout_dur = opts.timeout.map(std::time::Duration::from_millis);
+    let timeout_fut = async {
+        match timeout_dur {
+            Some(d) => tokio::time::sleep(d).await,
+            None => std::future::pending::<()>().await,
+        }
+    };
+    let signal_token = opts.signal.as_ref().map(|s| s.token().clone());
+    let signal_fut = async {
+        match &signal_token {
+            Some(t) => t.cancelled().await,
+            None => std::future::pending::<()>().await,
+        }
+    };
+
+    let (out_res, err_res) = tokio::select! {
+        v = join_fut => v,
+        _ = timeout_fut => {
+            force_kill(&mut child).await;
+            return Err(SubprocessError::Timeout(opts.timeout.unwrap_or(0))
+                .into_exception(&ctx));
+        }
+        _ = signal_fut => {
+            force_kill(&mut child).await;
+            return Err(SubprocessError::Aborted("The operation was aborted".into())
+                .into_exception(&ctx));
+        }
+    };
+
+    let (out, out_capped) = out_res.map_err(|e| io_err(&ctx, e, "read", &cmd_str))?;
+    let (err, err_capped) = err_res.map_err(|e| io_err(&ctx, e, "read", &cmd_str))?;
+    if out_capped || err_capped {
+        force_kill(&mut child).await;
+    }
 
     let status = child
         .wait()

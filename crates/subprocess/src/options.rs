@@ -1,17 +1,19 @@
 use std::collections::HashMap;
 
+use js_core::abort::AbortSignal;
 use js_core::js::{Ctx, FromJs, Value};
 use js_core::utils::{JsStringArg, StringArg};
 
 const DEFAULT_MAX_OUTPUT: usize = 10 * 1024 * 1024;
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Clone)]
 pub struct RunOptions {
     pub cwd: Option<String>,
     pub env: Option<HashMap<String, String>>,
     pub input: Option<String>,
     pub timeout: Option<u64>,
     pub max_output: Option<usize>,
+    pub signal: Option<AbortSignal>,
 }
 
 impl RunOptions {
@@ -57,6 +59,8 @@ impl<'js> FromJs<'js> for RunOptions {
         if let Some(env) = opts.get::<_, Option<HashMap<String, String>>>("env")? {
             result.env = Some(env);
         }
+
+        result.signal = opts.get::<_, Option<AbortSignal>>("signal")?;
 
         Ok(result)
     }
