@@ -19,7 +19,7 @@ pub enum SubprocessError {
     Timeout(u64),
 
     #[error("{0}")]
-    #[js(error)]
+    #[js(abort)]
     Aborted(String),
 }
 

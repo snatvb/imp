@@ -18,38 +18,31 @@ pub trait JsError: std::error::Error {
 }
 
 pub fn throw_abort_error<'js>(ctx: &js::Ctx<'js>, reason: &str) -> js::Error {
-    unsafe {
-        let name = std::ffi::CString::new("AbortError").unwrap();
-        let msg = std::ffi::CString::new(reason).unwrap();
-        let fmt = c"%s";
-        js::qjs::JS_ThrowDOMException(
-            ctx.as_raw().as_ptr(),
-            name.as_ptr(),
-            fmt.as_ptr(),
-            msg.as_ptr(),
-        );
-    }
+    let abort_ctor: js::Constructor = ctx.globals().get("Error").unwrap();
+    let err: js::Object = abort_ctor.construct((reason,)).unwrap();
+    err.set("name", "AbortError").unwrap();
+    ctx.throw(err.into_value());
     js::Error::Exception
 }
 
 pub fn throw_timeout_error<'js>(ctx: &js::Ctx<'js>, reason: &str) -> js::Error {
-    unsafe {
-        let name = std::ffi::CString::new("TimeoutError").unwrap();
-        let msg = std::ffi::CString::new(reason).unwrap();
-        let fmt = c"%s";
-        js::qjs::JS_ThrowDOMException(
-            ctx.as_raw().as_ptr(),
-            name.as_ptr(),
-            fmt.as_ptr(),
-            msg.as_ptr(),
-        );
-    }
+    let timeout_ctor: js::Constructor = ctx.globals().get("Error").unwrap();
+    let err: js::Object = timeout_ctor.construct((reason,)).unwrap();
+    err.set("name", "TimeoutError").unwrap();
+    ctx.throw(err.into_value());
     js::Error::Exception
 }
 
 pub fn make_type_error<'js>(ctx: &js::Ctx<'js>, msg: String) -> js::Result<js::Value<'js>> {
     let ctor: Constructor = ctx.globals().get("TypeError")?;
     let err: Object = ctor.construct((msg,))?;
+    Ok(err.into_value())
+}
+
+pub fn make_abort_error<'js>(ctx: &js::Ctx<'js>, msg: String) -> js::Result<js::Value<'js>> {
+    let ctor: Constructor = ctx.globals().get("Error")?;
+    let err: Object = ctor.construct((msg,))?;
+    err.set("name", "AbortError")?;
     Ok(err.into_value())
 }
 

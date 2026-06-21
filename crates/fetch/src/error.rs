@@ -11,7 +11,7 @@ pub enum Error {
     System(SystemError),
 
     #[error("{0}")]
-    #[js(error)]
+    #[js(abort)]
     Aborted(String),
 
     #[error("{0}")]

@@ -33,7 +33,8 @@ pub fn derive_js_error(input: TokenStream) -> TokenStream {
                         "type_error" => quote! { js_core::error::make_type_error(ctx, e.to_string()) },
                         "range_error" => quote! { js_core::error::make_range_error(ctx, e.to_string()) },
                         "error" => quote! { js_core::error::make_error(ctx, e.to_string()) },
-                        _ => panic!("Expected #[js(system)], #[js(type_error)], #[js(range_error)], or #[js(error)]"),
+                        "abort" => quote! { js_core::error::make_abort_error(ctx, e.to_string()) },
+                        _ => panic!("Expected #[js(system)], #[js(type_error)], #[js(range_error)], #[js(error)], or #[js(abort)]"),
                     };
                     quote! {
                         #name::#variant_name(e) => #body,

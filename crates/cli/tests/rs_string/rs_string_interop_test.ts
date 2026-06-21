@@ -17,6 +17,8 @@ import { readFile, mkdir, exists, remove, metadata, open } from "imp:fs"
 
 const S = (v: string) => RsString.fromString(v)
 
+const fixturesDir = import.meta.dirname + "/../fixtures"
+
 {
   const r = join(S("/foo"), S("bar"))
   console.assert(r.includes("foo"), "join RsString")
@@ -72,7 +74,7 @@ const S = (v: string) => RsString.fromString(v)
   console.assert(posix.basename(S("/foo/bar.txt")) === "bar.txt", "posix.basename RsString")
 }
 
-const fixturePath = S(import.meta.dirname + "/fixtures/hello.txt")
+const fixturePath = S(fixturesDir + "/hello.txt")
 {
   const content = await readFile(fixturePath, "utf8")
   console.assert(content.toString() === "hello world", "readFile RsString path utf8")
