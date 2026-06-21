@@ -75,10 +75,13 @@ impl PathBackend for Posix {
         if s.is_empty() {
             return ("", "");
         }
-        if s.len() == 1 && s.as_bytes()[0] == b'/' {
-            return ("/", "");
+        if s.as_bytes()[0] == b'/' {
+            let rest = &s[1..];
+            let rest = rest.trim_start_matches('/');
+            ("/", rest)
+        } else {
+            ("", s)
         }
-        (s, "")
     }
 
     fn normalize_separators<'a>(s: &'a str) -> Cow<'a, str> {
