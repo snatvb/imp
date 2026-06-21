@@ -7,12 +7,13 @@ use js::promise::PromiseState;
 
 pub async fn run_event_loop<'js>(
     ctx: &js::Ctx<'js>,
-    _rt: &js::AsyncRuntime,
     js_timers: JsTimers,
     early_exit: Option<js::Promise<'js>>,
 ) {
     let mut last = Instant::now();
     let mut released = Vec::with_capacity(8);
+    let mut idle_rounds: u32 = 0;
+
     loop {
         let now = Instant::now();
         let dt = now.duration_since(last);
@@ -41,17 +42,40 @@ pub async fn run_event_loop<'js>(
             .as_ref()
             .map(|p| !matches!(p.state(), PromiseState::Pending))
             .unwrap_or(false);
-        {
+
+        let idle = {
             let timers = js_timers.borrow();
-            if (early_done || early_exit.is_none())
+            (early_done || early_exit.is_none())
                 && timers.timers.is_empty()
                 && timers.released.is_empty()
-            {
-                break;
+        };
+
+        if idle {
+            let has_jobs = is_job_pending(ctx);
+            if has_jobs {
+                idle_rounds = 0;
+            } else {
+                idle_rounds += 1;
+                const GUARD_CYCLES: u32 = 100;
+                if idle_rounds >= GUARD_CYCLES {
+                    break;
+                }
             }
+        } else {
+            idle_rounds = 0;
         }
 
         tokio::time::sleep(Duration::from_millis(1)).await;
     }
     tracing::info!("event loop finished");
+}
+
+#[inline]
+fn is_job_pending(ctx: &js::Ctx<'_>) -> bool {
+    // unsafe neccesary to get rt ptr because using rt has_jobs leads to deadlock
+    // loop in signle thread, no datarace
+    unsafe {
+        let rt_ptr = js::qjs::JS_GetRuntime(ctx.as_raw().as_ptr());
+        js::qjs::JS_IsJobPending(rt_ptr)
+    }
 }

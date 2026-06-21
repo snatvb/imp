@@ -14,7 +14,7 @@ pub async fn run_embedded(bundle: Bundle) {
     let (entry_name, entry_code) = setup::setup_embedded_loaders(&rt, bundle).await;
 
     ctx.async_with(async |ctx| {
-        setup::run_js_entry(&ctx, &rt, &entry_name, &entry_code, &script_args).await;
+        setup::run_js_entry(&ctx, &entry_name, &entry_code, &script_args).await;
     })
     .await;
 

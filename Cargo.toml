@@ -45,7 +45,12 @@ quick-xml = { version = "0.40.1", features = [
   "escape-html",
   "async-tokio",
 ] }
-rquickjs = { version = "0.12.0", features = ["full-async", "macro", "loader"] }
+rquickjs = { version = "0.12.0", features = [
+  "full-async",
+  "macro",
+  "loader",
+  "dump-leaks",
+] }
 clap = { version = "4.6.1", features = ["color", "derive", "string"] }
 tokio = { version = "1.52.3", features = [
   "process",
@@ -90,3 +95,9 @@ imp_chrono = { path = "crates/chrono" }
 subprocess = { path = "crates/subprocess" }
 encoding = { path = "crates/encoding" }
 env = { path = "crates/env" }
+
+# [patch.crates-io]
+# rquickjs = { path = "../rquickjs" }
+# rquickjs-core = { path = "../rquickjs/core" }
+# rquickjs-sys = { path = "../rquickjs/sys" }
+# rquickjs-macro = { path = "../rquickjs/macro" }

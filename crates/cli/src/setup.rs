@@ -124,7 +124,6 @@ pub fn setup_globals<'js>(
 
 pub async fn run_js_entry<'js>(
     ctx: &js::Ctx<'js>,
-    rt: &js::AsyncRuntime,
     entry_name: &str,
     entry_code: &str,
     script_args: &[String],
@@ -147,5 +146,5 @@ pub async fn run_js_entry<'js>(
     );
     tracing::info!("module evaluated");
 
-    event_loop::run_event_loop(ctx, rt, js_timers, promise).await;
+    event_loop::run_event_loop(ctx, js_timers, promise).await;
 }

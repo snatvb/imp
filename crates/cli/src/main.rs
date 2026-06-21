@@ -182,11 +182,9 @@ async fn run_script(filepath: PathBuf, script_args: Vec<String>) {
     setup::setup_loaders(&rt, resolver, cwd).await;
 
     ctx.async_with(async |ctx| {
-        setup::run_js_entry(&ctx, &rt, filepath_str, &code, &script_args).await;
+        setup::run_js_entry(&ctx, filepath_str, &code, &script_args).await;
     })
     .await;
-
-    rt.idle().await;
 }
 
 #[cfg(debug_assertions)]
