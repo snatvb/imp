@@ -30,3 +30,5 @@ imp_chrono.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
 subprocess.workspace = true
+encoding.workspace = true
+env.workspace = true

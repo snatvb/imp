@@ -11,5 +11,7 @@ import "../fs/index"
 import "../fetch/index"
 import "../rs_string/index"
 import "../subprocess/index.ts"
+import "../encoding/index.ts"
+import "../env/index.ts"
 
 console.log("ALL SMOKE TESTS PASSED")

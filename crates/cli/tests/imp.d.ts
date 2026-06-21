@@ -733,3 +733,80 @@ declare module "imp:subprocess" {
   export default _default
   export { run, RunOptions, RunResult }
 }
+
+declare module "imp:encoding" {
+  type B64Variant = "standard" | "url"
+
+  interface Base64Options {
+    variant?: B64Variant
+    pad?: boolean
+  }
+
+  interface Base64DecodeOptions {
+    mode?: "base64" | "utf8"
+  }
+
+  interface HexOptions {
+    uppercase?: boolean
+  }
+
+  const base64: {
+    encode(input: JsString | ByteBuffer, options?: Base64Options): string
+    decode(input: JsString, options?: Base64DecodeOptions): string | ByteBuffer
+  }
+
+  const hex: {
+    encode(input: JsString | ByteBuffer, options?: HexOptions): string
+    decode(input: JsString): ByteBuffer
+  }
+
+  const utf8: {
+    encode(input: JsString): ByteBuffer
+    decode(input: ByteBuffer): string
+  }
+
+  const uri: {
+    encode(input: JsString): string
+    decode(input: JsString): string
+  }
+
+  const _default: { base64: typeof base64; hex: typeof hex; utf8: typeof utf8; uri: typeof uri }
+  export default _default
+  export { base64, hex, utf8, uri, Base64Options, Base64DecodeOptions, HexOptions, B64Variant }
+}
+
+declare module "imp:env" {
+  type ConfigValue = string | number | boolean
+  type ConfigObject = Record<string, ConfigValue | ConfigObject>
+
+  interface IniOptions {
+    caseSensitive?: boolean
+  }
+
+  interface DotenvOptions {
+    expand?: boolean
+  }
+
+  const env: {
+    parseIni(input: JsString, options?: IniOptions): ConfigObject
+    parseDotenv(input: JsString, options?: DotenvOptions): Record<string, string>
+    expand(input: JsString, vars?: Record<string, string>): string
+    merge(...sources: Record<string, string>[]): Record<string, string>
+    loadFile(path: string): Promise<ConfigObject>
+  }
+
+  const _default: typeof env
+  export default _default
+  export {
+    env,
+    parseIni,
+    parseDotenv,
+    expand,
+    merge,
+    loadFile,
+    ConfigValue,
+    ConfigObject,
+    IniOptions,
+    DotenvOptions,
+  }
+}
