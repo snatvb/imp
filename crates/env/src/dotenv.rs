@@ -415,3 +415,6 @@ pub fn parse_dotenv<'js>(
     }
     Ok(obj)
 }
+
+#[cfg(test)]
+mod tests;
