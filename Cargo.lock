@@ -2842,6 +2842,7 @@ dependencies = [
  "rquickjs",
  "thiserror",
  "tokio",
+ "tokio-util",
 ]
 
 [[package]]
