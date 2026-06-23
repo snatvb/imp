@@ -1,5 +1,9 @@
+use js::object::Accessor;
 use js_core::error::{JsError, SystemError};
 use rquickjs as js;
+
+mod exit;
+pub use exit::ExitHandle;
 
 #[js::function]
 fn cwd(ctx: js::Ctx<'_>) -> js::Result<String> {
@@ -8,16 +12,12 @@ fn cwd(ctx: js::Ctx<'_>) -> js::Result<String> {
         .map_err(|e| SystemError::from_io(e, "cwd", None).into_exception(&ctx))
 }
 
-#[js::function]
-fn exit(code: js::function::Opt<i32>) {
-    std::process::exit(code.0.unwrap_or(0))
-}
-
 pub fn create<'a>(
     ctx: &js::Ctx<'a>,
     exe_path: &str,
     filepath: &str,
     rest_args: &[impl std::borrow::Borrow<str>],
+    exit_handle: ExitHandle,
 ) -> js::Result<js::Object<'a>> {
     let process = js::Object::new(ctx.clone())?;
     let js_args = js::Array::new(ctx.clone())?;
@@ -29,8 +29,36 @@ pub fn create<'a>(
     }
 
     process.set("cwd", js_cwd)?;
-    process.set("exit", js_exit)?;
     process.set("argv", js_args)?;
+
+    let handle = exit_handle.clone();
+    let exit_fn = js::Function::new(ctx.clone(), move |code: js::function::Opt<i32>| {
+        handle.request_exit(code.0.unwrap_or(0));
+    })?;
+    process.set("exit", exit_fn)?;
+
+    let handle = exit_handle.clone();
+    let ctx_for_on = ctx.clone();
+    let on_fn = js::Function::new(ctx.clone(), move |event: String, cb: js::Function<'_>| {
+        if event == "exit" {
+            let ctx_ref: &js::Ctx<'static> =
+                unsafe { std::mem::transmute::<&js::Ctx<'a>, &js::Ctx<'static>>(&ctx_for_on) };
+            let cb_val: js::Function<'static> =
+                unsafe { std::mem::transmute::<js::Function<'_>, js::Function<'static>>(cb) };
+            let persistent = js::Persistent::save(ctx_ref, cb_val);
+            handle.add_listener(persistent);
+        }
+    })?;
+    process.set("on", on_fn)?;
+
+    let handle_get = exit_handle.clone();
+    let handle_set = exit_handle.clone();
+    process.prop(
+        "exitCode",
+        Accessor::from(move || -> i32 { handle_get.exit_code() }).set(move |code: i32| {
+            handle_set.set_exit_code(code);
+        }),
+    )?;
 
     let env_obj = js::Object::new(ctx.clone())?;
     for (key, value) in std::env::vars() {

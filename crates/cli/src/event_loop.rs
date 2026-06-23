@@ -1,3 +1,4 @@
+use std::io::Write;
 use std::time::{Duration, Instant};
 
 use js_core::timers::JsTimers;
@@ -8,6 +9,7 @@ use js::promise::PromiseState;
 pub async fn run_event_loop<'js>(
     ctx: &js::Ctx<'js>,
     js_timers: JsTimers,
+    exit_handle: Option<process::ExitHandle>,
     early_exit: Option<js::Promise<'js>>,
 ) {
     let mut last = Instant::now();
@@ -36,6 +38,15 @@ pub async fn run_event_loop<'js>(
                     tracing::error!(?e, "failed to restore timer callback");
                 }
             }
+        }
+
+        if let Some(ref handle) = exit_handle
+            && handle.is_requested()
+        {
+            handle.run_listeners(ctx);
+            let _ = std::io::stdout().flush();
+            let _ = std::io::stderr().flush();
+            break;
         }
 
         let early_done = early_exit

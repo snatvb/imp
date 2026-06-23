@@ -30,8 +30,8 @@ import { parseDotenv } from "imp:env"
 }
 
 {
-  const out = parseDotenv("ESC=\"a\\nb\\tc\\\\d\\\"e\"") as any
-  assert(RsString.equals(out.ESC, "a\nb\tc\\d\"e"), "double-quoted escapes")
+  const out = parseDotenv('ESC="a\\nb\\tc\\\\d\\"e"') as any
+  assert(RsString.equals(out.ESC, 'a\nb\tc\\d"e'), "double-quoted escapes")
 }
 
 {
@@ -58,10 +58,7 @@ import { parseDotenv } from "imp:env"
 
 {
   const out = parseDotenv("URL=postgres://user:pass@host:5432/db") as any
-  assert(
-    RsString.equals(out.URL, "postgres://user:pass@host:5432/db"),
-    "URL with special chars",
-  )
+  assert(RsString.equals(out.URL, "postgres://user:pass@host:5432/db"), "URL with special chars")
 }
 
 {
@@ -82,12 +79,12 @@ import { parseDotenv } from "imp:env"
 }
 
 {
-  const out = parseDotenv("GREETING=\"Hello $USER\"", { USER: "alice" }) as any
+  const out = parseDotenv('GREETING="Hello $USER"', { USER: "alice" }) as any
   assert(RsString.equals(out.GREETING, "Hello alice"), "var expansion in double-quoted")
 }
 
 {
-  const out = parseDotenv("MSG=\"$NOT_SET literal\"") as any
+  const out = parseDotenv('MSG="$NOT_SET literal"') as any
   assert(RsString.equals(out.MSG, "$NOT_SET literal"), "missing var keeps literal")
 }
 
@@ -99,12 +96,12 @@ import { parseDotenv } from "imp:env"
 }
 
 {
-  const out = parseDotenv("GREETING=\"Hello ${USER}\"", { USER: "bob" }) as any
+  const out = parseDotenv('GREETING="Hello ${USER}"', { USER: "bob" }) as any
   assert(RsString.equals(out.GREETING, "Hello bob"), "braced var expansion")
 }
 
 {
-  const out = parseDotenv("FOO=\"$BAR\"", { BAR: "value" }) as any
+  const out = parseDotenv('FOO="$BAR"', { BAR: "value" }) as any
   assert(RsString.equals(out.FOO, "value"), "FOO=$BAR expands to value")
 }
 

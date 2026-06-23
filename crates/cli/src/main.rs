@@ -181,10 +181,11 @@ async fn run_script(filepath: PathBuf, script_args: Vec<String>) {
 
     setup::setup_loaders(&rt, resolver, cwd).await;
 
-    ctx.async_with(async |ctx| {
-        setup::run_js_entry(&ctx, filepath_str, &code, &script_args).await;
-    })
-    .await;
+    let exit_code = ctx
+        .async_with(async |ctx| setup::run_js_entry(&ctx, filepath_str, &code, &script_args).await)
+        .await;
+
+    std::process::exit(exit_code);
 }
 
 #[cfg(debug_assertions)]

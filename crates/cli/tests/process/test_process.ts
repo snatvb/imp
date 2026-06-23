@@ -31,4 +31,10 @@ assert(process.homedir.length > 0, "homedir not empty")
 assert(typeof process.version === "string", "version is string")
 assert(/^\d+\.\d+\.\d+$/.test(process.version), "version matches semver")
 
+assert(typeof process.exitCode === "number", "exitCode is number")
+assert(process.exitCode === 0, "exitCode default is 0")
+process.exitCode = 42
+assert(process.exitCode === 42, "exitCode setter works")
+process.exitCode = 0
+
 console.log("ALL PROCESS TESTS PASSED")

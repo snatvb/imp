@@ -16,4 +16,3 @@ assert(typeof merge === "function", "merge is a function")
 assert(typeof loadFile === "function", "loadFile is a function")
 
 console.log("ALL ENV EMPTY TESTS PASSED")
-

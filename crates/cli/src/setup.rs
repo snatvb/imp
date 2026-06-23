@@ -97,7 +97,9 @@ pub fn setup_globals<'js>(
     exe: &str,
     filepath: &str,
     script_args: &[impl std::borrow::Borrow<str>],
-) -> JsTimers {
+) -> (JsTimers, process::ExitHandle) {
+    let exit_handle = process::ExitHandle::new();
+
     js_core::rs_string::init_rs_string_or_panic(ctx);
     js_core::byte_buffer::init_or_panic(ctx);
     imp_clap::init(ctx, script_args).unwrap();
@@ -111,7 +113,7 @@ pub fn setup_globals<'js>(
     globals
         .set(
             "process",
-            process::create(ctx, exe, filepath, script_args).unwrap(),
+            process::create(ctx, exe, filepath, script_args, exit_handle.clone()).unwrap(),
         )
         .unwrap();
     globals
@@ -120,7 +122,7 @@ pub fn setup_globals<'js>(
     fetch::create_globals(ctx).unwrap();
     imp_url::create_globals(ctx).unwrap();
     imp_chrono::create_globals(ctx).unwrap();
-    js_timers
+    (js_timers, exit_handle)
 }
 
 pub async fn run_js_entry<'js>(
@@ -128,11 +130,11 @@ pub async fn run_js_entry<'js>(
     entry_name: &str,
     entry_code: &str,
     script_args: &[String],
-) {
+) -> i32 {
     use crate::{error, event_loop};
 
     let exe_path = std::env::current_exe().unwrap();
-    let js_timers = setup_globals(
+    let (js_timers, exit_handle) = setup_globals(
         ctx,
         exe_path.to_string_lossy().as_ref(),
         entry_name,
@@ -147,5 +149,7 @@ pub async fn run_js_entry<'js>(
     );
     tracing::info!("module evaluated");
 
-    event_loop::run_event_loop(ctx, js_timers, promise).await;
+    let exit_handle_for_loop = exit_handle.clone();
+    event_loop::run_event_loop(ctx, js_timers, Some(exit_handle_for_loop), promise).await;
+    exit_handle.exit_code()
 }

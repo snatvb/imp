@@ -72,10 +72,7 @@ console.log("PASS: parse")
 assert(format({ dir: "/home/user/dir", base: "file.txt" }).includes("file.txt"), "format combines parts")
 console.log("PASS: format")
 
-assert(
-  relative("/data/orandea/test/aaa", "/data/orandea/impl/bbb").includes(".."),
-  "relative contains parent ref",
-)
+assert(relative("/data/orandea/test/aaa", "/data/orandea/impl/bbb").includes(".."), "relative contains parent ref")
 console.log("PASS: relative")
 
 assert(typeof toNamespacedPath("C:\\foo") === "string", "toNamespacedPath returns string")

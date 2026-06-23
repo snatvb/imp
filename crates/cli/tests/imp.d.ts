@@ -15,6 +15,8 @@ interface Console {
 interface Process {
   cwd(): string
   exit(code?: number): void
+  on(event: "exit", callback: (code: number) => void): void
+  exitCode: number
   env: Record<string, string>
   argv: string[]
   platform: string
@@ -194,20 +196,20 @@ declare module "imp:clap" {
   type ArgValueKind<O extends ArgOptions> = O["action"] extends "count"
     ? number
     : O["action"] extends "flag" | "set_false"
-    ? boolean
-    : O["action"] extends "append"
-    ? O["choices"] extends readonly (infer C)[]
-    ? C[]
-    : RsString[]
-    : O["action"] extends "help" | "help_short" | "help_long" | "version"
-    ? never
-    : O["num_args"] extends [number, number] | [number]
-    ? O["choices"] extends readonly (infer C)[]
-    ? C[]
-    : RsString[]
-    : O["choices"] extends readonly (infer C)[]
-    ? C
-    : RsString | undefined
+      ? boolean
+      : O["action"] extends "append"
+        ? O["choices"] extends readonly (infer C)[]
+          ? C[]
+          : RsString[]
+        : O["action"] extends "help" | "help_short" | "help_long" | "version"
+          ? never
+          : O["num_args"] extends [number, number] | [number]
+            ? O["choices"] extends readonly (infer C)[]
+              ? C[]
+              : RsString[]
+            : O["choices"] extends readonly (infer C)[]
+              ? C
+              : RsString | undefined
 
   interface ParseResultSuccess<T> {
     type: "result"
@@ -808,16 +810,5 @@ declare module "imp:env" {
 
   const _default: typeof env
   export default _default
-  export {
-    env,
-    parseIni,
-    parseDotenv,
-    expand,
-    merge,
-    loadFile,
-    ConfigValue,
-    ConfigObject,
-    IniOptions,
-    DotenvOptions,
-  }
+  export { env, parseIni, parseDotenv, expand, merge, loadFile, ConfigValue, ConfigObject, IniOptions, DotenvOptions }
 }

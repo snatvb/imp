@@ -88,8 +88,7 @@ import { utf8 } from "imp:encoding"
   const decArr = decoded.toArray()
   const encArr = buf.toArray()
   assert(
-    decArr.length === encArr.length &&
-      decArr.every((v: number, i: number) => v === encArr[i]),
+    decArr.length === encArr.length && decArr.every((v: number, i: number) => v === encArr[i]),
     `ByteBuffer roundtrip bytes: encoded=${encoded} decoded=[${decArr}]`,
   )
 }

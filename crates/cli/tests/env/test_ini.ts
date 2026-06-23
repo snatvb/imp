@@ -19,7 +19,9 @@ import { parseIni } from "imp:env"
 }
 
 {
-  const out = parseIni("[database]\nhost=localhost\nport=5432\ndebug=true\ntimeout=1.5\ngreeting=\"hello world\"\n") as any
+  const out = parseIni(
+    '[database]\nhost=localhost\nport=5432\ndebug=true\ntimeout=1.5\ngreeting="hello world"\n',
+  ) as any
   assert(RsString.equals(out.database.host, "localhost"), "no-space host")
   assert(out.database.port === 5432, "no-space port int")
   assert(out.database.debug === true, "debug=true")
@@ -67,7 +69,7 @@ import { parseIni } from "imp:env"
 
 {
   const out = parseIni('key = "a\\"b"\n') as any
-  assert(RsString.equals(out.key, 'a"b'), "double-quoted with \\\" escape")
+  assert(RsString.equals(out.key, 'a"b'), 'double-quoted with \\" escape')
 }
 
 {
@@ -134,7 +136,7 @@ import { parseIni } from "imp:env"
 }
 
 {
-  const out = parseIni("k1 = v1\nk2 = 1.5\nk3 = true\nk4 = \"unquoted string with # comment\"\n") as any
+  const out = parseIni('k1 = v1\nk2 = 1.5\nk3 = true\nk4 = "unquoted string with # comment"\n') as any
   assert(RsString.equals(out.k4, "unquoted string with # comment"), "comment marker inside quotes")
 }
 

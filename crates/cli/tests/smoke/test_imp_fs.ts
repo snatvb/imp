@@ -20,10 +20,7 @@ assert(fileMeta.isDirectory === false, "file metadata shows not directory")
 assert(fileMeta.size > 0, "file has size")
 console.log("PASS: metadata on file")
 
-assert(
-  (await impfs.exists(import.meta.dirname + "/DOES_NOT_EXIST")) === false,
-  "exists returns false for missing",
-)
+assert((await impfs.exists(import.meta.dirname + "/DOES_NOT_EXIST")) === false, "exists returns false for missing")
 console.log("PASS: exists missing")
 
 const writePath = import.meta.dirname + "/test_write.txt"

@@ -22,10 +22,7 @@ import { uri } from "imp:encoding"
 
 {
   const r = uri.encode("test/path?query=1&x=2")
-  assert(
-    r === "test%2Fpath%3Fquery%3D1%26x%3D2",
-    `encode path/query -> ${r}`,
-  )
+  assert(r === "test%2Fpath%3Fquery%3D1%26x%3D2", `encode path/query -> ${r}`)
 }
 
 {

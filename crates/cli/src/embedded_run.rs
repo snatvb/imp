@@ -13,10 +13,13 @@ pub async fn run_embedded(bundle: Bundle) {
 
     let (entry_name, entry_code) = setup::setup_embedded_loaders(&rt, bundle).await;
 
-    ctx.async_with(async |ctx| {
-        setup::run_js_entry(&ctx, &entry_name, &entry_code, &script_args).await;
-    })
-    .await;
+    let exit_code = ctx
+        .async_with(async |ctx| {
+            setup::run_js_entry(&ctx, &entry_name, &entry_code, &script_args).await
+        })
+        .await;
 
     rt.idle().await;
+
+    std::process::exit(exit_code);
 }
