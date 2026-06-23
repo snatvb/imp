@@ -4,6 +4,7 @@ use std::path::Path;
 use oxc_allocator::Allocator;
 use oxc_parser::{ParseOptions, Parser};
 use oxc_span::SourceType;
+use serde_json;
 
 use embed::Bundle;
 
@@ -87,7 +88,20 @@ pub fn bundle(entry: &Path, resolver: &Resolver, native_names: &[&str]) -> Resul
         let source = std::fs::read_to_string(&abs_path)
             .map_err(|e| format!("cannot read {}: {}", abs_path, e))?;
 
-        let code = if typescript::is_ts_ext(&abs_path) {
+        let file_ext = Path::new(&abs_path)
+            .extension()
+            .and_then(|e| e.to_str())
+            .unwrap_or("");
+
+        let code = if file_ext == "json" {
+            serde_json::from_str::<serde_json::Value>(&source)
+                .map_err(|e| format!("invalid JSON {}: {}", abs_path, e))?;
+            format!("export default {source};")
+        } else if file_ext == "txt" || file_ext == "text" {
+            let json_str = serde_json::to_string(&source)
+                .map_err(|e| format!("cannot escape text {}: {}", abs_path, e))?;
+            format!("export default {json_str};")
+        } else if typescript::is_ts_ext(&abs_path) {
             typescript::strip_types_fast_default(&source)?
         } else {
             source

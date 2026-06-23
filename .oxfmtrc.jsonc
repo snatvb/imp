@@ -3,4 +3,5 @@
   "printWidth": 120,
   "semi": false,
   "sortImports": true,
+  "ignorePatterns": ["**/data/**"],
 }

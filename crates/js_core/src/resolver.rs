@@ -43,13 +43,13 @@ where
 }
 
 pub struct Resolver {
-    pub extensions: Vec<&'static str>,
+    pub extensions: Vec<String>,
 }
 
 impl Default for Resolver {
     fn default() -> Self {
         Self {
-            extensions: vec![".ts", ".mts", ".js", ".mjs", ".json"],
+            extensions: MODULE_EXTENSIONS.iter().map(|e| format!(".{e}")).collect(),
         }
     }
 }

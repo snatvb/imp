@@ -51,6 +51,7 @@ pub async fn setup_loaders(rt: &js::AsyncRuntime, resolver: Resolver, cwd: OsPat
         (resolver, builtin_resolver),
         (
             js_core::loader::ScriptLoader { cwd },
+            js_core::loader::DataLoader,
             module_loader,
             js::loader::ScriptLoader::default(),
         ),
@@ -79,6 +80,7 @@ pub async fn setup_embedded_loaders(
         (embedded_resolver, builtin_resolver),
         (
             embedded_loader,
+            js_core::loader::DataLoader,
             module_loader,
             js::loader::ScriptLoader::default(),
         ),

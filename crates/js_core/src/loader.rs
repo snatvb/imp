@@ -1,6 +1,8 @@
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
 
+use serde_json;
+
 use os_path::OsPath;
 pub use rquickjs as js;
 
@@ -35,6 +37,51 @@ impl js::loader::Loader for TsLoader {
                 js::module::Module::declare(ctx.clone(), name, code)
             }
             _ => Err(js::Error::new_loading_message(name, "not ts")),
+        }
+    }
+}
+
+pub struct DataLoader;
+
+impl js::loader::Loader for DataLoader {
+    fn load<'js>(
+        &mut self,
+        ctx: &js::Ctx<'js>,
+        name: &str,
+        attrs: Option<js::loader::ImportAttributes<'js>>,
+    ) -> js::Result<js::module::Module<'js, js::module::Declared>> {
+        let path = std::path::Path::new(name);
+        let ext = path.extension().and_then(|e| e.to_str());
+
+        let module_type = attrs
+            .as_ref()
+            .and_then(|a| a.get_type().ok())
+            .flatten()
+            .or_else(|| ext.map(|e| e.to_string()));
+
+        match module_type.as_deref() {
+            Some("json") => {
+                let raw = std::fs::read_to_string(path)
+                    .map_err(|_| js::Error::new_loading_message(name, "file not found"))?;
+                serde_json::from_str::<serde_json::Value>(&raw)
+                    .map_err(|e| js::Error::new_loading_message(name, e.to_string()))?;
+                js::module::Module::declare(ctx.clone(), name, format!("export default {raw};"))
+            }
+            Some("text" | "txt") => {
+                let raw = std::fs::read_to_string(path)
+                    .map_err(|_| js::Error::new_loading_message(name, "file not found"))?;
+                let json_str = serde_json::to_string(&raw)
+                    .map_err(|e| js::Error::new_loading_message(name, e.to_string()))?;
+                js::module::Module::declare(
+                    ctx.clone(),
+                    name,
+                    format!("export default {json_str};"),
+                )
+            }
+            _ => Err(js::Error::new_loading_message(
+                name,
+                "unsupported data type",
+            )),
         }
     }
 }

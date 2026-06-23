@@ -789,6 +789,26 @@ declare module "imp:encoding" {
   export { base64, hex, utf8, uri, Base64Options, Base64DecodeOptions, HexOptions, B64Variant }
 }
 
+declare module "*.json" {
+  const value: any
+  export default value
+}
+
+declare module "*.txt" {
+  const value: string
+  export default value
+}
+
+declare module "*.text" {
+  const value: string
+  export default value
+}
+
+declare module "*.md" {
+  const value: string
+  export default value
+}
+
 declare module "imp:env" {
   type ConfigValue = string | number | boolean
   type ConfigObject = Record<string, ConfigValue | ConfigObject>

@@ -1482,6 +1482,7 @@ dependencies = [
  "oxc_span",
  "oxc_transformer",
  "rquickjs",
+ "serde_json",
  "tokio",
  "tokio-util",
  "tracing",
