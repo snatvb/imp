@@ -51,6 +51,9 @@ pub async fn run_event_loop<'js>(
         };
 
         if idle {
+            #[cfg(not(debug_assertions))]
+            break;
+
             let has_jobs = is_job_pending(ctx);
             if has_jobs {
                 idle_rounds = 0;
