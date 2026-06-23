@@ -809,6 +809,40 @@ declare module "*.md" {
   export default value
 }
 
+declare module "imp:hash" {
+  type HashEncoding = "hex" | "base64" | "bytes"
+
+  function md5(input: JsString | ByteBuffer): string
+  function md5(input: JsString | ByteBuffer, encoding: "hex" | "base64"): string
+  function md5(input: JsString | ByteBuffer, encoding: "bytes"): ByteBuffer
+
+  function sha1(input: JsString | ByteBuffer): string
+  function sha1(input: JsString | ByteBuffer, encoding: "hex" | "base64"): string
+  function sha1(input: JsString | ByteBuffer, encoding: "bytes"): ByteBuffer
+
+  function sha256(input: JsString | ByteBuffer): string
+  function sha256(input: JsString | ByteBuffer, encoding: "hex" | "base64"): string
+  function sha256(input: JsString | ByteBuffer, encoding: "bytes"): ByteBuffer
+
+  function sha512(input: JsString | ByteBuffer): string
+  function sha512(input: JsString | ByteBuffer, encoding: "hex" | "base64"): string
+  function sha512(input: JsString | ByteBuffer, encoding: "bytes"): ByteBuffer
+
+  function blake3(input: JsString | ByteBuffer): string
+  function blake3(input: JsString | ByteBuffer, encoding: "hex" | "base64"): string
+  function blake3(input: JsString | ByteBuffer, encoding: "bytes"): ByteBuffer
+
+  const _default: {
+    md5: typeof md5
+    sha1: typeof sha1
+    sha256: typeof sha256
+    sha512: typeof sha512
+    blake3: typeof blake3
+  }
+  export default _default
+  export { md5, sha1, sha256, sha512, blake3, HashEncoding }
+}
+
 declare module "imp:env" {
   type ConfigValue = string | number | boolean
   type ConfigObject = Record<string, ConfigValue | ConfigObject>

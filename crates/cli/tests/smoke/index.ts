@@ -13,6 +13,7 @@ import "../rs_string/index"
 import "../subprocess/index.ts"
 import "../encoding/index.ts"
 import "../env/index.ts"
+import "../hash/index.ts"
 import "../process/test_process"
 
 console.log("ALL SMOKE TESTS PASSED")

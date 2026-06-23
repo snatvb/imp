@@ -33,3 +33,4 @@ subprocess.workspace = true
 encoding.workspace = true
 env.workspace = true
 ffi_extra.workspace = true
+hash.workspace = true
