@@ -16,6 +16,15 @@ interface Process {
   cwd(): string
   exit(code?: number): void
   env: Record<string, string>
+  argv: string[]
+  platform: string
+  arch: string
+  pid: number
+  ppid: number
+  cpuCount: number
+  hostname: string
+  homedir: string
+  version: string
 }
 
 interface Performance {

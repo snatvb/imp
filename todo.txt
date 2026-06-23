@@ -1,2 +1,3 @@
-2026-06-07 bind chorno to js +chorojs
-2026-06-12 try to migrate on serde-saphyr instead yaml_serde +parser @dep
+x 2026-06-23 2026-06-07 bind chorno to js +chorojs
+x 2026-06-23 2026-06-12 try to migrate on serde-saphyr instead yaml_serde +parser @dep
+2026-06-23 Текущая реалзация import.meta неприемлима. она создает дубликаты литералов в каждый файл(срипт)
