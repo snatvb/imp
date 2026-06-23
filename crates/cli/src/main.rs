@@ -11,7 +11,7 @@ mod event_loop;
 mod prelude;
 mod setup;
 mod tracing_init;
-use js_core::{meta::with_meta, typescript};
+use js_core::typescript;
 use prelude::*;
 
 const IMP_D_TS: &str = include_str!("../tests/imp.d.ts");
@@ -167,9 +167,7 @@ async fn run_script(filepath: PathBuf, script_args: Vec<String>) {
 
     let code = if typescript::is_ts_ext(&filepath) {
         tracing::info!("stripping TS");
-        typescript::strip_types_fast_default(&code)
-            .map(with_meta(&cwd, filepath_str))
-            .unwrap()
+        typescript::strip_types_fast_default(&code).unwrap()
     } else {
         code
     };
@@ -179,10 +177,12 @@ async fn run_script(filepath: PathBuf, script_args: Vec<String>) {
     let ctx = js::AsyncContext::full(&rt).await.unwrap();
     tracing::info!("runtime ready");
 
-    setup::setup_loaders(&rt, resolver, cwd).await;
+    setup::setup_loaders(&rt, resolver, cwd.clone()).await;
 
     let exit_code = ctx
-        .async_with(async |ctx| setup::run_js_entry(&ctx, filepath_str, &code, &script_args).await)
+        .async_with(async |ctx| {
+            setup::run_js_entry(&ctx, filepath_str, &code, &script_args, &cwd).await
+        })
         .await;
 
     std::process::exit(exit_code);

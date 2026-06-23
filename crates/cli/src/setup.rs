@@ -67,8 +67,6 @@ pub async fn setup_embedded_loaders(
 
     let exe = std::env::current_exe().unwrap();
     let exe_dir = OsPathBuf::from_path_buf(exe.parent().unwrap().to_path_buf()).unwrap();
-    let exe = os_path::normalize_absolute(&exe, &exe_dir);
-    let exe_name = exe.as_path().file_name().unwrap().to_string();
 
     let embedded_resolver = js_core::loader::EmbeddedResolver::new(bundle.modules.keys().cloned());
     let embedded_loader = js_core::loader::EmbeddedLoader::new(bundle.modules, exe_dir.clone());
@@ -87,9 +85,7 @@ pub async fn setup_embedded_loaders(
     )
     .await;
 
-    let entry_code = js_core::meta::with_meta(&exe_dir, &exe_name)(entry_raw);
-
-    (entry_name, entry_code)
+    (entry_name, entry_raw)
 }
 
 pub fn setup_globals<'js>(
@@ -130,6 +126,7 @@ pub async fn run_js_entry<'js>(
     entry_name: &str,
     entry_code: &str,
     script_args: &[String],
+    cwd: &OsPathBuf,
 ) -> i32 {
     use crate::{error, event_loop};
 
@@ -142,14 +139,21 @@ pub async fn run_js_entry<'js>(
     );
 
     tracing::info!(file = %entry_name, "evaluating module");
-    let promise = error::try_js(
+    let module = error::try_js(
         ctx,
-        js::Module::evaluate(ctx.clone(), entry_name.to_string(), entry_code),
-        "module evaluation failed",
+        js::Module::declare(ctx.clone(), entry_name, entry_code),
+        "module declaration failed",
+    )
+    .unwrap();
+    error::try_js(
+        ctx,
+        js_core::meta::set_meta(ctx, &module, cwd, entry_name),
+        "module meta setup failed",
     );
+    let (_, promise) = error::try_js(ctx, module.eval(), "module evaluation failed").unwrap();
     tracing::info!("module evaluated");
 
     let exit_handle_for_loop = exit_handle.clone();
-    event_loop::run_event_loop(ctx, js_timers, Some(exit_handle_for_loop), promise).await;
+    event_loop::run_event_loop(ctx, js_timers, Some(exit_handle_for_loop), Some(promise)).await;
     exit_handle.exit_code()
 }

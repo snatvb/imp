@@ -86,10 +86,5 @@ pub async fn run_event_loop<'js>(
 
 #[inline]
 fn is_job_pending(ctx: &js::Ctx<'_>) -> bool {
-    // unsafe neccesary to get rt ptr because using rt has_jobs leads to deadlock
-    // loop in signle thread, no datarace
-    unsafe {
-        let rt_ptr = js::qjs::JS_GetRuntime(ctx.as_raw().as_ptr());
-        js::qjs::JS_IsJobPending(rt_ptr)
-    }
+    ffi_extra::js_helpers::is_job_pending(ctx)
 }

@@ -1,11 +1,12 @@
 [package]
-name = "process"
+name = "ffi_extra"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
 
 [dependencies]
 rquickjs.workspace = true
-js_core.workspace = true
-dirs = "6.0.0"
-ffi_extra.workspace = true
+libc.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+windows-sys.workspace = true

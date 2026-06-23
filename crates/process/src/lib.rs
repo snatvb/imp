@@ -41,11 +41,7 @@ pub fn create<'a>(
     let ctx_for_on = ctx.clone();
     let on_fn = js::Function::new(ctx.clone(), move |event: String, cb: js::Function<'_>| {
         if event == "exit" {
-            let ctx_ref: &js::Ctx<'static> =
-                unsafe { std::mem::transmute::<&js::Ctx<'a>, &js::Ctx<'static>>(&ctx_for_on) };
-            let cb_val: js::Function<'static> =
-                unsafe { std::mem::transmute::<js::Function<'_>, js::Function<'static>>(cb) };
-            let persistent = js::Persistent::save(ctx_ref, cb_val);
+            let persistent = ffi_extra::js_helpers::save_persistent_fn(&ctx_for_on, cb);
             handle.add_listener(persistent);
         }
     })?;
@@ -70,7 +66,7 @@ pub fn create<'a>(
     process.set("arch", std::env::consts::ARCH)?;
     process.set("pid", std::process::id())?;
 
-    let ppid = get_ppid();
+    let ppid = ffi_extra::os_info::get_ppid();
     process.set("ppid", ppid)?;
 
     let cpu_count = std::thread::available_parallelism()
@@ -78,7 +74,7 @@ pub fn create<'a>(
         .unwrap_or(1);
     process.set("cpuCount", cpu_count)?;
 
-    process.set("hostname", get_hostname())?;
+    process.set("hostname", ffi_extra::os_info::get_hostname())?;
 
     let homedir = dirs::home_dir()
         .map(|p| p.to_string_lossy().to_string())
@@ -88,33 +84,4 @@ pub fn create<'a>(
     process.set("version", env!("CARGO_PKG_VERSION"))?;
 
     Ok(process)
-}
-
-fn get_ppid() -> u32 {
-    #[cfg(unix)]
-    {
-        unsafe { libc::getppid() as u32 }
-    }
-    #[cfg(windows)]
-    {
-        unsafe { windows_sys::Win32::System::Threading::GetCurrentProcessId() }
-    }
-}
-
-fn get_hostname() -> String {
-    #[cfg(unix)]
-    {
-        let mut buf = [0u8; 256];
-        let ret = unsafe { libc::gethostname(buf.as_mut_ptr() as *mut libc::c_char, buf.len()) };
-        if ret == 0 {
-            if let Ok(s) = std::ffi::CStr::from_ptr(buf.as_ptr() as *const libc::c_char).to_str() {
-                return s.to_string();
-            }
-        }
-        String::new()
-    }
-    #[cfg(windows)]
-    {
-        std::env::var("COMPUTERNAME").unwrap_or_default()
-    }
 }

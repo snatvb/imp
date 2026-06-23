@@ -19,6 +19,7 @@ members = [
   "crates/subprocess",
   "crates/encoding",
   "crates/env",
+  "crates/ffi_extra",
 ]
 resolver = "3"
 
@@ -59,6 +60,7 @@ async-stream = "0.3.6"
 base64 = "0.22.1"
 hex = "0.4.3"
 percent-encoding = "2.3.2"
+windows-sys = { version = "0.61.2", features = ["Win32_System_Threading"] }
 
 js_core = { path = "crates/js_core" }
 console = { path = "crates/console" }
@@ -78,6 +80,7 @@ imp_chrono = { path = "crates/chrono" }
 subprocess = { path = "crates/subprocess" }
 encoding = { path = "crates/encoding" }
 env = { path = "crates/env" }
+ffi_extra = { path = "crates/ffi_extra" }
 
 # [patch.crates-io]
 # rquickjs = { path = "../rquickjs" }

@@ -3,6 +3,7 @@ type JsString = string | RsString
 interface ImportMeta {
   dirname: string
   filename: string
+  url: string
 }
 
 interface Console {

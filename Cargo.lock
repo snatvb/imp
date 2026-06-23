@@ -314,6 +314,7 @@ dependencies = [
  "encoding",
  "env",
  "fetch",
+ "ffi_extra",
  "fs",
  "imp_chrono",
  "imp_clap",
@@ -769,6 +770,15 @@ dependencies = [
  "serde_json",
  "thiserror",
  "tokio",
+]
+
+[[package]]
+name = "ffi_extra"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "rquickjs",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -1461,6 +1471,7 @@ dependencies = [
  "camino",
  "chrono",
  "embed",
+ "ffi_extra",
  "js_error_derive",
  "os-path",
  "oxc_allocator",
@@ -2210,10 +2221,9 @@ name = "process"
 version = "0.1.0"
 dependencies = [
  "dirs",
+ "ffi_extra",
  "js_core",
- "libc",
  "rquickjs",
- "windows-sys 0.61.2",
 ]
 
 [[package]]

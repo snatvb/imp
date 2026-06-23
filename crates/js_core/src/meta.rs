@@ -1,7 +1,5 @@
 use os_path::{OsPath, OsPathBuf};
 
-use crate::utils::JsString;
-
 pub struct Meta<'a> {
     filepath: &'a str,
     cwd: &'a OsPathBuf,
@@ -31,21 +29,24 @@ impl<'a> Meta<'a> {
             .unwrap_or_else(|| OsPathBuf::from("."))
     }
 
-    #[tracing::instrument(level = "debug", skip(self))]
-    pub fn into_define(&self) -> String {
-        let dirname = self.dir().js_string();
-        let filepath = self.filename().js_string();
-        tracing::debug!(?dirname, ?filepath, "Meta::into_define");
-        format!(
-            r#"
-import.meta.filename="{filepath}";
-import.meta.dirname="{dirname}";
-        "#
-        )
+    pub fn url(&self) -> String {
+        let path = self.filename().replace('\\', "/");
+        format!("file:///{path}")
     }
 }
 
-pub fn with_meta<'a>(cwd: &'a OsPathBuf, filepath: &'a str) -> impl FnOnce(String) -> String + 'a {
-    let meta = Meta::new(cwd, filepath).into_define();
-    move |code: String| format!("{meta}\n{code}")
+pub fn set_meta(
+    ctx: &rquickjs::Ctx<'_>,
+    module: &rquickjs::module::Module<'_>,
+    cwd: &OsPathBuf,
+    filepath: &str,
+) -> rquickjs::Result<()> {
+    let meta = Meta::new(cwd, filepath);
+    ffi_extra::module_meta::set_module_meta(
+        ctx,
+        module,
+        &meta.filename(),
+        meta.dir().as_path().as_str(),
+        &meta.url(),
+    )
 }

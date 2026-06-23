@@ -22,3 +22,4 @@ js_error_derive.workspace = true
 chrono.workspace = true
 tokio-util.workspace = true
 tokio.workspace = true
+ffi_extra.workspace = true

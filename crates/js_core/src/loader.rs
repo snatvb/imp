@@ -5,7 +5,7 @@ use os_path::OsPath;
 pub use rquickjs as js;
 
 use crate::{
-    meta::with_meta,
+    meta::set_meta,
     resolver::{MODULE_EXTENSIONS, normalize_relative_path, try_with_extensions},
     typescript,
 };
@@ -54,25 +54,26 @@ impl js::loader::Loader for ScriptLoader {
         let path = OsPath::new(name);
         let ext = path.extension();
         tracing::debug!(?ext, path = %name, "ScriptLoader::load");
-        let code = match ext {
+        let source = match ext {
             Some("ts" | "mts" | "cts") => {
                 let source = std::fs::read_to_string(path)
                     .map_err(|_| js::Error::new_loading_message(name, "file not found"))?;
                 tracing::debug!(bytes = source.len(), "read source");
                 typescript::strip_types_fast_default(&source)
-                    .map(with_meta(&self.cwd, name))
                     .map_err(|e| js::Error::new_loading_message(name, e))?
             }
             Some("js" | "mjs" | "cjs") => {
                 let source = std::fs::read_to_string(path)
                     .map_err(|_| js::Error::new_loading_message(name, "file not found"))?;
                 tracing::debug!(bytes = source.len(), "read source");
-                with_meta(&self.cwd, name)(source)
+                source
             }
             _ => return Err(js::Error::new_loading_message(name, "not a script")),
         };
 
-        js::module::Module::declare(ctx.clone(), name, code)
+        let module = js::module::Module::declare(ctx.clone(), name, source)?;
+        set_meta(ctx, &module, &self.cwd, name)?;
+        Ok(module)
     }
 }
 
@@ -137,7 +138,8 @@ impl js::loader::Loader for EmbeddedLoader {
             .modules
             .get(name)
             .ok_or_else(|| js::Error::new_loading_message(name, "module not found in bundle"))?;
-        let code = crate::meta::with_meta(&self.cwd, name)(code.clone());
-        js::module::Module::declare(ctx.clone(), name, code)
+        let module = js::module::Module::declare(ctx.clone(), name, code.clone())?;
+        set_meta(ctx, &module, &self.cwd, name)?;
+        Ok(module)
     }
 }
