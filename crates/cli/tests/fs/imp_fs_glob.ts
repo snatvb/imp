@@ -21,8 +21,8 @@ const globDir = fixture("glob")
     results.push(p.toString())
   }
   console.log("walk files:", results)
-  assert(results.length > 0, "walk files returns entries")
-  assert(!results.some((r) => r.includes("subdir")), "no directories in files filter")
+  assert(results.length === 4, `walk files returns 4 entries, got ${results.length}`)
+  assert(!results.includes("subdir"), "no directories in files filter")
   console.log("PASS: walk filter files only")
 }
 

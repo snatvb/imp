@@ -6,7 +6,7 @@ use js::{
     class::Class,
     function::{Opt, This},
 };
-use tokio::io::{AsyncSeekExt, AsyncWriteExt, BufWriter, SeekFrom};
+use tokio::io::{AsyncSeekExt, AsyncWriteExt, SeekFrom};
 
 use crate::error::Error;
 use js_core::ByteBuffer;
@@ -17,7 +17,7 @@ use js_core::utils::StringArg;
 #[js::class]
 pub struct WriteHandle<'js> {
     #[qjs(skip_trace)]
-    file: Option<BufWriter<tokio::fs::File>>,
+    file: Option<tokio::fs::File>,
     #[qjs(skip_trace)]
     append: bool,
     #[qjs(skip_trace)]
@@ -51,11 +51,9 @@ pub async fn open_write<'js>(
     ctx: Ctx<'js>,
     path: StringArg,
     flags: Opt<String>,
-    chunk_size: Opt<usize>,
 ) -> js::Result<WriteHandle<'js>> {
     let path_str = path.as_str().to_string();
     let flags = flags.as_deref().unwrap_or("a");
-    let chunk_size = chunk_size.0.unwrap_or(8192);
 
     let (file, append) = match flags {
         "w" => (
@@ -98,9 +96,8 @@ pub async fn open_write<'js>(
     let file = file.map_err(|e| {
         Error::System(SystemError::from_io(e, "open", Some(path_str.clone()))).into_exception(&ctx)
     })?;
-    let writer = BufWriter::with_capacity(chunk_size.max(8192), file);
     Ok(WriteHandle {
-        file: Some(writer),
+        file: Some(file),
         append,
         _marker: PhantomData,
     })

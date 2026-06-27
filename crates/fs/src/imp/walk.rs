@@ -256,8 +256,13 @@ impl<'js> WalkIterator<'js> {
                 Ok(obj)
             }
             None => {
-                if let Some(mut task) = inner.task.take() {
-                    let _ = (&mut task).await;
+                if let Some(task) = inner.task.take() {
+                    match task.await {
+                        Ok(result) => result?,
+                        Err(e) => {
+                            return Err(crate::error::Error::from(e).into_exception(&ctx));
+                        }
+                    }
                 }
                 let obj = js::Object::new(ctx.clone())?;
                 obj.set("value", js::Value::new_undefined(ctx.clone()))?;

@@ -1,9 +1,11 @@
-import { openWrite, readFile, remove } from "imp:fs"
+import { mkdir, openWrite, readFile, remove } from "imp:fs"
 
-const testPath = process.cwd() + "\\test_write_output.tmp"
+const tmpDir = import.meta.dirname + "\\.tmp"
+const testPath = tmpDir + "\\test_write_output.tmp"
+await mkdir(tmpDir, { recursive: true })
 
 {
-  using wh = await openWrite(testPath, "w", 8192)
+  using wh = await openWrite(testPath, "w")
   const n1 = await wh.write("hello world")
   assert(n1 === 11, "write string returns byte count")
 
@@ -35,7 +37,7 @@ const testPath = process.cwd() + "\\test_write_output.tmp"
 }
 
 {
-  using wh = await openWrite(testPath, "w", 8192)
+  using wh = await openWrite(testPath, "w")
   await wh.write("abcdefghij")
   await wh.seek(0, "start")
   const n = await wh.write("XY")
@@ -59,7 +61,7 @@ const testPath = process.cwd() + "\\test_write_output.tmp"
 await remove(testPath)
 
 {
-  using wh = await openWrite(testPath, "w", 8192)
+  using wh = await openWrite(testPath, "w")
   const bb = new ByteBuffer(10)
   const arr = bb.toArray()
   for (let i = 0; i < 10; i++) arr[i] = 65 + i
@@ -77,12 +79,12 @@ await remove(testPath)
 await remove(testPath)
 
 {
-  using wh = await openWrite(testPath, "w", 8192)
+  using wh = await openWrite(testPath, "w")
   await wh.write("first")
 }
 
 {
-  using wh = await openWrite(testPath, "a", 8192)
+  using wh = await openWrite(testPath, "a")
   await wh.write("second")
 }
 
@@ -103,7 +105,7 @@ await remove(testPath)
 }
 
 {
-  using wh = await openWrite(testPath, "a", 8192)
+  using wh = await openWrite(testPath, "a")
   await wh.seek(0, "start")
   await wh.write("X")
 }
@@ -127,12 +129,12 @@ await remove(testPath)
 await remove(testPath)
 
 {
-  using wh = await openWrite(testPath, "w", 8192)
+  using wh = await openWrite(testPath, "w")
   await wh.write("abcdefghij")
 }
 
 {
-  using wh = await openWrite(testPath, "rw", 8192)
+  using wh = await openWrite(testPath, "rw")
   await wh.seek(5, "start")
   await wh.write("XYZ")
 }
@@ -156,7 +158,7 @@ await remove(testPath)
 await remove(testPath)
 
 {
-  using wh = await openWrite(testPath, "w", 8192)
+  using wh = await openWrite(testPath, "w")
   await wh.write("base")
 }
 

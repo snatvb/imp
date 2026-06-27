@@ -1,9 +1,11 @@
-import { openWrite, readFile, remove } from "imp:fs"
+import { mkdir, openWrite, readFile, remove } from "imp:fs"
 
-const testPath = process.cwd() + "\\test_bb_write.tmp"
+const tmpDir = import.meta.dirname + "\\.tmp"
+const testPath = tmpDir + "\\test_bb_write.tmp"
+await mkdir(tmpDir, { recursive: true })
 
 {
-  using wh = await openWrite(testPath, "w", 8192)
+  using wh = await openWrite(testPath, "w")
   await wh.write("AAA")
 
   const bb = new ByteBuffer(3)
