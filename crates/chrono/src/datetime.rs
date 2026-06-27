@@ -165,7 +165,7 @@ impl ImpDateTime {
     #[qjs(rename = "diff")]
     fn diff<'js>(&self, ctx: Ctx<'js>, other: Value<'js>) -> Result<Class<'js, Duration>> {
         let other = extract_utc(&ctx, &other, "other")?;
-        let dur = other - self.inner;
+        let dur = self.inner - other;
         Class::instance(ctx.clone(), Duration::from_chrono(dur))
     }
 
@@ -281,7 +281,7 @@ impl ImpLocalDateTime {
     #[qjs(rename = "diff")]
     fn diff<'js>(&self, ctx: Ctx<'js>, other: Value<'js>) -> Result<Class<'js, Duration>> {
         let other = extract_local(&ctx, &other, "other")?;
-        let dur = other - self.inner;
+        let dur = self.inner - other;
         Class::instance(ctx.clone(), Duration::from_chrono(dur))
     }
 

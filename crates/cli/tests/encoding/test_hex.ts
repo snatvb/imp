@@ -30,7 +30,7 @@ import { utf8 } from "imp:encoding"
 {
   const buf = utf8.encode("abc")
   const r = hex.encode(buf, { uppercase: true })
-  assert(r === "414243", `encode ByteBuffer "abc" uppercase -> ${r}`)
+  assert(r === "616263", `encode ByteBuffer "abc" uppercase -> ${r}`)
 }
 
 {

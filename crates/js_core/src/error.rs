@@ -126,7 +126,8 @@ impl SystemError {
 impl JsError for SystemError {
     fn into_js<'js>(self, ctx: &js::Ctx<'js>) -> js::Result<js::Value<'js>> {
         let ctor: Constructor = ctx.globals().get("Error")?;
-        let err: Object = ctor.construct((self.message,))?;
+        let full_message = format!("[{}] {}", self.code, self.message);
+        let err: Object = ctor.construct((full_message,))?;
         err.set("code", self.code)?;
         err.set("syscall", self.syscall)?;
         if let Some(ref p) = self.path {

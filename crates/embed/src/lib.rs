@@ -11,6 +11,8 @@ const TRAILER_LEN: usize = 14;
 pub struct Bundle {
     pub entry: String,
     pub modules: HashMap<String, String>,
+    #[serde(default)]
+    pub original_paths: HashMap<String, String>,
 }
 
 pub fn read_embedded() -> Option<Bundle> {

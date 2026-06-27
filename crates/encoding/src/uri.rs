@@ -13,7 +13,7 @@ fn hex_upper(b: u8) -> [u8; 2] {
     [HEX[(b >> 4) as usize], HEX[(b & 0x0F) as usize]]
 }
 
-fn encode(input: &str) -> String {
+fn encode_impl(input: &str) -> String {
     let bytes = input.as_bytes();
     let mut out = String::with_capacity(bytes.len());
     for &b in bytes {
@@ -29,7 +29,7 @@ fn encode(input: &str) -> String {
     out
 }
 
-fn decode<'js>(ctx: &js::Ctx<'js>, input: &str) -> js::Result<String> {
+fn decode_impl<'js>(ctx: &js::Ctx<'js>, input: &str) -> js::Result<String> {
     let bytes = input.as_bytes();
     let mut out: Vec<u8> = Vec::with_capacity(bytes.len());
     let mut i = 0;
@@ -61,20 +61,13 @@ fn decode<'js>(ctx: &js::Ctx<'js>, input: &str) -> js::Result<String> {
 }
 
 #[js::function]
-pub fn js_encode<'js>(ctx: js::Ctx<'js>, input: StringArg) -> js::Result<js::String<'js>> {
-    let s = encode(input.as_str());
+pub fn encode<'js>(ctx: js::Ctx<'js>, input: StringArg) -> js::Result<js::String<'js>> {
+    let s = encode_impl(input.as_str());
     js::String::from_str(ctx, &s)
 }
 
 #[js::function]
-pub fn js_decode<'js>(ctx: js::Ctx<'js>, input: StringArg) -> js::Result<js::String<'js>> {
-    let s = decode(&ctx, input.as_str())?;
+pub fn decode<'js>(ctx: js::Ctx<'js>, input: StringArg) -> js::Result<js::String<'js>> {
+    let s = decode_impl(&ctx, input.as_str())?;
     js::String::from_str(ctx, &s)
-}
-
-pub fn make_module<'js>(ctx: &js::Ctx<'js>) -> js::Result<js::Object<'js>> {
-    let obj = js::Object::new(ctx.clone())?;
-    obj.set("encode", js_js_encode)?;
-    obj.set("decode", js_js_decode)?;
-    Ok(obj)
 }

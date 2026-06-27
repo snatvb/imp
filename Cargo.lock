@@ -1522,6 +1522,7 @@ dependencies = [
  "embed",
  "ffi_extra",
  "js_error_derive",
+ "js_module_derive",
  "os-path",
  "oxc_allocator",
  "oxc_ast",
@@ -1540,6 +1541,15 @@ dependencies = [
 
 [[package]]
 name = "js_error_derive"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "js_module_derive"
 version = "0.1.0"
 dependencies = [
  "proc-macro2",

@@ -211,7 +211,7 @@ impl<'js> WriteHandle<'js> {
     async fn write_from(
         &mut self,
         ctx: Ctx<'js>,
-        buffer: Class<'js, ByteBuffer>,
+        buffer: Class<'js, ByteBuffer<'js>>,
         offset: Option<usize>,
         length: Option<usize>,
     ) -> js::Result<usize> {

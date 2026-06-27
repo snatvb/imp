@@ -58,7 +58,7 @@ pub fn decode<'js>(
         .map_err(|e| EncodingError::InvalidBase64(e.to_string()).into_exception(&ctx))?;
     match opts.mode {
         B64DecodeMode::Base64 => {
-            let buf = js::Class::instance(ctx.clone(), ByteBuffer::new(bytes))?;
+            let buf = js::Class::instance(ctx.clone(), ByteBuffer::new(ctx.clone(), bytes)?)?;
             Ok(buf.into_value())
         }
         B64DecodeMode::Utf8 => {
@@ -67,11 +67,4 @@ pub fn decode<'js>(
             Ok(js::String::from_str(ctx, &s)?.into_value())
         }
     }
-}
-
-pub fn make_module<'js>(ctx: &js::Ctx<'js>) -> js::Result<js::Object<'js>> {
-    let obj = js::Object::new(ctx.clone())?;
-    obj.set("encode", js_encode)?;
-    obj.set("decode", js_decode)?;
-    Ok(obj)
 }

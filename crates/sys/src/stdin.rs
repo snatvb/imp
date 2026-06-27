@@ -39,13 +39,13 @@ pub async fn read_line<'js>(ctx: js::Ctx<'js>) -> js::Result<js::Class<'js, RsSt
 }
 
 #[js::function]
-pub async fn read_all<'js>(ctx: js::Ctx<'js>) -> js::Result<js::Class<'js, ByteBuffer>> {
+pub async fn read_all<'js>(ctx: js::Ctx<'js>) -> js::Result<js::Class<'js, ByteBuffer<'js>>> {
     let join_result = tokio::task::spawn_blocking(read_all_blocking).await;
     let io_result = join_result.into_js(&ctx)?;
     let data = io_result
         .map_err(|e| Error::System(SystemError::from_io(e, "read", None)))
         .into_js(&ctx)?;
-    js::Class::instance(ctx, ByteBuffer::new(data))
+    js::Class::instance(ctx.clone(), ByteBuffer::new(ctx, data)?)
 }
 
 js_core::impl_module!(StdinModule,

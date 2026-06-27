@@ -64,15 +64,24 @@ pub async fn setup_loaders(rt: &js::AsyncRuntime, resolver: Resolver, cwd: OsPat
 pub async fn setup_embedded_loaders(
     rt: &js::AsyncRuntime,
     bundle: embed::Bundle,
-) -> (String, String) {
+) -> (String, String, String) {
     let entry_name = bundle.entry.clone();
     let entry_raw = bundle.modules.get(&entry_name).cloned().unwrap();
+    let entry_original = bundle
+        .original_paths
+        .get(&entry_name)
+        .cloned()
+        .unwrap_or_else(|| entry_name.clone());
 
     let exe = std::env::current_exe().unwrap();
     let exe_dir = OsPathBuf::from_path_buf(exe.parent().unwrap().to_path_buf()).unwrap();
 
     let embedded_resolver = js_core::loader::EmbeddedResolver::new(bundle.modules.keys().cloned());
-    let embedded_loader = js_core::loader::EmbeddedLoader::new(bundle.modules, exe_dir.clone());
+    let embedded_loader = js_core::loader::EmbeddedLoader::new(
+        bundle.modules,
+        bundle.original_paths,
+        exe_dir.clone(),
+    );
 
     let mut builtin_resolver = js::loader::BuiltinResolver::default();
     let mut module_loader = js::loader::ModuleLoader::default();
@@ -89,7 +98,7 @@ pub async fn setup_embedded_loaders(
     )
     .await;
 
-    (entry_name, entry_raw)
+    (entry_name, entry_raw, entry_original)
 }
 
 pub fn setup_globals<'js>(

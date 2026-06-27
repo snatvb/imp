@@ -72,7 +72,7 @@ import { msgpack } from "imp:parsers"
 {
   let error = false
   try {
-    const invalidBuf = new ByteBuffer(5)
+    const invalidBuf = ByteBuffer.fromArray([0xc1])
     msgpack.parse(invalidBuf)
   } catch (e) {
     error = true

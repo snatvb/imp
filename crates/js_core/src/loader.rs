@@ -165,12 +165,21 @@ impl js::loader::Resolver for EmbeddedResolver {
 
 pub struct EmbeddedLoader {
     modules: HashMap<String, String>,
+    original_paths: HashMap<String, String>,
     cwd: os_path::OsPathBuf,
 }
 
 impl EmbeddedLoader {
-    pub fn new(modules: HashMap<String, String>, cwd: os_path::OsPathBuf) -> Self {
-        Self { modules, cwd }
+    pub fn new(
+        modules: HashMap<String, String>,
+        original_paths: HashMap<String, String>,
+        cwd: os_path::OsPathBuf,
+    ) -> Self {
+        Self {
+            modules,
+            original_paths,
+            cwd,
+        }
     }
 }
 
@@ -186,7 +195,12 @@ impl js::loader::Loader for EmbeddedLoader {
             .get(name)
             .ok_or_else(|| js::Error::new_loading_message(name, "module not found in bundle"))?;
         let module = js::module::Module::declare(ctx.clone(), name, code.clone())?;
-        set_meta(ctx, &module, &self.cwd, name)?;
+        let original = self
+            .original_paths
+            .get(name)
+            .map(|s| s.as_str())
+            .unwrap_or(name);
+        set_meta(ctx, &module, &self.cwd, original)?;
         Ok(module)
     }
 }

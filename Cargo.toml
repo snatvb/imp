@@ -2,6 +2,7 @@
 members = [
   "crates/cli",
   "crates/js_core",
+  "crates/js_module_derive",
   "crates/chrono",
   "crates/fs",
   "crates/console",
@@ -69,6 +70,7 @@ blake3 = "1.8.5"
 digest = "0.11.3"
 
 js_core = { path = "crates/js_core" }
+js_module_derive = { path = "crates/js_module_derive" }
 console = { path = "crates/console" }
 fs = { path = "crates/fs" }
 process = { path = "crates/process" }

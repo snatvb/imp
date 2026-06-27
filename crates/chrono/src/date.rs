@@ -135,19 +135,25 @@ impl ImpDate {
 
     #[qjs(rename = "addMonths")]
     fn add_months<'js>(&self, ctx: Ctx<'js>, n: i32) -> Result<Self> {
-        let new_date = self
-            .inner
-            .checked_add_months(chrono::Months::new(n.unsigned_abs()))
-            .ok_or_else(|| Error::OutOfRange("date overflow".to_string()).into_exception(&ctx))?;
+        let new_date = if n >= 0 {
+            self.inner.checked_add_months(chrono::Months::new(n as u32))
+        } else {
+            self.inner
+                .checked_sub_months(chrono::Months::new(n.unsigned_abs()))
+        }
+        .ok_or_else(|| Error::OutOfRange("date overflow".to_string()).into_exception(&ctx))?;
         Ok(Self { inner: new_date })
     }
 
     #[qjs(rename = "addYears")]
     fn add_years<'js>(&self, ctx: Ctx<'js>, n: i32) -> Result<Self> {
-        let new_date = self
-            .inner
-            .checked_add_months(chrono::Months::new((n.unsigned_abs()) * 12))
-            .ok_or_else(|| Error::OutOfRange("date overflow".to_string()).into_exception(&ctx))?;
+        let months = n.unsigned_abs() * 12;
+        let new_date = if n >= 0 {
+            self.inner.checked_add_months(chrono::Months::new(months))
+        } else {
+            self.inner.checked_sub_months(chrono::Months::new(months))
+        }
+        .ok_or_else(|| Error::OutOfRange("date overflow".to_string()).into_exception(&ctx))?;
         Ok(Self { inner: new_date })
     }
 

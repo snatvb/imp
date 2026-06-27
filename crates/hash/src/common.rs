@@ -18,9 +18,11 @@ pub(crate) fn encode_output<'js>(
             let b64 = base64::engine::general_purpose::STANDARD.encode(data);
             Ok(js::String::from_str(ctx.clone(), &b64)?.into_value())
         }
-        Encoding::Bytes => {
-            Ok(Class::instance(ctx.clone(), ByteBuffer::new(data.to_vec()))?.into_value())
-        }
+        Encoding::Bytes => Ok(Class::instance(
+            ctx.clone(),
+            ByteBuffer::new(ctx.clone(), data.to_vec())?,
+        )?
+        .into_value()),
     }
 }
 

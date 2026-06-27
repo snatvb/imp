@@ -57,10 +57,12 @@ fn build_command(cmd: &str, args: &[String], opts: &RunOptions) -> Command {
     if let Some(cwd) = &opts.cwd {
         command.current_dir(cwd);
     }
-    command.env_clear();
-    if let Some(env) = &opts.env {
-        for (k, v) in env {
-            command.env(k, v);
+    if opts.env.is_some() {
+        command.env_clear();
+        if let Some(env) = &opts.env {
+            for (k, v) in env {
+                command.env(k, v);
+            }
         }
     }
     command.stdin(if opts.input.is_some() {
@@ -97,10 +99,10 @@ fn take_pipes<'js>(
 #[inline]
 fn spawn_stdin_writer(
     stdin: Option<ChildStdin>,
-    input: Option<String>,
+    input: Option<Vec<u8>>,
 ) -> Option<tokio::task::JoinHandle<()>> {
     let mut stdin = stdin?;
-    let bytes = input?.into_bytes();
+    let bytes = input?;
     Some(tokio::spawn(async move {
         if let Err(e) = stdin.write_all(&bytes).await {
             eprintln!("subprocess: stdin write failed: {e}");
@@ -142,11 +144,11 @@ fn build_result<'js>(
         Encoding::Binary => {
             result.set(
                 "stdout",
-                js::Class::instance(ctx.clone(), ByteBuffer::new(out))?,
+                js::Class::instance(ctx.clone(), ByteBuffer::new(ctx.clone(), out)?)?,
             )?;
             result.set(
                 "stderr",
-                js::Class::instance(ctx.clone(), ByteBuffer::new(err))?,
+                js::Class::instance(ctx.clone(), ByteBuffer::new(ctx.clone(), err)?)?,
             )?;
         }
     }

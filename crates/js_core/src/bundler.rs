@@ -72,6 +72,7 @@ pub fn bundle(entry: &Path, resolver: &Resolver, native_names: &[&str]) -> Resul
         .replace('\\', "/");
 
     let mut modules: HashMap<String, String> = HashMap::new();
+    let mut original_paths: HashMap<String, String> = HashMap::new();
     let mut visited: HashSet<String> = HashSet::new();
     let mut queue: VecDeque<(String, String)> = VecDeque::new();
 
@@ -130,11 +131,13 @@ pub fn bundle(entry: &Path, resolver: &Resolver, native_names: &[&str]) -> Resul
             }
         }
 
-        modules.insert(vname, code);
+        modules.insert(vname.clone(), code);
+        original_paths.insert(vname, abs_path);
     }
 
     Ok(Bundle {
         entry: "main".to_string(),
         modules,
+        original_paths,
     })
 }

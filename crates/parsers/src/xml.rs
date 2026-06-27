@@ -17,6 +17,12 @@ pub fn parse<'js>(
         .flatten()
         .unwrap_or(true);
     let s = input.as_str();
+    let trimmed = s.trim();
+    if trimmed.is_empty() || !trimmed.starts_with('<') {
+        return Err(
+            Error::Parse("invalid XML: does not start with '<'".to_string()).into_exception(&ctx),
+        );
+    }
     let val: serde_json::Value =
         quick_xml::de::from_str(s).map_err(|e| Error::Parse(e.to_string()).into_exception(&ctx))?;
     value_to_js_ex(&ctx, val, native_strings)

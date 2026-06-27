@@ -1,4 +1,5 @@
 pub use js_error_derive::JsError;
+pub use js_module_derive::impl_module;
 
 pub mod abort;
 pub mod assert;

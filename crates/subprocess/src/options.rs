@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 
 use js_core::abort::AbortSignal;
-use js_core::js::{Ctx, FromJs, Value};
+use js_core::byte_buffer::ByteBuffer;
+use js_core::js::{Class, Ctx, FromJs, Value};
 use js_core::utils::{DurationArg, JsStringArg, StringArg};
 
 const DEFAULT_MAX_OUTPUT: usize = 10 * 1024 * 1024;
@@ -26,7 +27,7 @@ impl Encoding {
 pub struct RunOptions {
     pub cwd: Option<String>,
     pub env: Option<HashMap<String, String>>,
-    pub input: Option<String>,
+    pub input: Option<Vec<u8>>,
     pub timeout: Option<DurationArg>,
     pub max_output: Option<usize>,
     pub signal: Option<AbortSignal>,
@@ -58,7 +59,28 @@ impl<'js> FromJs<'js> for RunOptions {
             && !v.is_null()
             && !v.is_undefined()
         {
-            result.input = Some(<StringArg as JsStringArg>::coerce_string(ctx, &v, "input")?);
+            if v.is_string() {
+                let s = <StringArg as JsStringArg>::coerce_string(ctx, &v, "input")?;
+                result.input = Some(s.into_bytes());
+            } else if let Ok(cls) = Class::<ByteBuffer>::from_value(&v) {
+                result.input = Some(cls.borrow().as_slice().to_vec());
+            } else {
+                let received = if v.is_object() {
+                    "object"
+                } else if v.is_int() || v.is_float() {
+                    "number"
+                } else if v.is_bool() {
+                    "boolean"
+                } else if v.is_array() {
+                    "array"
+                } else {
+                    "value"
+                };
+                let msg = format!("input must be a string or ByteBuffer, got {received}");
+                let ctor: js_core::js::Constructor = ctx.globals().get("TypeError")?;
+                let err: js_core::js::Object = ctor.construct((msg,))?;
+                return Err(ctx.throw(err.into_value()));
+            }
         }
 
         if let Some(d) = opts.get::<_, Option<DurationArg>>("timeout")?

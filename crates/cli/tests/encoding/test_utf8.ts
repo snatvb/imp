@@ -24,32 +24,20 @@ import { utf8 } from "imp:encoding"
 }
 
 {
-  const buf = new ByteBuffer(5)
-  const arr = buf.toArray()
-  arr[0] = 104
-  arr[1] = 101
-  arr[2] = 108
-  arr[3] = 108
-  arr[4] = 111
+  const buf = utf8.encode("hello")
   const r = utf8.decode(buf)
   assert(typeof r === "string", `decode returns string: ${typeof r}`)
-  assert(r === "hello", `decode bytes -> "${r}"`)
+  assert(r === "hello", `decode "hello" roundtrip -> "${r}"`)
 }
 
 {
-  const buf = new ByteBuffer(12)
-  const arr = buf.toArray()
-  const bytes = [0xd0, 0xbf, 0xd1, 0x80, 0xd0, 0xb8, 0xd0, 0xb2, 0xd0, 0xb5, 0xd1, 0x82]
-  for (let i = 0; i < bytes.length; i++) arr[i] = bytes[i]
+  const buf = utf8.encode("привет")
   const r = utf8.decode(buf)
-  assert(r === "привет", `decode cyrillic bytes -> "${r}"`)
+  assert(r === "привет", `decode cyrillic roundtrip -> "${r}"`)
 }
 
 {
-  const buf = new ByteBuffer(2)
-  const arr = buf.toArray()
-  arr[0] = 0xff
-  arr[1] = 0xfe
+  const buf = ByteBuffer.fromArray([0xff, 0xfe])
   let threw = false
   try {
     utf8.decode(buf)

@@ -196,9 +196,9 @@ impl Parser {
 fn strings_to_js_vec<'js>(
     ctx: &js::Ctx<'js>,
     strings: impl Iterator<Item = impl AsRef<str>>,
-) -> js::Result<Vec<js::Class<'js, RsString>>> {
+) -> js::Result<Vec<js::String<'js>>> {
     strings
-        .map(|s| js::Class::instance(ctx.clone(), RsString::owned(s.as_ref().to_string())))
+        .map(|s| js::String::from_str(ctx.clone(), s.as_ref()))
         .collect()
 }
 
@@ -214,8 +214,7 @@ fn handle_set_action<'js>(
 
     if num_args.max_values() == 1 {
         if let Some(val) = matches.get_one::<String>(name) {
-            let rs_str = js::Class::instance(ctx.clone(), RsString::owned(val.clone()))?;
-            obj.set(name, rs_str)?;
+            obj.set(name, val.as_str())?;
         }
     } else {
         let vals = strings_to_js_vec(ctx, matches.get_many::<String>(name).unwrap_or_default())?;
@@ -247,8 +246,7 @@ fn build_result<'js>(
     cmd: &clap::Command,
     matches: &clap::ArgMatches,
 ) -> js::Result<()> {
-    let rs_type = js::Class::instance(ctx.clone(), RsString::owned("result".to_string()))?;
-    obj.set("type", rs_type)?;
+    obj.set("type", "result")?;
 
     for arg in cmd.get_arguments() {
         match arg.get_action() {
@@ -273,18 +271,15 @@ fn build_result<'js>(
 }
 
 #[inline(always)]
-fn build_error<'js>(ctx: &js::Ctx<'js>, obj: &js::Object<'js>, e: &clap::Error) -> js::Result<()> {
+fn build_error<'js>(_ctx: &js::Ctx<'js>, obj: &js::Object<'js>, e: &clap::Error) -> js::Result<()> {
     let type_str = match e.kind() {
         clap::error::ErrorKind::DisplayHelp
         | clap::error::ErrorKind::DisplayHelpOnMissingArgumentOrSubcommand => "help",
         clap::error::ErrorKind::DisplayVersion => "version",
         _ => "error",
     };
-    let rs_type = js::Class::instance(ctx.clone(), RsString::owned(type_str.to_string()))?;
-    obj.set("type", rs_type)?;
-    let message = RsString::owned(e.render().to_string());
-    let rs_message = js::Class::instance(ctx.clone(), message)?;
-    obj.set("message", rs_message)?;
+    obj.set("type", type_str)?;
+    obj.set("message", e.render().to_string().as_str())?;
     Ok(())
 }
 

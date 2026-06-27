@@ -78,7 +78,7 @@ impl<'js> FileHandle<'js> {
             return Ok(Value::new_undefined(ctx.clone()));
         }
 
-        let bb = ByteBuffer::new(self.buf[..n].to_vec());
+        let bb = ByteBuffer::new(ctx.clone(), self.buf[..n].to_vec())?;
         Class::instance(ctx, bb).map(|v| v.into_value())
     }
 
@@ -86,7 +86,7 @@ impl<'js> FileHandle<'js> {
     async fn read_into(
         &mut self,
         ctx: Ctx<'js>,
-        buffer: Class<'js, ByteBuffer>,
+        buffer: Class<'js, ByteBuffer<'js>>,
     ) -> js::Result<Value<'js>> {
         let reader = self
             .file

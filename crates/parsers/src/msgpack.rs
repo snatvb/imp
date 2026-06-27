@@ -8,7 +8,7 @@ use crate::error::Error;
 #[js::function]
 pub fn parse<'js>(
     ctx: Ctx<'js>,
-    input: js::Class<'js, ByteBuffer>,
+    input: js::Class<'js, ByteBuffer<'js>>,
     options: Opt<Object<'js>>,
 ) -> js::Result<Value<'js>> {
     let native_strings = options
@@ -24,9 +24,12 @@ pub fn parse<'js>(
 }
 
 #[js::function]
-pub fn stringify<'js>(ctx: Ctx<'js>, value: Value<'js>) -> js::Result<js::Class<'js, ByteBuffer>> {
+pub fn stringify<'js>(
+    ctx: Ctx<'js>,
+    value: Value<'js>,
+) -> js::Result<js::Class<'js, ByteBuffer<'js>>> {
     let val = js_to_value(&ctx, value).map_err(|e| e.into_exception(&ctx))?;
     let bytes = rmp_serde::to_vec(&val)
         .map_err(|e| Error::Serialize(e.to_string()).into_exception(&ctx))?;
-    js::Class::instance(ctx, ByteBuffer::new(bytes))
+    js::Class::instance(ctx.clone(), ByteBuffer::new(ctx, bytes)?)
 }

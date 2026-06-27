@@ -49,6 +49,7 @@ declare class ByteBuffer {
   constructor(size: number)
 
   static alloc(size: number): ByteBuffer
+  static fromArray(arr: number[]): ByteBuffer
 
   get length(): number
 
@@ -726,7 +727,7 @@ declare module "imp:subprocess" {
   interface RunOptions {
     cwd?: string
     env?: Record<string, string>
-    input?: string
+    input?: string | ByteBuffer
     timeout?: number | Duration
     maxOutput?: number
     signal?: AbortSignal

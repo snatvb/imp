@@ -25,16 +25,12 @@ pub fn encode<'js>(
 }
 
 #[js::function]
-pub fn decode<'js>(ctx: js::Ctx<'js>, input: StringArg) -> js::Result<js::Class<'js, ByteBuffer>> {
+pub fn decode<'js>(
+    ctx: js::Ctx<'js>,
+    input: StringArg,
+) -> js::Result<js::Class<'js, ByteBuffer<'js>>> {
     let s = input.as_str();
     let bytes = Vec::from_hex(s)
         .map_err(|e| EncodingError::InvalidHex(e.to_string()).into_exception(&ctx))?;
-    js::Class::instance(ctx, ByteBuffer::new(bytes))
-}
-
-pub fn make_module<'js>(ctx: &js::Ctx<'js>) -> js::Result<js::Object<'js>> {
-    let obj = js::Object::new(ctx.clone())?;
-    obj.set("encode", js_decode)?;
-    obj.set("decode", js_decode)?;
-    Ok(obj)
+    js::Class::instance(ctx.clone(), ByteBuffer::new(ctx, bytes)?)
 }
