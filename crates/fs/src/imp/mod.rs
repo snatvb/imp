@@ -35,4 +35,6 @@ js_core::impl_module!(ImpFsModule,
     "walk" => walk::js_walk,
     "chmod" => dir::js_chmod,
     "lchmod" => dir::js_lchmod,
+    "symlink" => dir::js_symlink,
+    "link" => dir::js_link,
 );

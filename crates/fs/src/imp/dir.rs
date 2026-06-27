@@ -173,15 +173,16 @@ pub async fn metadata_batch<'js>(
 
 #[js::function]
 pub async fn chmod<'js>(ctx: js::Ctx<'js>, path: StringArg, mode: u32) -> js::Result<()> {
-    let path_owned = path.as_str().to_string();
-    let p = path_owned.clone();
+    let p = path.as_str().to_owned();
     let result = tokio::task::spawn_blocking(move || set_readonly_from_mode(&p, mode)).await;
     match result {
-        Ok(inner) => inner
-            .map_err(|e| SystemError::from_io(e, "chmod", Some(path_owned)).into_exception(&ctx))?,
+        Ok(inner) => inner.map_err(|e| {
+            SystemError::from_io(e, "chmod", Some(path.as_str().to_string())).into_exception(&ctx)
+        })?,
         Err(e) => {
             return Err(
-                SystemError::from_io(e.into(), "chmod", Some(path_owned)).into_exception(&ctx)
+                SystemError::from_io(e.into(), "chmod", Some(path.as_str().to_string()))
+                    .into_exception(&ctx),
             );
         }
     }
@@ -190,17 +191,68 @@ pub async fn chmod<'js>(ctx: js::Ctx<'js>, path: StringArg, mode: u32) -> js::Re
 
 #[js::function]
 pub async fn lchmod<'js>(ctx: js::Ctx<'js>, path: StringArg, mode: u32) -> js::Result<()> {
-    let path_owned = path.as_str().to_string();
-    let p = path_owned.clone();
+    let p = path.as_str().to_owned();
     let result =
         tokio::task::spawn_blocking(move || set_readonly_from_mode_symlink(&p, mode)).await;
     match result {
         Ok(inner) => inner.map_err(|e| {
-            SystemError::from_io(e, "lchmod", Some(path_owned)).into_exception(&ctx)
+            SystemError::from_io(e, "lchmod", Some(path.as_str().to_string())).into_exception(&ctx)
         })?,
         Err(e) => {
             return Err(
-                SystemError::from_io(e.into(), "lchmod", Some(path_owned)).into_exception(&ctx)
+                SystemError::from_io(e.into(), "lchmod", Some(path.as_str().to_string()))
+                    .into_exception(&ctx),
+            );
+        }
+    }
+    Ok(())
+}
+
+#[js::function]
+pub async fn symlink<'js>(ctx: js::Ctx<'js>, target: StringArg, path: StringArg) -> js::Result<()> {
+    let t = target.as_str().to_owned();
+    let p = path.as_str().to_owned();
+    let result = tokio::task::spawn_blocking(move || {
+        #[cfg(unix)]
+        {
+            std::os::unix::fs::symlink(&t, &p)
+        }
+        #[cfg(windows)]
+        {
+            match std::fs::metadata(&t) {
+                Ok(meta) if meta.is_dir() => std::os::windows::fs::symlink_dir(&t, &p),
+                _ => std::os::windows::fs::symlink_file(&t, &p),
+            }
+        }
+    })
+    .await;
+    match result {
+        Ok(inner) => inner.map_err(|e| {
+            SystemError::from_io(e, "symlink", Some(path.as_str().to_string())).into_exception(&ctx)
+        })?,
+        Err(e) => {
+            return Err(
+                SystemError::from_io(e.into(), "symlink", Some(path.as_str().to_string()))
+                    .into_exception(&ctx),
+            );
+        }
+    }
+    Ok(())
+}
+
+#[js::function]
+pub async fn link<'js>(ctx: js::Ctx<'js>, target: StringArg, path: StringArg) -> js::Result<()> {
+    let t = target.as_str().to_owned();
+    let p = path.as_str().to_owned();
+    let result = tokio::task::spawn_blocking(move || std::fs::hard_link(&t, &p)).await;
+    match result {
+        Ok(inner) => inner.map_err(|e| {
+            SystemError::from_io(e, "link", Some(path.as_str().to_string())).into_exception(&ctx)
+        })?,
+        Err(e) => {
+            return Err(
+                SystemError::from_io(e.into(), "link", Some(path.as_str().to_string()))
+                    .into_exception(&ctx),
             );
         }
     }

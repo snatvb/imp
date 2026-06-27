@@ -263,6 +263,8 @@ declare module "imp:fs" {
   function exists(path: JsString): Promise<boolean>
   function chmod(path: JsString, mode: number): Promise<void>
   function lchmod(path: JsString, mode: number): Promise<void>
+  function symlink(target: JsString, path: JsString): Promise<void>
+  function link(target: JsString, path: JsString): Promise<void>
   function walk(dir: JsString, options?: WalkOptions): WalkIterator
   function glob(dir: JsString, pattern: JsString, options?: WalkOptions): Promise<RsString[]>
   function globStream(dir: JsString, pattern: JsString, options?: WalkOptions): WalkIterator
@@ -280,6 +282,8 @@ declare module "imp:fs" {
     exists: typeof exists
     chmod: typeof chmod
     lchmod: typeof lchmod
+    symlink: typeof symlink
+    link: typeof link
     walk: typeof walk
     glob: typeof glob
     globStream: typeof globStream
@@ -298,6 +302,8 @@ declare module "imp:fs" {
     exists,
     chmod,
     lchmod,
+    symlink,
+    link,
     walk,
     glob,
     globStream,
