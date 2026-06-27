@@ -40,6 +40,8 @@ pub async fn run_event_loop<'js>(
             }
         }
 
+        signal::with_handle(|h| h.drain(ctx));
+
         if let Some(ref handle) = exit_handle
             && handle.is_requested()
         {

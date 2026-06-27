@@ -22,6 +22,7 @@ members = [
   "crates/env",
   "crates/ffi_extra",
   "crates/hash",
+  "crates/signal",
 ]
 resolver = "3"
 
@@ -45,7 +46,7 @@ toml = { version = "1.1.2", features = ["serde"] }
 quick-xml = { version = "0.40.1", features = ["serde-types", "serialize", "escape-html", "async-tokio"] }
 rquickjs = { version = "0.12.0", features = ["full-async", "macro", "loader", "dump-leaks", "disable-assertions"] }
 clap = { version = "4.6.1", features = ["color", "derive", "string"] }
-tokio = { version = "1.52.3", features = ["process", "fs", "io-util", "rt-multi-thread", "macros", "time"] }
+tokio = { version = "1.52.3", features = ["process", "fs", "io-util", "rt-multi-thread", "macros", "time", "signal"] }
 tokio-util = "0.7.18"
 futures = "0.3.32"
 thiserror = { version = "2.0.18", features = ["std"] }
@@ -90,6 +91,7 @@ encoding = { path = "crates/encoding" }
 env = { path = "crates/env" }
 ffi_extra = { path = "crates/ffi_extra" }
 hash = { path = "crates/hash" }
+signal = { path = "crates/signal" }
 
 # [patch.crates-io]
 # rquickjs = { path = "../rquickjs" }

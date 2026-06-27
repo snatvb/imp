@@ -880,3 +880,18 @@ declare module "imp:env" {
   export default _default
   export { env, parseIni, parseDotenv, expand, merge, loadFile, ConfigValue, ConfigObject, IniOptions, DotenvOptions }
 }
+
+declare module "imp:signal" {
+  type SignalName = "SIGINT" | "SIGTERM" | "SIGHUP" | "SIGQUIT" | "SIGBREAK"
+  type SignalDispose = () => void
+
+  const signal: {
+    on(name: SignalName, handler: () => void): SignalDispose
+    once(name: SignalName, handler: () => void): SignalDispose
+    removeAll(name?: SignalName): void
+    pending(): SignalName[]
+  }
+
+  export default signal
+  export { signal, SignalName, SignalDispose }
+}

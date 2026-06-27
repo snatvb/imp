@@ -1,0 +1,11 @@
+[package]
+name = "signal"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+
+[dependencies]
+rquickjs.workspace = true
+js_core.workspace = true
+ffi_extra.workspace = true
+tokio.workspace = true

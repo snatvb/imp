@@ -28,6 +28,7 @@ folder and hope the user has the right Node version. With imp you ship
 - `imp:parsers` — JSON, YAML, TOML, XML, RON, CSV, MessagePack in one module
 - `imp:inq` — `confirm`, `select`, `prompt`, `multiSelect`, `password`, `editor`
 - `imp:subprocess` — `run(cmd, args, options)` with `cwd`/`env`/`input`/`timeout`/`signal`/`encoding`
+- `imp:signal` — OS signal handlers (SIGINT, SIGTERM, SIGHUP, SIGQUIT)
 - `imp:clap`, `imp:time` — CLI args and date/time types
 - `Duration`, `ByteBuffer`, `RsString` — Rust-backed primitives
 
