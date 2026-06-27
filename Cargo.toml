@@ -23,6 +23,7 @@ members = [
   "crates/ffi_extra",
   "crates/hash",
   "crates/signal",
+  "crates/crypto",
 ]
 resolver = "3"
 
@@ -91,6 +92,7 @@ encoding = { path = "crates/encoding" }
 env = { path = "crates/env" }
 ffi_extra = { path = "crates/ffi_extra" }
 hash = { path = "crates/hash" }
+crypto = { path = "crates/crypto" }
 signal = { path = "crates/signal" }
 
 # [patch.crates-io]

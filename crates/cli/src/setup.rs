@@ -19,6 +19,7 @@ pub fn native_module_names() -> &'static [&'static str] {
         "imp:env",
         "imp:hash",
         "imp:signal",
+        "imp:crypto",
     ]
 }
 
@@ -43,6 +44,7 @@ pub fn register_all_native_modules(
         ("imp:env", env::EnvModule),
         ("imp:hash", hash::HashModule),
         ("imp:signal", signal::SignalModule),
+        ("imp:crypto", crypto::CryptoModule),
     );
 }
 

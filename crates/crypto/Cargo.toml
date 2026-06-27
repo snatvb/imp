@@ -1,0 +1,18 @@
+[package]
+name = "crypto"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+
+[dependencies]
+rquickjs.workspace = true
+js_core.workspace = true
+thiserror.workspace = true
+base64.workspace = true
+hex.workspace = true
+rand = "0.10.1"
+hmac = "0.13.0"
+aes-gcm = "0.10.3"
+subtle = "2.6.1"
+uuid = { version = "1.23.4", features = ["v4"] }
+sha2.workspace = true

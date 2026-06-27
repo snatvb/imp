@@ -1,0 +1,10 @@
+js_core::impl_module!(CryptoModule,
+    "randomBytes" => crate::random::js_random_bytes,
+    "randomHex" => crate::random::js_random_hex,
+    "randomUUID" => crate::random::js_random_uuid,
+    "randomInt" => crate::random::js_random_int,
+    "hmac" => crate::hmac::js_hmac,
+    "aesEncrypt" => crate::aes::js_aes_encrypt,
+    "aesDecrypt" => crate::aes::js_aes_decrypt,
+    "timingSafeEqual" => crate::compare::js_timing_safe_equal,
+);

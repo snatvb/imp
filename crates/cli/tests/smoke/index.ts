@@ -17,5 +17,6 @@ import "../env/index.ts"
 import "../hash/index.ts"
 import "../process/test_process"
 import "../signal/test_signal"
+import "../crypto/index.ts"
 
 console.log("ALL SMOKE TESTS PASSED")

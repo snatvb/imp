@@ -35,3 +35,4 @@ env.workspace = true
 ffi_extra.workspace = true
 hash.workspace = true
 signal.workspace = true
+crypto.workspace = true

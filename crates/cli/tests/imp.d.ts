@@ -895,3 +895,49 @@ declare module "imp:signal" {
   export default signal
   export { signal, SignalName, SignalDispose }
 }
+
+declare module "imp:crypto" {
+  type HmacAlgo = "sha256" | "sha512"
+  type AeadAlgo = "aes-128-gcm" | "aes-256-gcm"
+
+  function randomBytes(size: number): ByteBuffer
+  function randomHex(size: number): string
+  function randomUUID(): string
+  function randomInt(min: number, max: number): number
+  function hmac(
+    algo: HmacAlgo,
+    key: JsString | ByteBuffer,
+    data: JsString | ByteBuffer,
+    encoding?: string,
+  ): string | ByteBuffer
+  function aesEncrypt(algo: AeadAlgo, key: ByteBuffer, plaintext: ByteBuffer): ByteBuffer
+  function aesDecrypt(algo: AeadAlgo, key: ByteBuffer, ciphertext: ByteBuffer): ByteBuffer
+  function timingSafeEqual(a: ByteBuffer, b: ByteBuffer): boolean
+
+  const crypto: {
+    randomBytes: typeof randomBytes
+    randomHex: typeof randomHex
+    randomUUID: typeof randomUUID
+    randomInt: typeof randomInt
+    hmac: typeof hmac
+    aesEncrypt: typeof aesEncrypt
+    aesDecrypt: typeof aesDecrypt
+    timingSafeEqual: typeof timingSafeEqual
+  }
+
+  const _default: typeof crypto
+  export default _default
+  export {
+    randomBytes,
+    randomHex,
+    randomUUID,
+    randomInt,
+    hmac,
+    aesEncrypt,
+    aesDecrypt,
+    timingSafeEqual,
+    crypto,
+    HmacAlgo,
+    AeadAlgo,
+  }
+}
