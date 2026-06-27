@@ -5,6 +5,7 @@ use rquickjs::{self as js, ArrayBuffer, Class, Ctx, JsLifetime, Value};
 #[js::class]
 #[derive(JsLifetime, Clone)]
 pub struct Response {
+    #[qjs(get)]
     status: u16,
     status_text: String,
     headers: Headers,

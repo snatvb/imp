@@ -68,7 +68,7 @@ impl<'js> ByteBuffer<'js> {
         Self::from_arraybuffer(inner)
     }
 
-    #[qjs(static)]
+    #[qjs(static, rename = "fromArray")]
     fn from_array(ctx: Ctx<'js>, arr: js::Array<'js>) -> Result<ByteBuffer<'js>> {
         let mut bytes = Vec::with_capacity(arr.len());
         for i in 0..arr.len() {
