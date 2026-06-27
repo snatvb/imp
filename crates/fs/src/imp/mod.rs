@@ -33,4 +33,6 @@ js_core::impl_module!(ImpFsModule,
     "glob" => glob::js_glob,
     "globStream" => glob::js_glob_stream,
     "walk" => walk::js_walk,
+    "chmod" => dir::js_chmod,
+    "lchmod" => dir::js_lchmod,
 );

@@ -9,6 +9,42 @@ use crate::prelude::*;
 
 use super::fs_stats::FsStats;
 
+#[cfg(unix)]
+fn set_readonly_from_mode(path: &str, mode: u32) -> std::io::Result<()> {
+    use std::os::unix::fs::PermissionsExt;
+    let meta = std::fs::metadata(path)?;
+    let mut perms = meta.permissions();
+    perms.set_mode(mode);
+    std::fs::set_permissions(path, perms)
+}
+
+#[cfg(windows)]
+fn set_readonly_from_mode(path: &str, mode: u32) -> std::io::Result<()> {
+    let readonly = (mode & 0o200) == 0;
+    let meta = std::fs::metadata(path)?;
+    let mut perms = meta.permissions();
+    perms.set_readonly(readonly);
+    std::fs::set_permissions(path, perms)
+}
+
+#[cfg(unix)]
+fn set_readonly_from_mode_symlink(path: &str, mode: u32) -> std::io::Result<()> {
+    use std::os::unix::fs::PermissionsExt;
+    let meta = std::fs::symlink_metadata(path)?;
+    let mut perms = meta.permissions();
+    perms.set_mode(mode);
+    std::fs::set_permissions(path, perms)
+}
+
+#[cfg(windows)]
+fn set_readonly_from_mode_symlink(path: &str, mode: u32) -> std::io::Result<()> {
+    let readonly = (mode & 0o200) == 0;
+    let meta = std::fs::symlink_metadata(path)?;
+    let mut perms = meta.permissions();
+    perms.set_readonly(readonly);
+    std::fs::set_permissions(path, perms)
+}
+
 fn make_err(
     ctx: &js::Ctx<'_>,
     text: &'static str,
@@ -133,4 +169,40 @@ pub async fn metadata_batch<'js>(
         result.set(i, stats)?;
     }
     Ok(result)
+}
+
+#[js::function]
+pub async fn chmod<'js>(ctx: js::Ctx<'js>, path: StringArg, mode: u32) -> js::Result<()> {
+    let path_owned = path.as_str().to_string();
+    let p = path_owned.clone();
+    let result = tokio::task::spawn_blocking(move || set_readonly_from_mode(&p, mode)).await;
+    match result {
+        Ok(inner) => inner
+            .map_err(|e| SystemError::from_io(e, "chmod", Some(path_owned)).into_exception(&ctx))?,
+        Err(e) => {
+            return Err(
+                SystemError::from_io(e.into(), "chmod", Some(path_owned)).into_exception(&ctx)
+            );
+        }
+    }
+    Ok(())
+}
+
+#[js::function]
+pub async fn lchmod<'js>(ctx: js::Ctx<'js>, path: StringArg, mode: u32) -> js::Result<()> {
+    let path_owned = path.as_str().to_string();
+    let p = path_owned.clone();
+    let result =
+        tokio::task::spawn_blocking(move || set_readonly_from_mode_symlink(&p, mode)).await;
+    match result {
+        Ok(inner) => inner.map_err(|e| {
+            SystemError::from_io(e, "lchmod", Some(path_owned)).into_exception(&ctx)
+        })?,
+        Err(e) => {
+            return Err(
+                SystemError::from_io(e.into(), "lchmod", Some(path_owned)).into_exception(&ctx)
+            );
+        }
+    }
+    Ok(())
 }

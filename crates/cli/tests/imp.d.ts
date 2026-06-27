@@ -261,6 +261,8 @@ declare module "imp:fs" {
   function remove(path: JsString, options?: { recursive?: boolean }): Promise<void>
   function removeAll(paths: JsString[]): Promise<void>
   function exists(path: JsString): Promise<boolean>
+  function chmod(path: JsString, mode: number): Promise<void>
+  function lchmod(path: JsString, mode: number): Promise<void>
   function walk(dir: JsString, options?: WalkOptions): WalkIterator
   function glob(dir: JsString, pattern: JsString, options?: WalkOptions): Promise<RsString[]>
   function globStream(dir: JsString, pattern: JsString, options?: WalkOptions): WalkIterator
@@ -276,6 +278,8 @@ declare module "imp:fs" {
     remove: typeof remove
     removeAll: typeof removeAll
     exists: typeof exists
+    chmod: typeof chmod
+    lchmod: typeof lchmod
     walk: typeof walk
     glob: typeof glob
     globStream: typeof globStream
@@ -292,6 +296,8 @@ declare module "imp:fs" {
     remove,
     removeAll,
     exists,
+    chmod,
+    lchmod,
     walk,
     glob,
     globStream,
