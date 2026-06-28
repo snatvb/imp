@@ -92,5 +92,9 @@ pub async fn listen_signal(name: SignalName, tx: mpsc::UnboundedSender<SignalNam
         SignalName::SigHup | SignalName::SigQuit => {
             eprintln!("signal: {} not supported on this platform", name.as_str());
         }
+        #[cfg(not(windows))]
+        SignalName::SigBreak => {
+            eprintln!("signal: {} not supported on this platform", name.as_str());
+        }
     }
 }

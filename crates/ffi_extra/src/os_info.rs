@@ -9,13 +9,16 @@ pub fn get_ppid() -> u32 {
     }
 }
 
+#[allow(clippy::collapsible_if)]
 pub fn get_hostname() -> String {
     #[cfg(unix)]
     {
         let mut buf = [0u8; 256];
         let ret = unsafe { libc::gethostname(buf.as_mut_ptr() as *mut libc::c_char, buf.len()) };
         if ret == 0 {
-            if let Ok(s) = std::ffi::CStr::from_ptr(buf.as_ptr() as *const libc::c_char).to_str() {
+            if let Ok(s) =
+                unsafe { std::ffi::CStr::from_ptr(buf.as_ptr() as *const libc::c_char).to_str() }
+            {
                 return s.to_string();
             }
         }
