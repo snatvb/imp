@@ -1,146 +1,22 @@
-import { run } from "imp:subprocess"
-import { readFile, writeFile, exists } from "imp:fs"
-import { sha256 } from "imp:hash"
-import { loadFile } from "imp:env"
+import { readFile, writeFile } from "imp:fs"
 import { join } from "path"
 import clap from "imp:clap"
+import {
+  TARGETS,
+  sh,
+  loadConfig,
+  buildAll,
+  packageAll,
+  computeHashes,
+} from "./lib.ts"
 
 const PROJECT_ROOT = process.cwd()
 
 const parser = new clap.Parser()
   .name("release")
   .about("Cross-platform release for imp")
-  .arg({ name: "version", short: "v", long: "version", help: "Release version (e.g. v0.1.0)", action: "set", required: true })
+  .arg({ name: "version", help: "Release version (e.g. v0.1.0)", action: "set", required: true })
   .arg({ name: "dry-run", short: "n", long: "dry-run", help: "Show what would be done", action: "flag" })
-
-interface Target {
-  triple: string | null
-  archive: "zip" | "tar.gz"
-  suffix: string
-  label: string
-  buildArgs: string[]
-  binDir: string
-}
-
-const TARGETS: Target[] = [
-  {
-    triple: null,
-    archive: "tar.gz",
-    suffix: "",
-    label: "mac-arm64",
-    buildArgs: ["build", "--release", "-p", "cli"],
-    binDir: join(PROJECT_ROOT, "target", "release"),
-  },
-  {
-    triple: "x86_64-pc-windows-gnu",
-    archive: "zip",
-    suffix: ".exe",
-    label: "windows-x64",
-    buildArgs: ["build", "--release", "--target", "x86_64-pc-windows-gnu", "-p", "cli"],
-    binDir: join(PROJECT_ROOT, "target", "x86_64-pc-windows-gnu", "release"),
-  },
-  {
-    triple: "x86_64-unknown-linux-gnu",
-    archive: "tar.gz",
-    suffix: "",
-    label: "linux-x64",
-    buildArgs: ["build", "--release", "--target", "x86_64-unknown-linux-gnu", "-p", "cli"],
-    binDir: join(PROJECT_ROOT, "target", "x86_64-unknown-linux-gnu", "release"),
-  },
-  {
-    triple: "aarch64-unknown-linux-gnu",
-    archive: "tar.gz",
-    suffix: "",
-    label: "linux-arm64",
-    buildArgs: ["zigbuild", "--release", "--target", "aarch64-unknown-linux-gnu", "-p", "cli"],
-    binDir: join(PROJECT_ROOT, "target", "aarch64-unknown-linux-gnu", "release"),
-  },
-]
-
-async function sh(cmd: string, args: string[], opts?: { cwd?: string }) {
-  const r = await run(cmd, args, opts)
-  if (!r.success) {
-    console.error(`Command failed: ${cmd} ${args.join(" ")}`)
-    console.error(r.stderr)
-    process.exit(1)
-  }
-  return r.stdout
-}
-
-async function fileHash(path: string): Promise<string> {
-  const data = await readFile(path, "binary")
-  return sha256(data, "hex")
-}
-
-async function loadConfig(): Promise<{ brewDir: string; scoopDir: string }> {
-  const envPath = join(PROJECT_ROOT, ".env.release")
-  if (!(await exists(envPath))) {
-    console.error("Missing .env.release. Copy .env.example to .env.release and fill in paths.")
-    process.exit(1)
-  }
-  const env = await loadFile(envPath)
-  return {
-    brewDir: String(env.BREW_DIR),
-    scoopDir: String(env.SCOOP_DIR),
-  }
-}
-
-async function buildAll(dryRun: boolean) {
-  console.log("==> Building all targets...")
-  if (dryRun) {
-    console.log("  [dry-run] would build 4 targets")
-    return
-  }
-
-  for (const t of TARGETS) {
-    console.log(`  Building ${t.label}...`)
-    await sh("cargo", t.buildArgs, { cwd: PROJECT_ROOT })
-  }
-}
-
-async function packageAll(version: string, dryRun: boolean) {
-  console.log("==> Packaging archives...")
-  if (dryRun) {
-    console.log("  [dry-run] would package 4 archives")
-    return
-  }
-
-  for (const t of TARGETS) {
-    const binName = t.suffix ? `imp${t.suffix}` : "imp"
-    const binPath = join(t.binDir, binName)
-    const archiveName = `imp-${version}-${t.label}`
-
-    if (!(await exists(binPath))) {
-      console.error(`Binary not found: ${binPath}`)
-      process.exit(1)
-    }
-
-    if (t.archive === "zip") {
-      const archivePath = join(PROJECT_ROOT, `${archiveName}.zip`)
-      await sh("zip", ["-j", archivePath, binPath], { cwd: PROJECT_ROOT })
-    } else {
-      const archivePath = join(PROJECT_ROOT, `${archiveName}.tar.gz`)
-      await sh("tar", ["czf", archivePath, "-C", t.binDir, binName], { cwd: PROJECT_ROOT })
-    }
-    console.log(`  ${archiveName}.${t.archive === "zip" ? "zip" : "tar.gz"}`)
-  }
-}
-
-async function computeHashes(version: string): Promise<Record<string, string>> {
-  console.log("==> Computing SHA256 hashes...")
-  const hashes: Record<string, string> = {}
-
-  for (const t of TARGETS) {
-    const archiveName = `imp-${version}-${t.label}`
-    const ext = t.archive === "zip" ? ".zip" : ".tar.gz"
-    const archivePath = join(PROJECT_ROOT, `${archiveName}${ext}`)
-    const hash = await fileHash(archivePath)
-    hashes[t.label] = hash
-    console.log(`  ${t.label}: ${hash}`)
-  }
-
-  return hashes
-}
 
 async function updateFormula(version: string, hashes: Record<string, string>, brewDir: string) {
   console.log("==> Updating Homebrew formula...")
@@ -222,6 +98,9 @@ async function createRelease(version: string, dryRun: boolean) {
 const result = parser.parse(clap.args)
 
 if (result.type !== "result") {
+  if (result.type === "error") {
+    console.error(result.message)
+  }
   process.exit(1)
 }
 
@@ -237,9 +116,9 @@ const config = await loadConfig()
 
 console.log(`Releasing imp ${version}${dryRun ? " (dry-run)" : ""}\n`)
 
-await buildAll(dryRun)
-await packageAll(version, dryRun)
-const hashes = await computeHashes(version)
+await buildAll(TARGETS, dryRun)
+await packageAll(TARGETS, version, dryRun)
+const hashes = await computeHashes(TARGETS, version, dryRun)
 await updateFormula(version, hashes, config.brewDir)
 await updateManifest(version, hashes, config.scoopDir)
 await pushBuckets(config.brewDir, config.scoopDir, dryRun)
