@@ -1,3 +1,5 @@
+import "./helper.ts"
+
 const { default: helper } = await import("./helper.ts")
 assert(typeof helper === "function", "dynamic import returns module with function")
 

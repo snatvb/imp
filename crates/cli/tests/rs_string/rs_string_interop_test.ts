@@ -30,8 +30,8 @@ const fixturesDir = import.meta.dirname + "/../fixtures"
 }
 
 {
-  assert(basename(S("/foo/bar.txt")) === "bar.txt", "basename RsString")
-  assert(basename(S("/foo/bar.txt"), S(".txt")) === "bar", "basename RsString with suffix")
+  assert(basename(S("/foo/bar.txt")).toString() === "bar.txt", "basename RsString")
+  assert(basename(S("/foo/bar.txt"), S(".txt")).toString() === "bar", "basename RsString with suffix")
 }
 
 {
@@ -39,7 +39,7 @@ const fixturesDir = import.meta.dirname + "/../fixtures"
 }
 
 {
-  assert(extname(S("file.txt")) === "txt", "extname RsString")
+  assert(extname(S("file.txt")).toString() === "txt", "extname RsString")
 }
 
 {
@@ -52,9 +52,15 @@ const fixturesDir = import.meta.dirname + "/../fixtures"
 }
 
 {
-  const p = parse(S("C:\\path\\dir\\file.txt"))
-  assert(p.base === "file.txt", "parse RsString base")
-  assert(p.ext === ".txt", "parse RsString ext")
+  if (process.platform === "win32") {
+    const p = parse(S("C:\\path\\dir\\file.txt"))
+    assert(p.base.toString() === "file.txt", "parse RsString base (win)")
+    assert(p.ext.toString() === ".txt", "parse RsString ext (win)")
+  } else {
+    const p = parse(S("/path/dir/file.txt"))
+    assert(p.base.toString() === "file.txt", "parse RsString base (unix)")
+    assert(p.ext.toString() === ".txt", "parse RsString ext (unix)")
+  }
 }
 
 {
@@ -63,15 +69,20 @@ const fixturesDir = import.meta.dirname + "/../fixtures"
 }
 
 {
-  const r = toNamespacedPath(S("C:\\foo"))
-  assert(typeof r === "string", "toNamespacedPath RsString")
+  if (process.platform === "win32") {
+    const r = toNamespacedPath(S("C:\\foo"))
+    assert(typeof r === "string", "toNamespacedPath RsString (win)")
+  } else {
+    const r = toNamespacedPath(S("/foo"))
+    assert(typeof r === "string", "toNamespacedPath RsString (unix)")
+  }
 }
 
 {
   assert(win32.join(S("foo"), S("bar"), S("baz")).includes("bar"), "win32.join RsString")
   assert(win32.isAbsolute(S("C:\\foo")), "win32.isAbsolute RsString")
   assert(posix.isAbsolute(S("/foo")), "posix.isAbsolute RsString")
-  assert(posix.basename(S("/foo/bar.txt")) === "bar.txt", "posix.basename RsString")
+  assert(posix.basename(S("/foo/bar.txt")).toString() === "bar.txt", "posix.basename RsString")
 }
 
 const fixturePath = S(fixturesDir + "/hello.txt")

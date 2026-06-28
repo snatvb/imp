@@ -3,7 +3,7 @@ import { extname, basename, resolve } from "path"
 import { readFile, writeFile } from "imp:fs"
 import { json, yaml, toml } from "imp:parsers"
 
-const FORMATS: Record<string, { parse: (s: string) => unknown; stringify: (v: unknown) => any }> = {
+const FORMATS: Record<string, { parse: (s: JsString) => unknown; stringify: (v: unknown) => any }> = {
   json: json,
   yaml: yaml,
   yml: yaml,

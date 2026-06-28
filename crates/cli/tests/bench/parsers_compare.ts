@@ -296,8 +296,12 @@ async function main() {
   console.log("--------------|-------------|-------------|-------------")
   for (const row of allRows) {
     const cells = sizes.map((s, i) => {
-      const ops = row.parse[i].ops.toFixed(0).padStart(7)
-      const pctStr = pct(jsonNativeRow.parse[i].ops, row.parse[i].ops).padStart(4)
+      const rowEntry = row.parse[i]
+      const nativeEntry = jsonNativeRow.parse[i]
+      if (rowEntry === undefined) throw new Error(`Missing parse result for ${row.name} size ${s}`)
+      if (nativeEntry === undefined) throw new Error(`Missing parse result for JSON (native) size ${s}`)
+      const ops = rowEntry.ops.toFixed(0).padStart(7)
+      const pctStr = pct(nativeEntry.ops, rowEntry.ops).padStart(4)
       return `${ops} ${pctStr}`
     })
     console.log(`${row.name.padEnd(14)}| ${cells.join(" | ")}`)
@@ -310,8 +314,12 @@ async function main() {
   console.log("--------------|-------------|-------------|-------------")
   for (const row of allRows) {
     const cells = sizes.map((s, i) => {
-      const ops = row.stringify[i].ops.toFixed(0).padStart(7)
-      const pctStr = pct(jsonNativeRow.stringify[i].ops, row.stringify[i].ops).padStart(4)
+      const rowEntry = row.stringify[i]
+      const nativeEntry = jsonNativeRow.stringify[i]
+      if (rowEntry === undefined) throw new Error(`Missing stringify result for ${row.name} size ${s}`)
+      if (nativeEntry === undefined) throw new Error(`Missing stringify result for JSON (native) size ${s}`)
+      const ops = rowEntry.ops.toFixed(0).padStart(7)
+      const pctStr = pct(nativeEntry.ops, rowEntry.ops).padStart(4)
       return `${ops} ${pctStr}`
     })
     console.log(`${row.name.padEnd(14)}| ${cells.join(" | ")}`)

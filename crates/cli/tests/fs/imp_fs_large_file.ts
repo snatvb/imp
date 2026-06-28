@@ -124,7 +124,9 @@ const pattern = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
   }
 
   for (let i = 0; i < chunks.length; i++) {
-    const str = chunks[i].toString()
+    const chunk = chunks[i]
+    assert(chunk !== undefined, "chunk exists")
+    const str = chunk.toString()
     const offset = i * chunkSize
     for (let j = 0; j < str.length; j++) {
       const expected = pattern[(offset + j) % pattern.length]

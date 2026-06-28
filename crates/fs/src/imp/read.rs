@@ -1,4 +1,5 @@
 use base64::Engine;
+use js_core::RsString;
 use js_core::error::SystemError;
 use js_core::js::function;
 use js_core::utils::StringArg;
@@ -24,16 +25,19 @@ pub async fn read_file<'js>(
         Encoding::Utf8 => {
             let s = String::from_utf8(raw)
                 .map_err(|e| Error::Encoding(e.to_string()).into_exception(&ctx))?;
-            Ok(js::String::from_str(ctx.clone(), &s)?.into_value())
+            let instance = js::Class::instance(ctx, RsString::owned(s))?;
+            Ok(instance.into_value())
         }
         Encoding::Ascii => {
             let decoder = encoding_rs::Encoding::for_label(b"ascii").unwrap();
             let (s, _, _) = decoder.decode(&raw);
-            Ok(js::String::from_str(ctx.clone(), &s)?.into_value())
+            let instance = js::Class::instance(ctx, RsString::owned(s.into()))?;
+            Ok(instance.into_value())
         }
         Encoding::Latin1 | Encoding::Binary => {
             let (s, _, _) = encoding_rs::WINDOWS_1252.decode(&raw);
-            Ok(js::String::from_str(ctx.clone(), &s)?.into_value())
+            let instance = js::Class::instance(ctx, RsString::owned(s.into()))?;
+            Ok(instance.into_value())
         }
         Encoding::Base64 => {
             let s = base64::engine::general_purpose::STANDARD.encode(&raw);

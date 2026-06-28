@@ -123,6 +123,7 @@ async function testBodyGetReader() {
   await writeFile(filePath, "reader test data")
   const r = await fetch(`file:///${filePath}`)
   const body = r.body
+  if (!body) throw new Error("body is null")
   const reader = body.getReader()
   const result = await reader.read()
   assert(result.done === false, "getReader().read(): done=false")
@@ -138,6 +139,7 @@ async function testBodyStreamLocked() {
   await writeFile(filePath, "lock test")
   const r = await fetch(`file:///${filePath}`)
   const body = r.body
+  if (!body) throw new Error("body is null")
   const reader = body.getReader()
   assert(body.locked, "ReadableStream: locked after getReader()")
   try {

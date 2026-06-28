@@ -53,7 +53,9 @@ import { utf8 } from "imp:encoding"
   const pt = utf8.encode("tamper test")
   const ct = aesEncrypt("aes-256-gcm", key, pt)
   const ctArr = Array.from(ct.toArray())
-  ctArr[14] ^= 0xff
+  const ctByte = ctArr[14]
+  if (ctByte === undefined) throw new Error("ciphertext index out of bounds")
+  ctArr[14] = ctByte ^ 0xff
   const tampered = ByteBuffer.fromArray(ctArr)
   let threw = false
   try {

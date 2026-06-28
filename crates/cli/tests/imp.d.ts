@@ -60,11 +60,11 @@ declare class ByteBuffer {
   toArray(): number[]
 }
 
-type RsString = string & {
+type RsString = {
   readonly length: number
 
-  at(index?: number): RsString
-  charAt(index: number): RsString
+  at(index?: number): RsString | undefined
+  charAt(index: number): RsString | undefined
   charCodeAt(index: number): number
   codePointAt(index: number): number
 
@@ -76,29 +76,29 @@ type RsString = string & {
   trimStart(): RsString
   trimEnd(): RsString
 
-  indexOf(search: string, fromIndex?: number): number
-  lastIndexOf(search: string, fromIndex?: number): number
-  includes(search: string): boolean
-  startsWith(search: string): boolean
-  endsWith(search: string): boolean
+  indexOf(search: JsString, fromIndex?: number): number
+  lastIndexOf(search: JsString, fromIndex?: number): number
+  includes(search: JsString): boolean
+  startsWith(search: JsString): boolean
+  endsWith(search: JsString): boolean
 
-  concat(str: string): RsString
+  concat(str: JsString): RsString
   repeat(count: number): RsString
-  padStart(targetLength: number, padString?: string): RsString
-  padEnd(targetLength: number, padString?: string): RsString
+  padStart(targetLength: number, padString?: JsString): RsString
+  padEnd(targetLength: number, padString?: JsString): RsString
   toLowerCase(): RsString
   toUpperCase(): RsString
   toLocaleLowerCase(): RsString
   toLocaleUpperCase(): RsString
-  localeCompare(other: string): number
-  normalize(form?: string): RsString
+  localeCompare(other: JsString): number
+  normalize(form?: JsString): RsString
 
-  replace(search: string | RegExp, replacement: string | ((...args: any[]) => string)): RsString
-  replaceAll(search: string | RegExp, replacement: string | ((...args: any[]) => string)): RsString
+  replace(search: JsString | RegExp, replacement: JsString | ((...args: any[]) => JsString)): RsString
+  replaceAll(search: JsString | RegExp, replacement: JsString | ((...args: any[]) => JsString)): RsString
   search(regexp: RegExp): number
   match(regexp: RegExp): RegExpMatchArray | null
   matchAll(regexp: RegExp): IterableIterator<RegExpMatchArray>
-  split(separator: string | RegExp, limit?: number): string[]
+  split(separator: JsString | RegExp, limit?: number): string[]
 
   toString(): string
   valueOf(): string
@@ -202,19 +202,19 @@ declare module "imp:clap" {
       : O["action"] extends "append"
         ? O["choices"] extends readonly (infer C)[]
           ? C[]
-          : RsString[]
+          : string[]
         : O["action"] extends "help" | "help_short" | "help_long" | "version"
           ? never
           : O["num_args"] extends [number, number] | [number]
             ? O["choices"] extends readonly (infer C)[]
               ? C[]
-              : RsString[]
+              : string[]
             : O["choices"] extends readonly (infer C)[]
               ? C
-              : RsString | undefined
+              : string | undefined
 
   interface ParseResultSuccess<T> {
-    type: "result"
+    type: "ok"
   }
 
   interface ParseResultHelp {
@@ -234,13 +234,13 @@ declare module "imp:clap" {
 
   type ParseResult<T = {}> = (ParseResultSuccess<T> & T) | ParseResultHelp | ParseResultVersion | ParseResultError
 
-  const args: readonly RsString[]
+  const args: readonly string[]
 
   class Parser<T = {}> {
     constructor()
-    name(name: string): Parser<T>
-    version(version: string): Parser<T>
-    about(about: string): Parser<T>
+    name(name: JsString): Parser<T>
+    version(version: JsString): Parser<T>
+    about(about: JsString): Parser<T>
     arg<const O extends ArgOptions>(opts: O): Parser<T & { [K in O["name"]]: ArgValueKind<O> }>
     parse(args: readonly JsString[]): ParseResult<T>
   }
@@ -572,6 +572,7 @@ declare class ReadableStreamDefaultReader {
   read(): Promise<{ done: boolean; value: any }>
   cancel(reason?: any): Promise<void>
   releaseLock(): void
+  [Symbol.dispose](): void
 }
 
 declare class ReadableStream implements AsyncIterable<any> {

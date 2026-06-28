@@ -314,10 +314,12 @@ export {}
   assert(sig2.reason === "", "AbortSignal.timeout(Duration): empty reason initially")
 
   await new Promise<void>((resolve) => setTimeout(resolve, 100))
-  assert(sig1.aborted === true, "AbortSignal.timeout(number): fired after delay")
-  assert(sig1.reason === "The operation timed out", "AbortSignal.timeout(number): reason")
-  assert(sig2.aborted === true, "AbortSignal.timeout(Duration): fired after delay")
-  assert(sig2.reason === "The operation timed out", "AbortSignal.timeout(Duration): reason")
+  const sig1_post = sig1
+  assert(sig1_post.aborted === true, "AbortSignal.timeout(number): fired after delay")
+  assert(sig1_post.reason === "The operation timed out", "AbortSignal.timeout(number): reason")
+  const sig2_post = sig2
+  assert(sig2_post.aborted === true, "AbortSignal.timeout(Duration): fired after delay")
+  assert(sig2_post.reason === "The operation timed out", "AbortSignal.timeout(Duration): reason")
 
   let threw = false
   try {

@@ -70,7 +70,11 @@ const fixture = (name: string) => resolve(import.meta.dirname, "fixtures", name)
 
   const c1 = await fh.read()
 
+  if (!c1) throw new Error("read returned undefined")
+
   const c2 = await fh.read()
+
+  if (!c2) throw new Error("read returned undefined")
 
   const t1 = c1.toString()
   const t2 = c2.toString()
@@ -94,6 +98,8 @@ const fixture = (name: string) => resolve(import.meta.dirname, "fixtures", name)
 
   const chunk = await fh.read()
 
+  if (!chunk) throw new Error("read returned undefined")
+
   const text = chunk.toString()
 
   assert(text === "world", `after seek: "${text}"`)
@@ -115,6 +121,8 @@ const fixture = (name: string) => resolve(import.meta.dirname, "fixtures", name)
   assert(pos === 5, `seek current returns 5, got ${pos}`)
 
   const chunk = await fh.read()
+
+  if (!chunk) throw new Error("read returned undefined")
 
   const text = chunk.toString()
 
@@ -206,6 +214,8 @@ const fixture = (name: string) => resolve(import.meta.dirname, "fixtures", name)
 
   const chunk = await fh.read()
 
+  if (!chunk) throw new Error("read returned undefined")
+
   const text = chunk.toString()
 
   assert(text === "world", `after seek end: "${text}"`)
@@ -262,6 +272,8 @@ const fixture = (name: string) => resolve(import.meta.dirname, "fixtures", name)
 
   const chunk = await fh.read()
 
+  if (!chunk) throw new Error("read returned undefined")
+
   const rs = chunk.toStr()
 
   assert(rs.length === 11, `RsString length 11, got ${rs.length}`)
@@ -280,6 +292,8 @@ const fixture = (name: string) => resolve(import.meta.dirname, "fixtures", name)
 
   const chunk = await fh.read()
 
+  if (!chunk) throw new Error("read returned undefined")
+
   const ab = chunk.toArrayBuffer()
 
   assert(ab instanceof ArrayBuffer, "toArrayBuffer returns ArrayBuffer")
@@ -297,6 +311,8 @@ const fixture = (name: string) => resolve(import.meta.dirname, "fixtures", name)
   const fh = await open(fixture("hello.txt"), 64)
 
   const chunk = await fh.read()
+
+  if (!chunk) throw new Error("read returned undefined")
 
   const sliced = chunk.slice(0, 5)
 

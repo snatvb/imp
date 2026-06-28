@@ -32,6 +32,7 @@ async function testPipeToBasic() {
   await writeFile(filePath, "pipe me")
   const r = await fetch(`file:///${filePath}`)
   const body = r.body
+  if (!body) throw new Error("body is null")
   const { dest, chunks } = createMockDest()
   await body.pipeTo(dest)
   assert(chunks.length === 1, "pipeTo: got 1 chunk")
@@ -39,7 +40,9 @@ async function testPipeToBasic() {
   const bytes = new Uint8Array(chunks[0])
   let text = ""
   for (let i = 0; i < bytes.length; i++) {
-    text += String.fromCharCode(bytes[i])
+    const byte = bytes[i]
+    if (byte === undefined) throw new Error("byte is undefined")
+    text += String.fromCharCode(byte)
   }
   assert(text === "pipe me", "pipeTo: content matches")
   await remove(filePath)
@@ -51,6 +54,7 @@ async function testTeeBasic() {
   await writeFile(filePath, "tee me")
   const r = await fetch(`file:///${filePath}`)
   const body = r.body
+  if (!body) throw new Error("body is null")
   const branches = await body.tee()
   assert(branches.length === 2, "tee: returns 2 branches")
 
@@ -61,7 +65,9 @@ async function testTeeBasic() {
   const bytes1 = new Uint8Array(result1.value)
   let text1 = ""
   for (let i = 0; i < bytes1.length; i++) {
-    text1 += String.fromCharCode(bytes1[i])
+    const byte = bytes1[i]
+    if (byte === undefined) throw new Error("byte is undefined")
+    text1 += String.fromCharCode(byte)
   }
   assert(text1 === "tee me", "tee branch1: content matches")
 
@@ -71,7 +77,9 @@ async function testTeeBasic() {
   const bytes2 = new Uint8Array(result2.value)
   let text2 = ""
   for (let i = 0; i < bytes2.length; i++) {
-    text2 += String.fromCharCode(bytes2[i])
+    const byte = bytes2[i]
+    if (byte === undefined) throw new Error("byte is undefined")
+    text2 += String.fromCharCode(byte)
   }
   assert(text2 === "tee me", "tee branch2: content matches")
 
@@ -84,6 +92,7 @@ async function testReaderDispose() {
   await writeFile(filePath, "dispose test")
   const r = await fetch(`file:///${filePath}`)
   const body = r.body
+  if (!body) throw new Error("body is null")
 
   assert(!body.locked, "dispose: not locked before")
   {

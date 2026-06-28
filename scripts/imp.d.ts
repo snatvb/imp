@@ -60,11 +60,11 @@ declare class ByteBuffer {
   toArray(): number[]
 }
 
-type RsString = string & {
+type RsString = {
   readonly length: number
 
-  at(index?: number): RsString
-  charAt(index: number): RsString
+  at(index?: number): RsString | undefined
+  charAt(index: number): RsString | undefined
   charCodeAt(index: number): number
   codePointAt(index: number): number
 
@@ -202,19 +202,19 @@ declare module "imp:clap" {
       : O["action"] extends "append"
         ? O["choices"] extends readonly (infer C)[]
           ? C[]
-          : RsString[]
+          : string[]
         : O["action"] extends "help" | "help_short" | "help_long" | "version"
           ? never
           : O["num_args"] extends [number, number] | [number]
             ? O["choices"] extends readonly (infer C)[]
               ? C[]
-              : RsString[]
+              : string[]
             : O["choices"] extends readonly (infer C)[]
               ? C
-              : RsString | undefined
+              : string | undefined
 
   interface ParseResultSuccess<T> {
-    type: "result"
+    type: "ok"
   }
 
   interface ParseResultHelp {
@@ -234,7 +234,7 @@ declare module "imp:clap" {
 
   type ParseResult<T = {}> = (ParseResultSuccess<T> & T) | ParseResultHelp | ParseResultVersion | ParseResultError
 
-  const args: readonly RsString[]
+  const args: readonly string[]
 
   class Parser<T = {}> {
     constructor()
@@ -572,6 +572,7 @@ declare class ReadableStreamDefaultReader {
   read(): Promise<{ done: boolean; value: any }>
   cancel(reason?: any): Promise<void>
   releaseLock(): void
+  [Symbol.dispose](): void
 }
 
 declare class ReadableStream implements AsyncIterable<any> {

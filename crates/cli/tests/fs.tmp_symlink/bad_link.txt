@@ -1,0 +1,1 @@
+/Users/snatvb/projects/imp/imp/crates/cli/tests/fs.tmp_symlink/NOPE.txt

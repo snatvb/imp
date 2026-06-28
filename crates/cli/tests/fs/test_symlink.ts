@@ -29,7 +29,7 @@ if (canSymlink) {
   assert(st.isSymbolicLink, "symlink => isSymbolicLink")
 
   const content = await readFile(linkPath, "utf8")
-  assert(content === "hello", "read through symlink")
+  assert(content.toString() === "hello", "read through symlink")
 
   await remove(linkPath)
   await remove(target)
@@ -46,7 +46,7 @@ if (canSymlink) {
   assert(st.isSymbolicLink, "dir symlink => isSymbolicLink")
 
   const content = await readFile(linkDir + "/file.txt", "utf8")
-  assert(content === "inside dir", "read through dir symlink")
+  assert(content.toString() === "inside dir", "read through dir symlink")
 
   await remove(linkDir)
   await remove(targetDir, { recursive: true })
@@ -62,7 +62,7 @@ if (canSymlink) {
   assert(!st.isSymbolicLink, "hard link => not symlink")
 
   const content = await readFile(linkPath, "utf8")
-  assert(content === "data", "read through hard link")
+  assert(content.toString() === "data", "read through hard link")
 
   await remove(linkPath)
   await remove(target)

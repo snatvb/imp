@@ -18,9 +18,9 @@ async function updateFormula(version: string, hashes: Record<string, string>, br
   const formulaPath = join(brewDir, "Formula/imp.rb")
   let content = (await readFile(formulaPath, "utf8")).toString()
   content = content.replaceAll('"0.1.0"', `"${version}"`)
-  content = content.replace("PLACEHOLDER_MAC_ARM64_SHA256", hashes["mac-arm64"])
-  content = content.replace("PLACEHOLDER_LINUX_ARM64_SHA256", hashes["linux-arm64"])
-  content = content.replace("PLACEHOLDER_LINUX_X64_SHA256", hashes["linux-x64"])
+  content = content.replace("PLACEHOLDER_MAC_ARM64_SHA256", hashes["mac-arm64"]!)
+  content = content.replace("PLACEHOLDER_LINUX_ARM64_SHA256", hashes["linux-arm64"]!)
+  content = content.replace("PLACEHOLDER_LINUX_X64_SHA256", hashes["linux-x64"]!)
   await writeFile(formulaPath, content)
   console.log(`  Updated ${formulaPath}`)
 }
@@ -30,7 +30,7 @@ async function updateManifest(version: string, hashes: Record<string, string>, s
   const manifestPath = join(scoopDir, "imp.json")
   let content = (await readFile(manifestPath, "utf8")).toString()
   content = content.replaceAll('"0.1.0"', `"${version}"`)
-  content = content.replace("PLACEHOLDER_WIN64_SHA256", hashes["windows-x64"])
+  content = content.replace("PLACEHOLDER_WIN64_SHA256", hashes["windows-x64"]!)
   await writeFile(manifestPath, content)
   console.log(`  Updated ${manifestPath}`)
 }
@@ -89,15 +89,16 @@ async function createRelease(version: string, dryRun: boolean) {
 
 const result = parser.parse(clap.args)
 
-if (result.type !== "result") {
+if (result.type !== "ok") {
   if (result.type === "error") {
     console.error(result.message)
   }
   process.exit(1)
 }
 
-const version = result.version.toString()
-const dryRun = Boolean(result["dry-run"])
+const { version: rawVersion, "dry-run": rawDryRun } = result as { version: { toString(): string }; "dry-run": boolean }
+const version = rawVersion.toString()
+const dryRun = Boolean(rawDryRun)
 
 if (!version.startsWith("v")) {
   console.error("Version must start with 'v' (e.g. v0.1.0)")

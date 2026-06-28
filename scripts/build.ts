@@ -9,14 +9,14 @@ const parser = new clap.Parser()
 
 const result = parser.parse(clap.args)
 
-if (result.type !== "result") {
+if (result.type !== "ok") {
   if (result.type === "error") {
     console.error(result.message)
   }
   process.exit(1)
 }
 
-const dryRun = Boolean(result["dry-run"])
+const dryRun = Boolean((result as { "dry-run": boolean })["dry-run"])
 
 await buildAll(TARGETS, dryRun)
 await packageAll(TARGETS, "local", dryRun)

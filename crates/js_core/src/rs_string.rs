@@ -67,7 +67,7 @@ impl RsString {
     }
 
     #[qjs(rename = "at")]
-    fn at_method<'js>(&self, ctx: Ctx<'js>, index: Opt<isize>) -> Result<Class<'js, RsString>> {
+    fn at_method<'js>(&self, ctx: Ctx<'js>, index: Opt<isize>) -> Result<Value<'js>> {
         let index = index.0.unwrap_or(0);
         let len = self.get_slice().chars().count() as isize;
         let mut idx = index;
@@ -75,56 +75,58 @@ impl RsString {
             idx += len;
         }
         if idx < 0 || idx >= len {
-            return Class::instance(ctx, self.empty());
+            return Ok(Value::new_undefined(ctx));
         }
         if let Some(byte_idx) = self.char_to_byte(idx as usize) {
             let c = self.get_slice()[byte_idx..].chars().next().unwrap();
-            Class::instance(
+            let instance = Class::instance(
                 ctx,
                 RsString {
                     inner: self.inner.clone(),
                     start: self.start + byte_idx,
                     end: self.start + byte_idx + c.len_utf8(),
                 },
-            )
+            )?;
+            Ok(instance.into_value())
         } else {
-            Class::instance(ctx, self.empty())
+            Ok(Value::new_undefined(ctx))
         }
     }
 
     #[qjs(rename = "charAt")]
-    fn char_at<'js>(&self, ctx: Ctx<'js>, index: usize) -> Result<Class<'js, RsString>> {
+    fn char_at<'js>(&self, ctx: Ctx<'js>, index: usize) -> Result<Value<'js>> {
         if let Some(byte_idx) = self.char_to_byte(index) {
             let c = self.get_slice()[byte_idx..].chars().next().unwrap();
-            Class::instance(
+            let instance = Class::instance(
                 ctx,
                 RsString {
                     inner: self.inner.clone(),
                     start: self.start + byte_idx,
                     end: self.start + byte_idx + c.len_utf8(),
                 },
-            )
+            )?;
+            Ok(instance.into_value())
         } else {
-            Class::instance(ctx, self.empty())
+            Ok(Value::new_undefined(ctx))
         }
     }
 
     #[qjs(rename = "charCodeAt")]
-    fn char_code_at(&self, index: usize) -> i32 {
+    fn char_code_at(&self, index: usize) -> f64 {
         self.get_slice()
             .chars()
             .nth(index)
-            .map(|c| c as u32 as i32)
-            .unwrap_or(-1)
+            .map(|c| c as u32 as f64)
+            .unwrap_or(f64::NAN)
     }
 
     #[qjs(rename = "codePointAt")]
-    fn code_point_at(&self, index: usize) -> i32 {
+    fn code_point_at(&self, index: usize) -> f64 {
         self.get_slice()
             .chars()
             .nth(index)
-            .map(|c| c as i32)
-            .unwrap_or(-1)
+            .map(|c| c as u32 as f64)
+            .unwrap_or(f64::NAN)
     }
 
     fn substring<'js>(

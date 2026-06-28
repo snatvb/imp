@@ -296,6 +296,7 @@ const globDir = fixture("glob")
   const results = await glob(globDir, "subdir/*.txt")
   const strResults = results.map((r) => r.toString())
   assert(strResults.length === 1, `expected 1 file, got ${strResults.length}`)
+  assert(strResults[0] !== undefined, "first result exists")
   assert(strResults[0].includes("file3"), "found file3.txt")
   console.log("PASS: regression — glob with subdir pattern")
 }

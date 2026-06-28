@@ -4,11 +4,11 @@ import { readFile, writeFile } from "imp:fs"
 
 const input = import.meta.dirname + "/fixtures/sample.md"
 
-function escape(s: string): string {
+function escape(s: JsString): JsString {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
 }
 
-function inline(s: string): string {
+function inline(s: JsString): JsString {
   return escape(s)
     .replace(/`([^`]+)`/g, "<code>$1</code>")
     .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
@@ -16,7 +16,7 @@ function inline(s: string): string {
     .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
 }
 
-function mdToHtml(md: string): string {
+function mdToHtml(md: JsString): string {
   const lines = md.split(/\r?\n/)
   const out: string[] = []
   let inCode = false
@@ -63,32 +63,32 @@ function mdToHtml(md: string): string {
     const h1 = line.match(/^#\s+(.*)$/)
     if (h6) {
       closeList()
-      out.push(`<h6>${inline(h6[1])}</h6>`)
+      out.push(`<h6>${inline(h6[1]!)}</h6>`)
       continue
     }
     if (h5) {
       closeList()
-      out.push(`<h5>${inline(h5[1])}</h5>`)
+      out.push(`<h5>${inline(h5[1]!)}</h5>`)
       continue
     }
     if (h4) {
       closeList()
-      out.push(`<h4>${inline(h4[1])}</h4>`)
+      out.push(`<h4>${inline(h4[1]!)}</h4>`)
       continue
     }
     if (h3) {
       closeList()
-      out.push(`<h3>${inline(h3[1])}</h3>`)
+      out.push(`<h3>${inline(h3[1]!)}</h3>`)
       continue
     }
     if (h2) {
       closeList()
-      out.push(`<h2>${inline(h2[1])}</h2>`)
+      out.push(`<h2>${inline(h2[1]!)}</h2>`)
       continue
     }
     if (h1) {
       closeList()
-      out.push(`<h1>${inline(h1[1])}</h1>`)
+      out.push(`<h1>${inline(h1[1]!)}</h1>`)
       continue
     }
 
@@ -101,7 +101,7 @@ function mdToHtml(md: string): string {
         inList = true
         listType = "ol"
       }
-      out.push(`  <li>${inline(ol[1])}</li>`)
+      out.push(`  <li>${inline(ol[1]!)}</li>`)
       continue
     }
     if (ul) {
@@ -111,7 +111,7 @@ function mdToHtml(md: string): string {
         inList = true
         listType = "ul"
       }
-      out.push(`  <li>${inline(ul[1])}</li>`)
+      out.push(`  <li>${inline(ul[1]!)}</li>`)
       continue
     }
 
