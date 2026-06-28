@@ -285,6 +285,34 @@ cargo install --git https://github.com/snatvb/imp crates/cli
 This builds the `imp` binary and puts it in `~/.cargo/bin/`. Add that to
 your `PATH` if it isn't already.
 
+## Building from source
+
+Cross-compile Windows and Linux binaries from macOS:
+
+```bash
+# Install cross-compilation toolchains
+brew install mingw-w64                              # Windows x64 linker
+brew install messense/macos-cross-toolchains        # Linux x86_64 linker
+cargo install cargo-zigbuild && brew install zig    # Linux ARM64
+
+# Build all targets
+cargo build --release -p cli                                            # macOS arm64
+cargo build --release --target x86_64-pc-windows-gnu -p cli            # Windows x64
+cargo build --release --target x86_64-unknown-linux-gnu -p cli         # Linux x86_64
+cargo zigbuild --release --target aarch64-unknown-linux-gnu -p cli     # Linux ARM64
+```
+
+Output binaries:
+
+| Target | Path | Size |
+|--------|------|------|
+| macOS arm64 | `target/release/imp` | ~11 MB |
+| Windows x64 | `target/x86_64-pc-windows-gnu/release/imp.exe` | ~9.6 MB |
+| Linux x86_64 | `target/x86_64-unknown-linux-gnu/release/imp` | ~10 MB |
+| Linux ARM64 | `target/aarch64-unknown-linux-gnu/release/imp` | ~8.7 MB |
+
+All binaries are self-contained — no system OpenSSL/libssl required. Only `glibc` and `ca-certificates` needed on target Linux machines.
+
 ## License
 
 MIT — <https://github.com/snatvb/imp>

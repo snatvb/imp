@@ -1,0 +1,38 @@
+FROM debian:bookworm AS builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl build-essential ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.96.0
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+WORKDIR /app
+COPY . .
+RUN rm -f .cargo/config.toml
+
+RUN cargo build --release -p cli
+
+FROM debian:bookworm-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /app/target/release/imp /usr/local/bin/imp
+COPY crates/cli/tests/ /app/tests/
+COPY crates/js_core/tests/ /app/js_core_tests/
+
+WORKDIR /app
+
+CMD ["sh", "-c", "\
+  echo '=== Smoke Tests ===' && \
+  imp run tests/smoke/index.ts && \
+  echo '' && \
+  echo '=== FS Tests ===' && \
+  for f in tests/fs/*.ts; do echo \"  $f\"; imp run \"$f\" || exit 1; done && \
+  echo '' && \
+  echo '=== Fetch Tests (rustls) ===' && \
+  for f in tests/fetch/*.ts; do echo \"  $f\"; imp run \"$f\" || exit 1; done && \
+  echo '' && \
+  echo '=== All tests passed ==='"]
