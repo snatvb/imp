@@ -117,7 +117,7 @@ import { json, yaml, toml, csv, xml } from "imp:parsers"
 const obj = json.parse('{"a": 1}')
 const str = yaml.stringify({ key: "value" })
 
-const cfg = toml.parse('[server]\nport = 8080')
+const cfg = toml.parse("[server]\nport = 8080")
 const rows = csv.parse("name,age\nAlice,30")
 ```
 
@@ -219,17 +219,17 @@ const fmt = now.format("%Y-%m-%d %H:%M:%S")
 
 No imports needed — available everywhere:
 
-| Global | Description |
-| ------ | ----------- |
-| `console` | `log`, `error`, `warn`, `info`, `assert`, `trace` |
-| `process` | `cwd()`, `exit()`, `env`, `argv`, `pid`, `platform` |
-| `path` | `resolve`, `join`, `basename`, `dirname`, `extname`, `relative`, `normalize` |
-| `fetch` | HTTP client (Web standard `fetch`, `Request`, `Response`, `Headers`) |
-| `URL`, `URLSearchParams` | URL parsing and manipulation |
-| `AbortController`, `AbortSignal` | Request cancellation |
-| `setTimeout`, `setInterval`, `setImmediate` | Async timers |
-| `TextEncoder`, `TextDecoder` | UTF-8 encode/decode |
-| `Buffer` | Byte buffer (Node.js compatible subset) |
+| Global                                      | Description                                                                  |
+| ------------------------------------------- | ---------------------------------------------------------------------------- |
+| `console`                                   | `log`, `error`, `warn`, `info`, `assert`, `trace`                            |
+| `process`                                   | `cwd()`, `exit()`, `env`, `argv`, `pid`, `platform`                          |
+| `path`                                      | `resolve`, `join`, `basename`, `dirname`, `extname`, `relative`, `normalize` |
+| `fetch`                                     | HTTP client (Web standard `fetch`, `Request`, `Response`, `Headers`)         |
+| `URL`, `URLSearchParams`                    | URL parsing and manipulation                                                 |
+| `AbortController`, `AbortSignal`            | Request cancellation                                                         |
+| `setTimeout`, `setInterval`, `setImmediate` | Async timers                                                                 |
+| `TextEncoder`, `TextDecoder`                | UTF-8 encode/decode                                                          |
+| `Buffer`                                    | Byte buffer (Node.js compatible subset)                                      |
 
 ## CLI args
 
@@ -304,12 +304,12 @@ cargo zigbuild --release --target aarch64-unknown-linux-gnu -p cli     # Linux A
 
 Output binaries:
 
-| Target | Path | Size |
-|--------|------|------|
-| macOS arm64 | `target/release/imp` | ~11 MB |
-| Windows x64 | `target/x86_64-pc-windows-gnu/release/imp.exe` | ~9.6 MB |
-| Linux x86_64 | `target/x86_64-unknown-linux-gnu/release/imp` | ~10 MB |
-| Linux ARM64 | `target/aarch64-unknown-linux-gnu/release/imp` | ~8.7 MB |
+| Target       | Path                                           | Size    |
+| ------------ | ---------------------------------------------- | ------- |
+| macOS arm64  | `target/release/imp`                           | ~11 MB  |
+| Windows x64  | `target/x86_64-pc-windows-gnu/release/imp.exe` | ~9.6 MB |
+| Linux x86_64 | `target/x86_64-unknown-linux-gnu/release/imp`  | ~10 MB  |
+| Linux ARM64  | `target/aarch64-unknown-linux-gnu/release/imp` | ~8.7 MB |
 
 All binaries are self-contained — no system OpenSSL/libssl required. Only `glibc` and `ca-certificates` needed on target Linux machines.
 
