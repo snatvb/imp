@@ -1,4 +1,5 @@
 use crate::headers::Headers;
+use crate::stream_body;
 use rquickjs::class::{Trace, Tracer};
 use rquickjs::{self as js, ArrayBuffer, Class, Ctx, JsLifetime, Value};
 
@@ -93,6 +94,12 @@ impl Response {
     #[qjs(get)]
     fn url(&self) -> String {
         self.url.clone()
+    }
+
+    #[qjs(get)]
+    fn body<'js>(&self, ctx: Ctx<'js>) -> js::Result<Class<'js, js_core::streams::ReadableStream>> {
+        let pending_io = js_core::streams::PendingIo::new();
+        stream_body::create_fetch_stream(&ctx, self.body.clone(), pending_io)
     }
 
     #[qjs()]

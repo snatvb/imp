@@ -543,9 +543,10 @@ declare class Response {
   readonly headers: Headers
   readonly url: string
   readonly type: string
+  readonly body: ReadableStream | null
   text(): Promise<string>
   json(): Promise<any>
-  arrayBuffer(): ArrayBuffer
+  arrayBuffer(): Promise<ArrayBuffer>
   clone(): Response
 }
 
@@ -553,6 +554,45 @@ declare class DOMException extends Error {
   constructor(message?: string, name?: string)
   readonly name: string
   readonly code: number
+}
+
+interface QueuingStrategyInit {
+  highWaterMark: number
+}
+
+declare class ReadableStreamDefaultController {
+  readonly desiredSize: number | null
+  close(): void
+  enqueue(chunk?: any): void
+  error(e?: any): void
+}
+
+declare class ReadableStreamDefaultReader {
+  closed: Promise<void>
+  read(): Promise<{ done: boolean; value: any }>
+  cancel(reason?: any): Promise<void>
+  releaseLock(): void
+}
+
+declare class ReadableStream implements AsyncIterable<any> {
+  constructor(underlyingSource?: any, strategy?: { highWaterMark?: number; size?: (chunk: any) => number })
+  readonly locked: boolean
+  cancel(reason?: any): Promise<void>
+  getReader(): ReadableStreamDefaultReader
+  pipeTo(
+    dest: any,
+    options?: { preventClose?: boolean; preventAbort?: boolean; preventCancel?: boolean; signal?: AbortSignal },
+  ): Promise<void>
+  tee(): [ReadableStream, ReadableStream]
+  values(): ReadableStreamAsyncIterator
+  [Symbol.asyncIterator](): ReadableStreamAsyncIterator
+  [Symbol.dispose](): void
+}
+
+declare class ReadableStreamAsyncIterator {
+  next(): Promise<{ done: boolean; value: any }>
+  return(): Promise<{ done: true; value: undefined }>
+  [Symbol.asyncIterator](): ReadableStreamAsyncIterator
 }
 
 declare class AbortController {

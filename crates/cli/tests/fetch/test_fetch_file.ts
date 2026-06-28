@@ -1,6 +1,7 @@
-import { writeFile, remove } from "imp:fs"
+import { writeFile, remove, mkdir } from "imp:fs"
 
-const TMP_DIR = process.cwd()
+const TMP_DIR = import.meta.dirname + "\\.tmp"
+await mkdir(TMP_DIR, { recursive: true })
 
 async function testBasicFileRead() {
   const filePath = `${TMP_DIR}\\_test_fetch_basic.txt`
@@ -107,6 +108,49 @@ async function testPercentEncodedPath() {
   await remove(filePath)
 }
 
+async function testBodyIsReadableStream() {
+  const filePath = `${TMP_DIR}\\_test_fetch_stream.txt`
+  await writeFile(filePath, "stream test data")
+  const r = await fetch(`file:///${filePath}`)
+  const body = r.body
+  assert(body !== null && body !== undefined, "body getter: returns value")
+  assert(typeof body.getReader === "function", "body getter: is ReadableStream (has getReader)")
+  await remove(filePath)
+}
+
+async function testBodyGetReader() {
+  const filePath = `${TMP_DIR}\\_test_fetch_reader.txt`
+  await writeFile(filePath, "reader test data")
+  const r = await fetch(`file:///${filePath}`)
+  const body = r.body
+  const reader = body.getReader()
+  const result = await reader.read()
+  assert(result.done === false, "getReader().read(): done=false")
+  assert(result.value instanceof ArrayBuffer, "getReader().read(): value is ArrayBuffer")
+  assert(result.value.byteLength > 0, "getReader().read(): value has bytes")
+  const doneResult = await reader.read()
+  assert(doneResult.done === true, "getReader().read(): done=true at end")
+  await remove(filePath)
+}
+
+async function testBodyStreamLocked() {
+  const filePath = `${TMP_DIR}\\_test_fetch_lock.txt`
+  await writeFile(filePath, "lock test")
+  const r = await fetch(`file:///${filePath}`)
+  const body = r.body
+  const reader = body.getReader()
+  assert(body.locked, "ReadableStream: locked after getReader()")
+  try {
+    body.getReader()
+    assert(false, "ReadableStream: should throw when locked")
+  } catch (e) {
+    console.log("PASS: getReader on locked stream throws")
+  }
+  reader.releaseLock()
+  assert(!body.locked, "ReadableStream: unlocked after releaseLock()")
+  await remove(filePath)
+}
+
 async function main() {
   await testBasicFileRead()
   console.log("PASS: Basic file read")
@@ -126,6 +170,15 @@ async function main() {
 
   await testPercentEncodedPath()
   console.log("PASS: Percent-encoded path")
+
+  await testBodyIsReadableStream()
+  console.log("PASS: body is ReadableStream")
+
+  await testBodyGetReader()
+  console.log("PASS: body getReader reads data")
+
+  await testBodyStreamLocked()
+  console.log("PASS: body stream lock/unlock")
 
   console.log("ALL FILE FETCH TESTS PASSED")
 }

@@ -15,6 +15,7 @@ pub mod performance;
 mod re_export;
 pub mod resolver;
 pub mod rs_string;
+pub mod streams;
 pub mod timers;
 pub mod typescript;
 pub mod utils;
