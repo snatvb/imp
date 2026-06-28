@@ -16,7 +16,6 @@ pub async fn run_event_loop<'js>(
 ) {
     let mut last = Instant::now();
     let mut released = Vec::with_capacity(8);
-    #[cfg(debug_assertions)]
     let mut idle_rounds: u32 = 0;
     let mut rejection_handled = false;
 
@@ -84,7 +83,6 @@ pub async fn run_event_loop<'js>(
             }
         }
 
-        #[cfg(debug_assertions)]
         let idle = {
             let timers = js_timers.borrow();
             (early_done || early_exit.is_none())
@@ -92,7 +90,6 @@ pub async fn run_event_loop<'js>(
                 && timers.released.is_empty()
         };
 
-        #[cfg(debug_assertions)]
         if idle {
             let has_jobs = is_job_pending(ctx);
             if has_jobs {
@@ -114,7 +111,6 @@ pub async fn run_event_loop<'js>(
 }
 
 #[inline]
-#[cfg(debug_assertions)]
 fn is_job_pending(ctx: &js::Ctx<'_>) -> bool {
     ffi_extra::js_helpers::is_job_pending(ctx)
 }
