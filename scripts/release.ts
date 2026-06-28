@@ -1,14 +1,9 @@
-import { readFile, writeFile } from "imp:fs"
 import { join } from "path"
+
 import clap from "imp:clap"
-import {
-  TARGETS,
-  sh,
-  loadConfig,
-  buildAll,
-  packageAll,
-  computeHashes,
-} from "./lib.ts"
+import { readFile, writeFile } from "imp:fs"
+
+import { TARGETS, TEMP_DIR, sh, loadConfig, buildAll, packageAll, computeHashes } from "./lib.ts"
 
 const PROJECT_ROOT = process.cwd()
 
@@ -81,16 +76,13 @@ async function createRelease(version: string, dryRun: boolean) {
   for (const t of TARGETS) {
     const archiveName = `imp-${version}-${t.label}`
     const ext = t.archive === "zip" ? ".zip" : ".tar.gz"
-    const archivePath = join(PROJECT_ROOT, `${archiveName}${ext}`)
+    const archivePath = join(TEMP_DIR, `${archiveName}${ext}`)
     assetArgs.push(`${archivePath}#${archiveName}${ext}`)
   }
 
-  await sh("gh", [
-    "release", "create", version,
-    "--title", version,
-    "--notes", `Release ${version}`,
-    ...assetArgs,
-  ], { cwd: PROJECT_ROOT })
+  await sh("gh", ["release", "create", version, "--title", version, "--notes", `Release ${version}`, ...assetArgs], {
+    cwd: PROJECT_ROOT,
+  })
 
   console.log(`  Release ${version} created`)
 }

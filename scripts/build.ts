@@ -1,5 +1,6 @@
-import { TARGETS, sh, buildAll, packageAll, computeHashes } from "./lib.ts"
 import clap from "imp:clap"
+
+import { TARGETS, buildAll, packageAll } from "./lib.ts"
 
 const parser = new clap.Parser()
   .name("build")
@@ -19,11 +20,5 @@ const dryRun = Boolean(result["dry-run"])
 
 await buildAll(TARGETS, dryRun)
 await packageAll(TARGETS, "local", dryRun)
-const hashes = await computeHashes(TARGETS, "local", dryRun)
-
-console.log("\n==> Summary:")
-for (const [label, hash] of Object.entries(hashes)) {
-  console.log(`  ${label}: ${hash}`)
-}
 
 console.log("\nDone!")

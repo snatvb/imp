@@ -1,10 +1,12 @@
-import { run } from "imp:subprocess"
-import { readFile, writeFile, exists } from "imp:fs"
-import { sha256 } from "imp:hash"
-import { loadFile } from "imp:env"
 import { join } from "path"
 
+import { loadFile } from "imp:env"
+import { readFile, writeFile, exists, mkdir, remove } from "imp:fs"
+import { sha256 } from "imp:hash"
+import { run } from "imp:subprocess"
+
 const PROJECT_ROOT = process.cwd()
+export const TEMP_DIR = join(PROJECT_ROOT, "scripts", ".tmp")
 
 export interface Target {
   triple: string | null
@@ -98,6 +100,9 @@ export async function packageAll(targets: Target[], version: string, dryRun: boo
     return
   }
 
+  await remove(TEMP_DIR, { recursive: true })
+  await mkdir(TEMP_DIR, { recursive: true })
+
   for (const t of targets) {
     const binName = t.suffix ? `imp${t.suffix}` : "imp"
     const binPath = join(t.binDir, binName)
@@ -109,24 +114,28 @@ export async function packageAll(targets: Target[], version: string, dryRun: boo
     }
 
     if (t.archive === "zip") {
-      const archivePath = join(PROJECT_ROOT, `${archiveName}.zip`)
+      const archivePath = join(TEMP_DIR, `${archiveName}.zip`)
       await sh("zip", ["-j", archivePath, binPath], { cwd: PROJECT_ROOT })
     } else {
-      const archivePath = join(PROJECT_ROOT, `${archiveName}.tar.gz`)
+      const archivePath = join(TEMP_DIR, `${archiveName}.tar.gz`)
       await sh("tar", ["czf", archivePath, "-C", t.binDir, binName], { cwd: PROJECT_ROOT })
     }
     console.log(`  ${archiveName}.${t.archive === "zip" ? "zip" : "tar.gz"}`)
   }
 }
 
-export async function computeHashes(targets: Target[], version: string, dryRun: boolean): Promise<Record<string, string>> {
+export async function computeHashes(
+  targets: Target[],
+  version: string,
+  dryRun: boolean,
+): Promise<Record<string, string>> {
   console.log("==> Computing SHA256 hashes...")
   const hashes: Record<string, string> = {}
 
   for (const t of targets) {
     const archiveName = `imp-${version}-${t.label}`
     const ext = t.archive === "zip" ? ".zip" : ".tar.gz"
-    const archivePath = join(PROJECT_ROOT, `${archiveName}${ext}`)
+    const archivePath = join(TEMP_DIR, `${archiveName}${ext}`)
     if (dryRun) {
       hashes[t.label] = "dry-run"
       console.log(`  ${t.label}: dry-run`)
