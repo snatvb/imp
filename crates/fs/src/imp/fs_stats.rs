@@ -245,7 +245,7 @@ impl<'js> FsStats {
         #[cfg(unix)]
         {
             use std::os::unix::fs::MetadataExt;
-            self.meta.blksize() as u64
+            self.meta.blksize()
         }
         #[cfg(not(unix))]
         {
