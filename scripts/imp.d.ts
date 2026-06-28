@@ -76,29 +76,29 @@ type RsString = {
   trimStart(): RsString
   trimEnd(): RsString
 
-  indexOf(search: string, fromIndex?: number): number
-  lastIndexOf(search: string, fromIndex?: number): number
-  includes(search: string): boolean
-  startsWith(search: string): boolean
-  endsWith(search: string): boolean
+  indexOf(search: JsString, fromIndex?: number): number
+  lastIndexOf(search: JsString, fromIndex?: number): number
+  includes(search: JsString): boolean
+  startsWith(search: JsString): boolean
+  endsWith(search: JsString): boolean
 
-  concat(str: string): RsString
+  concat(str: JsString): RsString
   repeat(count: number): RsString
-  padStart(targetLength: number, padString?: string): RsString
-  padEnd(targetLength: number, padString?: string): RsString
+  padStart(targetLength: number, padString?: JsString): RsString
+  padEnd(targetLength: number, padString?: JsString): RsString
   toLowerCase(): RsString
   toUpperCase(): RsString
   toLocaleLowerCase(): RsString
   toLocaleUpperCase(): RsString
-  localeCompare(other: string): number
-  normalize(form?: string): RsString
+  localeCompare(other: JsString): number
+  normalize(form?: JsString): RsString
 
-  replace(search: string | RegExp, replacement: string | ((...args: any[]) => string)): RsString
-  replaceAll(search: string | RegExp, replacement: string | ((...args: any[]) => string)): RsString
+  replace(search: JsString | RegExp, replacement: JsString | ((...args: any[]) => JsString)): RsString
+  replaceAll(search: JsString | RegExp, replacement: JsString | ((...args: any[]) => JsString)): RsString
   search(regexp: RegExp): number
   match(regexp: RegExp): RegExpMatchArray | null
   matchAll(regexp: RegExp): IterableIterator<RegExpMatchArray>
-  split(separator: string | RegExp, limit?: number): string[]
+  split(separator: JsString | RegExp, limit?: number): string[]
 
   toString(): string
   valueOf(): string
@@ -238,9 +238,9 @@ declare module "imp:clap" {
 
   class Parser<T = {}> {
     constructor()
-    name(name: string): Parser<T>
-    version(version: string): Parser<T>
-    about(about: string): Parser<T>
+    name(name: JsString): Parser<T>
+    version(version: JsString): Parser<T>
+    about(about: JsString): Parser<T>
     arg<const O extends ArgOptions>(opts: O): Parser<T & { [K in O["name"]]: ArgValueKind<O> }>
     parse(args: readonly JsString[]): ParseResult<T>
   }

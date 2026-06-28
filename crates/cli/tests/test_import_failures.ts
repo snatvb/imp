@@ -1,5 +1,3 @@
-import "./helper.ts"
-
 let failed = 0
 let passed = 0
 
