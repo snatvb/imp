@@ -3,7 +3,7 @@ import clap from "imp:clap"
 const parser = new clap.Parser().name("test").arg({ name: "name", short: "n", long: "name", action: "set" })
 
 const result = parser.parse(["-n", "Alice"])
-assert(result.type === "result", "type should equal 'result' string")
+assert(result.type === "ok", "type should equal 'ok' string")
 assert(typeof result.type === "string", "type should be typeof string")
 
 const helpParser = new clap.Parser()

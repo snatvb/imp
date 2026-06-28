@@ -246,7 +246,7 @@ fn build_result<'js>(
     cmd: &clap::Command,
     matches: &clap::ArgMatches,
 ) -> js::Result<()> {
-    obj.set("type", "result")?;
+    obj.set("type", "ok")?;
 
     for arg in cmd.get_arguments() {
         match arg.get_action() {

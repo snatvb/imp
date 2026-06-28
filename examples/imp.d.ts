@@ -3,6 +3,7 @@ type JsString = string | RsString
 interface ImportMeta {
   dirname: string
   filename: string
+  url: string
 }
 
 interface Console {
@@ -15,7 +16,18 @@ interface Console {
 interface Process {
   cwd(): string
   exit(code?: number): void
+  on(event: "exit", callback: (code: number) => void): void
+  exitCode: number
   env: Record<string, string>
+  argv: string[]
+  platform: string
+  arch: string
+  pid: number
+  ppid: number
+  cpuCount: number
+  hostname: string
+  homedir: string
+  version: string
 }
 
 interface Performance {
@@ -31,10 +43,13 @@ declare const console: Console
 declare const process: Process
 declare const performance: Performance
 
+declare function assert(condition: any, ...args: any[]): asserts condition
+
 declare class ByteBuffer {
   constructor(size: number)
 
   static alloc(size: number): ByteBuffer
+  static fromArray(arr: number[]): ByteBuffer
 
   get length(): number
 
@@ -235,7 +250,7 @@ declare module "imp:clap" {
 
 declare module "imp:fs" {
   function open(path: JsString, chunkSize: number): Promise<FileHandle>
-  function openWrite(path: JsString, flags?: "w" | "a" | "rw", chunkSize?: number): Promise<WriteHandle>
+  function openWrite(path: JsString, flags?: "w" | "a" | "rw"): Promise<WriteHandle>
   function readFile(path: JsString): Promise<ArrayBuffer>
   function readFile(path: JsString, encoding: "buffer" | "null"): Promise<ArrayBuffer>
   function readFile(path: JsString, encoding: string): Promise<RsString>
@@ -246,6 +261,10 @@ declare module "imp:fs" {
   function remove(path: JsString, options?: { recursive?: boolean }): Promise<void>
   function removeAll(paths: JsString[]): Promise<void>
   function exists(path: JsString): Promise<boolean>
+  function chmod(path: JsString, mode: number): Promise<void>
+  function lchmod(path: JsString, mode: number): Promise<void>
+  function symlink(target: JsString, path: JsString): Promise<void>
+  function link(target: JsString, path: JsString): Promise<void>
   function walk(dir: JsString, options?: WalkOptions): WalkIterator
   function glob(dir: JsString, pattern: JsString, options?: WalkOptions): Promise<RsString[]>
   function globStream(dir: JsString, pattern: JsString, options?: WalkOptions): WalkIterator
@@ -261,6 +280,10 @@ declare module "imp:fs" {
     remove: typeof remove
     removeAll: typeof removeAll
     exists: typeof exists
+    chmod: typeof chmod
+    lchmod: typeof lchmod
+    symlink: typeof symlink
+    link: typeof link
     walk: typeof walk
     glob: typeof glob
     globStream: typeof globStream
@@ -277,6 +300,10 @@ declare module "imp:fs" {
     remove,
     removeAll,
     exists,
+    chmod,
+    lchmod,
+    symlink,
+    link,
     walk,
     glob,
     globStream,
@@ -516,9 +543,10 @@ declare class Response {
   readonly headers: Headers
   readonly url: string
   readonly type: string
+  readonly body: ReadableStream | null
   text(): Promise<string>
   json(): Promise<any>
-  arrayBuffer(): ArrayBuffer
+  arrayBuffer(): Promise<ArrayBuffer>
   clone(): Response
 }
 
@@ -526,6 +554,45 @@ declare class DOMException extends Error {
   constructor(message?: string, name?: string)
   readonly name: string
   readonly code: number
+}
+
+interface QueuingStrategyInit {
+  highWaterMark: number
+}
+
+declare class ReadableStreamDefaultController {
+  readonly desiredSize: number | null
+  close(): void
+  enqueue(chunk?: any): void
+  error(e?: any): void
+}
+
+declare class ReadableStreamDefaultReader {
+  closed: Promise<void>
+  read(): Promise<{ done: boolean; value: any }>
+  cancel(reason?: any): Promise<void>
+  releaseLock(): void
+}
+
+declare class ReadableStream implements AsyncIterable<any> {
+  constructor(underlyingSource?: any, strategy?: { highWaterMark?: number; size?: (chunk: any) => number })
+  readonly locked: boolean
+  cancel(reason?: any): Promise<void>
+  getReader(): ReadableStreamDefaultReader
+  pipeTo(
+    dest: any,
+    options?: { preventClose?: boolean; preventAbort?: boolean; preventCancel?: boolean; signal?: AbortSignal },
+  ): Promise<void>
+  tee(): [ReadableStream, ReadableStream]
+  values(): ReadableStreamAsyncIterator
+  [Symbol.asyncIterator](): ReadableStreamAsyncIterator
+  [Symbol.dispose](): void
+}
+
+declare class ReadableStreamAsyncIterator {
+  next(): Promise<{ done: boolean; value: any }>
+  return(): Promise<{ done: true; value: undefined }>
+  [Symbol.asyncIterator](): ReadableStreamAsyncIterator
 }
 
 declare class AbortController {
@@ -705,5 +772,212 @@ declare module "imp:time" {
     ImpTime,
     ImpDateTime,
     ImpLocalDateTime,
+  }
+}
+
+declare module "imp:subprocess" {
+  interface RunOptions {
+    cwd?: string
+    env?: Record<string, string>
+    input?: string | ByteBuffer
+    timeout?: number | Duration
+    maxOutput?: number
+    signal?: AbortSignal
+    encoding?: "utf8" | "binary"
+  }
+
+  interface RunResult {
+    code: number
+    stdout: string | ByteBuffer
+    stderr: string | ByteBuffer
+    success: boolean
+    durationMs: number
+  }
+
+  function run(cmd: JsString, args?: JsString[], options?: RunOptions): Promise<RunResult>
+
+  const _default: { run: typeof run }
+  export default _default
+  export { run, RunOptions, RunResult }
+}
+
+declare module "imp:encoding" {
+  type B64Variant = "standard" | "url"
+
+  interface Base64Options {
+    variant?: B64Variant
+    pad?: boolean
+  }
+
+  interface Base64DecodeOptions {
+    mode?: "base64" | "utf8"
+  }
+
+  interface HexOptions {
+    uppercase?: boolean
+  }
+
+  const base64: {
+    encode(input: JsString | ByteBuffer, options?: Base64Options): string
+    decode(input: JsString, options?: Base64DecodeOptions): string | ByteBuffer
+  }
+
+  const hex: {
+    encode(input: JsString | ByteBuffer, options?: HexOptions): string
+    decode(input: JsString): ByteBuffer
+  }
+
+  const utf8: {
+    encode(input: JsString): ByteBuffer
+    decode(input: ByteBuffer): string
+  }
+
+  const uri: {
+    encode(input: JsString): string
+    decode(input: JsString): string
+  }
+
+  const _default: { base64: typeof base64; hex: typeof hex; utf8: typeof utf8; uri: typeof uri }
+  export default _default
+  export { base64, hex, utf8, uri, Base64Options, Base64DecodeOptions, HexOptions, B64Variant }
+}
+
+declare module "*.json" {
+  const value: any
+  export default value
+}
+
+declare module "*.txt" {
+  const value: string
+  export default value
+}
+
+declare module "*.text" {
+  const value: string
+  export default value
+}
+
+declare module "*.md" {
+  const value: string
+  export default value
+}
+
+declare module "imp:hash" {
+  type HashEncoding = "hex" | "base64" | "bytes"
+
+  function md5(input: JsString | ByteBuffer): string
+  function md5(input: JsString | ByteBuffer, encoding: "hex" | "base64"): string
+  function md5(input: JsString | ByteBuffer, encoding: "bytes"): ByteBuffer
+
+  function sha1(input: JsString | ByteBuffer): string
+  function sha1(input: JsString | ByteBuffer, encoding: "hex" | "base64"): string
+  function sha1(input: JsString | ByteBuffer, encoding: "bytes"): ByteBuffer
+
+  function sha256(input: JsString | ByteBuffer): string
+  function sha256(input: JsString | ByteBuffer, encoding: "hex" | "base64"): string
+  function sha256(input: JsString | ByteBuffer, encoding: "bytes"): ByteBuffer
+
+  function sha512(input: JsString | ByteBuffer): string
+  function sha512(input: JsString | ByteBuffer, encoding: "hex" | "base64"): string
+  function sha512(input: JsString | ByteBuffer, encoding: "bytes"): ByteBuffer
+
+  function blake3(input: JsString | ByteBuffer): string
+  function blake3(input: JsString | ByteBuffer, encoding: "hex" | "base64"): string
+  function blake3(input: JsString | ByteBuffer, encoding: "bytes"): ByteBuffer
+
+  const _default: {
+    md5: typeof md5
+    sha1: typeof sha1
+    sha256: typeof sha256
+    sha512: typeof sha512
+    blake3: typeof blake3
+  }
+  export default _default
+  export { md5, sha1, sha256, sha512, blake3, HashEncoding }
+}
+
+declare module "imp:env" {
+  type ConfigValue = string | number | boolean
+  type ConfigObject = Record<string, ConfigValue | ConfigObject>
+
+  interface IniOptions {
+    caseSensitive?: boolean
+  }
+
+  interface DotenvOptions {
+    expand?: boolean
+  }
+
+  const env: {
+    parseIni(input: JsString, options?: IniOptions): ConfigObject
+    parseDotenv(input: JsString, options?: DotenvOptions): Record<string, string>
+    expand(input: JsString, vars?: Record<string, string>): string
+    merge(...sources: Record<string, string>[]): Record<string, string>
+    loadFile(path: string): Promise<ConfigObject>
+  }
+
+  const _default: typeof env
+  export default _default
+  export { env, parseIni, parseDotenv, expand, merge, loadFile, ConfigValue, ConfigObject, IniOptions, DotenvOptions }
+}
+
+declare module "imp:signal" {
+  type SignalName = "SIGINT" | "SIGTERM" | "SIGHUP" | "SIGQUIT" | "SIGBREAK"
+  type SignalDispose = () => void
+
+  const signal: {
+    on(name: SignalName, handler: () => void): SignalDispose
+    once(name: SignalName, handler: () => void): SignalDispose
+    removeAll(name?: SignalName): void
+    pending(): SignalName[]
+  }
+
+  export default signal
+  export { signal, SignalName, SignalDispose }
+}
+
+declare module "imp:crypto" {
+  type HmacAlgo = "sha256" | "sha512"
+  type AeadAlgo = "aes-128-gcm" | "aes-256-gcm"
+
+  function randomBytes(size: number): ByteBuffer
+  function randomHex(size: number): string
+  function randomUUID(): string
+  function randomInt(min: number, max: number): number
+  function hmac(
+    algo: HmacAlgo,
+    key: JsString | ByteBuffer,
+    data: JsString | ByteBuffer,
+    encoding?: string,
+  ): string | ByteBuffer
+  function aesEncrypt(algo: AeadAlgo, key: ByteBuffer, plaintext: ByteBuffer): ByteBuffer
+  function aesDecrypt(algo: AeadAlgo, key: ByteBuffer, ciphertext: ByteBuffer): ByteBuffer
+  function timingSafeEqual(a: ByteBuffer, b: ByteBuffer): boolean
+
+  const crypto: {
+    randomBytes: typeof randomBytes
+    randomHex: typeof randomHex
+    randomUUID: typeof randomUUID
+    randomInt: typeof randomInt
+    hmac: typeof hmac
+    aesEncrypt: typeof aesEncrypt
+    aesDecrypt: typeof aesDecrypt
+    timingSafeEqual: typeof timingSafeEqual
+  }
+
+  const _default: typeof crypto
+  export default _default
+  export {
+    randomBytes,
+    randomHex,
+    randomUUID,
+    randomInt,
+    hmac,
+    aesEncrypt,
+    aesDecrypt,
+    timingSafeEqual,
+    crypto,
+    HmacAlgo,
+    AeadAlgo,
   }
 }

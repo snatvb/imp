@@ -6,8 +6,8 @@ assert(clap.args.length === 0, "args should be empty")
 {
   const parser = new clap.Parser().arg({ name: "name", short: "n", long: "name", action: "set" })
   const result = parser.parse(clap.args)
-  assert(String(result.type) === "result", "empty args should parse as result")
-  if (result.type === "result") {
+  assert(String(result.type) === "ok", "empty args should parse as ok")
+  if (result.type === "ok") {
     assert(result.name === undefined, "name should be undefined")
   }
 }

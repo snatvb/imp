@@ -10,8 +10,8 @@ assert(clap.args.length > 0, "args should not be empty")
     .arg({ name: "verbose", short: "v", long: "verbose", action: "count" })
 
   const result = parser.parse(clap.args)
-  assert(String(result.type) === "result", "type should be result")
-  if (result.type === "result") {
+  assert(String(result.type) === "ok", "type should be ok")
+  if (result.type === "ok") {
     assert(result.name === "Alice", "name should be Alice")
     assert(result.verbose === 3, "verbose should be 3")
   }
@@ -24,8 +24,8 @@ assert(clap.args.length > 0, "args should not be empty")
     .arg({ name: "verbose", short: "v", long: "verbose", action: "count" })
 
   const result = parser.parse(clap.args)
-  assert(String(result.type) === "result", "type should be result")
-  if (result.type === "result") {
+  assert(String(result.type) === "ok", "type should be ok")
+  if (result.type === "ok") {
     assert(result.name === "Alice", "name should be Alice")
     assert(result.verbose === 3, "verbose should be 3")
   }

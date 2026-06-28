@@ -12,8 +12,8 @@ const parser = new clap.Parser()
 
 const result = parser.parse(["-n", "Alice", "-vvv", "-o", "out.txt", "--debug", "file1.txt", "file2.txt"])
 
-assert(result.type === "result", "type should be result")
-if (result.type === "result") {
+assert(result.type === "ok", "type should be ok")
+if (result.type === "ok") {
   assert(result.name === "Alice", "name should be Alice")
   assert(result.verbose === 3, "verbose should be 3")
   assert(result.output === "out.txt", "output should be out.txt")

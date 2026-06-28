@@ -15,7 +15,7 @@ interface Console {
 
 interface Process {
   cwd(): string
-  exit(code?: number): void
+  exit(code?: number): never
   on(event: "exit", callback: (code: number) => void): void
   exitCode: number
   env: Record<string, string>

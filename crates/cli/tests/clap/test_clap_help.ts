@@ -13,8 +13,8 @@ const parser = new clap.Parser()
 // Тест обычного парсинга
 console.log("Test 1: normal parsing")
 const result1 = parser.parse(["-n", "Alice", "-vvv"])
-assert(result1.type === "result", "type should be result")
-if (result1.type === "result") {
+assert(result1.type === "ok", "type should be ok")
+if (result1.type === "ok") {
   assert(result1.name === "Alice", "name should be Alice")
   assert(result1.verbose === 3, "verbose should be 3")
 }
