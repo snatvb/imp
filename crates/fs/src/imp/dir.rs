@@ -62,22 +62,29 @@ pub async fn mkdir<'js>(ctx: js::Ctx<'js>, path: StringArg) -> js::Result<()> {
     Ok(())
 }
 
-async fn remove_path<'js>(ctx: &js::Ctx<'js>, path_arg: StringArg) -> js::Result<()> {
+async fn remove_path<'js>(ctx: &js::Ctx<'js>, path_arg: StringArg) -> js::Result<bool> {
     let path_str = path_arg.as_str();
-    let err_map = make_err(ctx, "remove", path_str);
-    let meta = fs::metadata(path_str).await.map_err(&err_map)?;
+    let meta = match fs::metadata(path_str).await {
+        Ok(m) => m,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(false),
+        Err(e) => return Err(make_err(ctx, "remove", path_str)(e)),
+    };
 
     if meta.is_dir() {
-        fs::remove_dir_all(path_str).await.map_err(err_map)?;
+        fs::remove_dir_all(path_str)
+            .await
+            .map_err(make_err(ctx, "remove", path_str))?;
     } else {
-        fs::remove_file(path_str).await.map_err(err_map)?;
+        fs::remove_file(path_str)
+            .await
+            .map_err(make_err(ctx, "remove", path_str))?;
     }
 
-    Ok(())
+    Ok(true)
 }
 
 #[js::function]
-pub async fn remove<'js>(ctx: js::Ctx<'js>, path: StringArg) -> js::Result<()> {
+pub async fn remove<'js>(ctx: js::Ctx<'js>, path: StringArg) -> js::Result<bool> {
     remove_path(&ctx, path).await
 }
 

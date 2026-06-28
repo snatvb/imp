@@ -258,7 +258,7 @@ declare module "imp:fs" {
   function mkdir(path: JsString, options?: { recursive?: boolean }): Promise<void>
   function metadata(path: JsString): Promise<FsStats>
   function metadataBatch(paths: JsString[]): Promise<FsStats[]>
-  function remove(path: JsString, options?: { recursive?: boolean }): Promise<void>
+  function remove(path: JsString, options?: { recursive?: boolean }): Promise<boolean>
   function removeAll(paths: JsString[]): Promise<void>
   function exists(path: JsString): Promise<boolean>
   function chmod(path: JsString, mode: number): Promise<void>
