@@ -45,12 +45,12 @@ async function pushBuckets(brewDir: string, scoopDir: string, dryRun: boolean) {
   await sh("git", ["add", "."], { cwd: brewDir })
   await sh("git", ["commit", "-m", "Update imp formula"], { cwd: brewDir })
   await sh("git", ["push"], { cwd: brewDir })
-  console.log("  Pushed homebrew-tap")
+  console.log("  Pushed homebrew-imp")
 
   await sh("git", ["add", "."], { cwd: scoopDir })
   await sh("git", ["commit", "-m", "Update imp manifest"], { cwd: scoopDir })
   await sh("git", ["push"], { cwd: scoopDir })
-  console.log("  Pushed scoop-bucket")
+  console.log("  Pushed scoop-imp")
 }
 
 async function createTag(version: string, dryRun: boolean) {

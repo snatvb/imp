@@ -24,13 +24,14 @@ curl -fsSL https://raw.githubusercontent.com/snatvb/imp/main/scripts/install.sh 
 ### Homebrew (macOS/Linux)
 
 ```bash
+brew tap snatvb/imp git@github.com:snatvb/homebrew-imp.git
 brew install snatvb/imp/imp
 ```
 
 ### Scoop (Windows)
 
 ```bash
-scoop bucket add imp https://github.com/snatvb/imp-bucket
+scoop bucket add imp https://github.com/snatvb/scoop-imp
 scoop install imp
 ```
 
