@@ -63,10 +63,14 @@ console.log("PASS: extname")
 assert(!normalize("/foo/bar//baz/asdf/quux/..").includes("//"), "normalize removes double slashes")
 console.log("PASS: normalize")
 
-const parsed = parse("C:\\path\\dir\\file.txt")
-assert(typeof parsed === "object", "parse returns object")
-assert(parsed.base === "file.txt", "parse base correct")
-assert(parsed.ext === ".txt", "parse ext correct")
+const parsedPosix = parse("/foo/bar/baz.txt")
+assert(typeof parsedPosix === "object", "parse returns object")
+assert(parsedPosix.base === "baz.txt", "parse posix base correct")
+assert(parsedPosix.ext === ".txt", "parse posix ext correct")
+
+const parsedWin = win32.parse("C:\\path\\dir\\file.txt")
+assert(parsedWin.base === "file.txt", "parse win32 base correct")
+assert(parsedWin.ext === ".txt", "parse win32 ext correct")
 console.log("PASS: parse")
 
 assert(format({ dir: "/home/user/dir", base: "file.txt" }).includes("file.txt"), "format combines parts")

@@ -1,10 +1,10 @@
 import { writeFile, remove, mkdir } from "imp:fs"
 
-const TMP_DIR = import.meta.dirname + "\\.tmp"
+const TMP_DIR = import.meta.dirname + "/.tmp"
 await mkdir(TMP_DIR, { recursive: true })
 
 async function testBasicFileRead() {
-  const filePath = `${TMP_DIR}\\_test_fetch_basic.txt`
+  const filePath = `${TMP_DIR}/_test_fetch_basic.txt`
   await writeFile(filePath, "hello file fetch")
   const r = await fetch(`file:///${filePath}`)
   assert(r.ok, "Basic file read: ok")
@@ -15,12 +15,12 @@ async function testBasicFileRead() {
 }
 
 async function testContentType() {
-  const jsonPath = `${TMP_DIR}\\_test_fetch_ct.json`
-  const htmlPath = `${TMP_DIR}\\_test_fetch_ct.html`
-  const cssPath = `${TMP_DIR}\\_test_fetch_ct.css`
-  const jsPath = `${TMP_DIR}\\_test_fetch_ct.js`
-  const txtPath = `${TMP_DIR}\\_test_fetch_ct.txt`
-  const unknownPath = `${TMP_DIR}\\_test_fetch_ct.xyz`
+  const jsonPath = `${TMP_DIR}/_test_fetch_ct.json`
+  const htmlPath = `${TMP_DIR}/_test_fetch_ct.html`
+  const cssPath = `${TMP_DIR}/_test_fetch_ct.css`
+  const jsPath = `${TMP_DIR}/_test_fetch_ct.js`
+  const txtPath = `${TMP_DIR}/_test_fetch_ct.txt`
+  const unknownPath = `${TMP_DIR}/_test_fetch_ct.xyz`
 
   await writeFile(jsonPath, "{}")
   await writeFile(htmlPath, "<html></html>")
@@ -56,7 +56,7 @@ async function testContentType() {
 }
 
 async function testJsonFile() {
-  const filePath = `${TMP_DIR}\\_test_fetch_json.json`
+  const filePath = `${TMP_DIR}/_test_fetch_json.json`
   await writeFile(filePath, '{"key":"value","num":42}')
   const r = await fetch(`file:///${filePath}`)
   const j = await r.json()
@@ -87,7 +87,7 @@ async function testAbortBeforeFileFetch() {
 }
 
 async function testResponseProperties() {
-  const filePath = `${TMP_DIR}\\_test_fetch_props.txt`
+  const filePath = `${TMP_DIR}/_test_fetch_props.txt`
   await writeFile(filePath, "props test")
   const url = `file:///${filePath}`
   const r = await fetch(url)
@@ -99,7 +99,7 @@ async function testResponseProperties() {
 }
 
 async function testPercentEncodedPath() {
-  const filePath = `${TMP_DIR}\\_test_fetch space file.txt`
+  const filePath = `${TMP_DIR}/_test_fetch space file.txt`
   await writeFile(filePath, "spaced file content")
   const encoded = encodeURI(`file:///${filePath}`)
   const r = await fetch(encoded)
@@ -109,7 +109,7 @@ async function testPercentEncodedPath() {
 }
 
 async function testBodyIsReadableStream() {
-  const filePath = `${TMP_DIR}\\_test_fetch_stream.txt`
+  const filePath = `${TMP_DIR}/_test_fetch_stream.txt`
   await writeFile(filePath, "stream test data")
   const r = await fetch(`file:///${filePath}`)
   const body = r.body
@@ -119,7 +119,7 @@ async function testBodyIsReadableStream() {
 }
 
 async function testBodyGetReader() {
-  const filePath = `${TMP_DIR}\\_test_fetch_reader.txt`
+  const filePath = `${TMP_DIR}/_test_fetch_reader.txt`
   await writeFile(filePath, "reader test data")
   const r = await fetch(`file:///${filePath}`)
   const body = r.body
@@ -135,7 +135,7 @@ async function testBodyGetReader() {
 }
 
 async function testBodyStreamLocked() {
-  const filePath = `${TMP_DIR}\\_test_fetch_lock.txt`
+  const filePath = `${TMP_DIR}/_test_fetch_lock.txt`
   await writeFile(filePath, "lock test")
   const r = await fetch(`file:///${filePath}`)
   const body = r.body
@@ -185,4 +185,4 @@ async function main() {
   console.log("ALL FILE FETCH TESTS PASSED")
 }
 
-main()
+await main()

@@ -252,4 +252,4 @@ async function main() {
   console.log("ALL FETCH TESTS PASSED")
 }
 
-main()
+await main()

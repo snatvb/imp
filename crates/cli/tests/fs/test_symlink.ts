@@ -69,13 +69,11 @@ if (canSymlink) {
 }
 
 if (canSymlink) {
-  let threw = false
-  try {
-    await symlink(tmpDir + "/NOPE.txt", tmpDir + "/bad_link.txt")
-  } catch (e) {
-    threw = true
-  }
-  assert(threw, "symlink non-existent target throws")
+  const dangling = tmpDir + "/dangling_link.txt"
+  await symlink(tmpDir + "/NOPE.txt", dangling)
+  const st = await metadata(dangling)
+  assert(st.isSymbolicLink, "dangling symlink created on unix")
+  await remove(dangling)
 }
 
 {

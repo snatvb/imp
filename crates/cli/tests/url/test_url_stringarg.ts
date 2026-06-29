@@ -49,7 +49,7 @@ async function testFetchCallWithUrl() {
 
 async function testFetchFileWithUrl() {
   const { writeFile, remove } = await import("imp:fs")
-  const path = `${process.cwd()}\\_test_fetch_url_obj.txt`
+  const path = `${process.cwd()}/_test_fetch_url_obj.txt`
   await writeFile(path, "url obj content")
   const u = new URL(`file:///${path}`)
   const r = await fetch(u)

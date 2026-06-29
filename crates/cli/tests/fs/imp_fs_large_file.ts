@@ -1,12 +1,17 @@
-import { resolve } from "path"
+import { open, writeFile, mkdir, remove } from "imp:fs"
 
-import { open } from "imp:fs"
+const tmpDir = import.meta.dirname + "/.tmp_largefile"
+await mkdir(tmpDir, { recursive: true })
 
-const fixture = (name: string) => resolve(import.meta.dirname, "fixtures", name)
-
-const largeFilePath = fixture("large_test.bin")
-const fileSize = 1024 * 1024 // 1MB
 const pattern = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+const fileSize = 1024 * 1024 // 1MB
+
+let content = ""
+while (content.length < fileSize) content += pattern
+content = content.slice(0, fileSize)
+
+const largeFilePath = tmpDir + "/large_test.bin"
+await writeFile(largeFilePath, content)
 
 // --- test: large file with small chunks ---
 {
@@ -141,5 +146,7 @@ const pattern = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
   await fh.close()
 }
+
+await remove(tmpDir)
 
 console.log("ALL LARGE FILE TESTS PASSED")

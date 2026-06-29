@@ -1,6 +1,6 @@
 import { writeFile, remove, mkdir } from "imp:fs"
 
-const TMP_DIR = import.meta.dirname + "\\.tmp"
+const TMP_DIR = import.meta.dirname + "/.tmp"
 await mkdir(TMP_DIR, { recursive: true })
 
 function createMockDest() {
@@ -28,7 +28,7 @@ function createMockDest() {
 }
 
 async function testPipeToBasic() {
-  const filePath = `${TMP_DIR}\\_test_pipe.txt`
+  const filePath = `${TMP_DIR}/_test_pipe.txt`
   await writeFile(filePath, "pipe me")
   const r = await fetch(`file:///${filePath}`)
   const body = r.body
@@ -50,7 +50,7 @@ async function testPipeToBasic() {
 }
 
 async function testTeeBasic() {
-  const filePath = `${TMP_DIR}\\_test_tee.txt`
+  const filePath = `${TMP_DIR}/_test_tee.txt`
   await writeFile(filePath, "tee me")
   const r = await fetch(`file:///${filePath}`)
   const body = r.body
@@ -88,7 +88,7 @@ async function testTeeBasic() {
 }
 
 async function testReaderDispose() {
-  const filePath = `${TMP_DIR}\\_test_dispose.txt`
+  const filePath = `${TMP_DIR}/_test_dispose.txt`
   await writeFile(filePath, "dispose test")
   const r = await fetch(`file:///${filePath}`)
   const body = r.body
@@ -114,4 +114,4 @@ async function main() {
   console.log("ALL STREAM TESTS PASSED")
 }
 
-main()
+await main()

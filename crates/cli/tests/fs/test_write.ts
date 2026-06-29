@@ -1,7 +1,7 @@
 import { mkdir, openWrite, readFile, remove } from "imp:fs"
 
-const tmpDir = import.meta.dirname + "\\.tmp"
-const testPath = tmpDir + "\\test_write_output.tmp"
+const tmpDir = import.meta.dirname + "/.tmp"
+const testPath = tmpDir + "/test_write_output.tmp"
 await mkdir(tmpDir, { recursive: true })
 
 {

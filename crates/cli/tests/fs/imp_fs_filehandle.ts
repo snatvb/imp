@@ -1,13 +1,14 @@
-import { resolve } from "path"
+import { open, writeFile, mkdir, remove } from "imp:fs"
 
-import { open } from "imp:fs"
-
-const fixture = (name: string) => resolve(import.meta.dirname, "fixtures", name)
+const tmpDir = import.meta.dirname + "/.tmp_filehandle"
+await mkdir(tmpDir, { recursive: true })
+await writeFile(tmpDir + "/hello.txt", "hello world")
+await writeFile(tmpDir + "/readfile.bin", "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz\n")
 
 // --- test: basic read ---
 
 {
-  const fh = await open(fixture("hello.txt"), 64)
+  const fh = await open(tmpDir + "/hello.txt", 64)
 
   const chunk = await fh.read()
 
@@ -30,7 +31,7 @@ const fixture = (name: string) => resolve(import.meta.dirname, "fixtures", name)
 
 // --- test: multiple reads (buffer reuse) ---
 {
-  const fh = await open(fixture("hello.txt"), 5)
+  const fh = await open(tmpDir + "/hello.txt", 5)
 
   const c1 = await fh.read()
 
@@ -66,7 +67,7 @@ const fixture = (name: string) => resolve(import.meta.dirname, "fixtures", name)
 // --- test: zero-copy independence ---
 
 {
-  const fh = await open(fixture("hello.txt"), 5)
+  const fh = await open(tmpDir + "/hello.txt", 5)
 
   const c1 = await fh.read()
 
@@ -90,7 +91,7 @@ const fixture = (name: string) => resolve(import.meta.dirname, "fixtures", name)
 // --- test: seek ---
 
 {
-  const fh = await open(fixture("hello.txt"), 64)
+  const fh = await open(tmpDir + "/hello.txt", 64)
 
   const pos = await fh.seek(6, "start")
 
@@ -112,7 +113,7 @@ const fixture = (name: string) => resolve(import.meta.dirname, "fixtures", name)
 // --- test: seek current ---
 
 {
-  const fh = await open(fixture("hello.txt"), 64)
+  const fh = await open(tmpDir + "/hello.txt", 64)
 
   await fh.seek(3, "start")
 
@@ -136,7 +137,7 @@ const fixture = (name: string) => resolve(import.meta.dirname, "fixtures", name)
 // --- test: close is idempotent ---
 
 {
-  const fh = await open(fixture("hello.txt"), 64)
+  const fh = await open(tmpDir + "/hello.txt", 64)
 
   await fh.close()
 
@@ -150,7 +151,7 @@ const fixture = (name: string) => resolve(import.meta.dirname, "fixtures", name)
 // --- test: read after close errors ---
 
 {
-  const fh = await open(fixture("hello.txt"), 64)
+  const fh = await open(tmpDir + "/hello.txt", 64)
 
   await fh.close()
 
@@ -170,7 +171,7 @@ const fixture = (name: string) => resolve(import.meta.dirname, "fixtures", name)
 // --- test: seek after close errors ---
 
 {
-  const fh = await open(fixture("hello.txt"), 64)
+  const fh = await open(tmpDir + "/hello.txt", 64)
 
   await fh.close()
 
@@ -193,7 +194,7 @@ const fixture = (name: string) => resolve(import.meta.dirname, "fixtures", name)
   let threw = false
 
   try {
-    await open(fixture("DOES_NOT_EXIST.txt"), 64)
+    await open(tmpDir + "/DOES_NOT_EXIST.txt", 64)
   } catch (e) {
     threw = true
   }
@@ -206,7 +207,7 @@ const fixture = (name: string) => resolve(import.meta.dirname, "fixtures", name)
 // --- test: seek end ---
 
 {
-  const fh = await open(fixture("hello.txt"), 64)
+  const fh = await open(tmpDir + "/hello.txt", 64)
 
   const pos = await fh.seek(-5, "end")
 
@@ -228,7 +229,7 @@ const fixture = (name: string) => resolve(import.meta.dirname, "fixtures", name)
 // --- test: larger file with bigger chunk ---
 
 {
-  const fh = await open(fixture("readfile.bin"), 32)
+  const fh = await open(tmpDir + "/readfile.bin", 32)
 
   let all = ""
 
@@ -248,7 +249,7 @@ const fixture = (name: string) => resolve(import.meta.dirname, "fixtures", name)
 // --- test: invalid whence ---
 
 {
-  const fh = await open(fixture("hello.txt"), 64)
+  const fh = await open(tmpDir + "/hello.txt", 64)
 
   let threw = false
 
@@ -268,7 +269,7 @@ const fixture = (name: string) => resolve(import.meta.dirname, "fixtures", name)
 // --- test: ByteBuffer.toStr() returns RsString ---
 
 {
-  const fh = await open(fixture("hello.txt"), 64)
+  const fh = await open(tmpDir + "/hello.txt", 64)
 
   const chunk = await fh.read()
 
@@ -288,7 +289,7 @@ const fixture = (name: string) => resolve(import.meta.dirname, "fixtures", name)
 // --- test: ByteBuffer.toArrayBuffer() ---
 
 {
-  const fh = await open(fixture("hello.txt"), 64)
+  const fh = await open(tmpDir + "/hello.txt", 64)
 
   const chunk = await fh.read()
 
@@ -308,7 +309,7 @@ const fixture = (name: string) => resolve(import.meta.dirname, "fixtures", name)
 // --- test: ByteBuffer.slice() ---
 
 {
-  const fh = await open(fixture("hello.txt"), 64)
+  const fh = await open(tmpDir + "/hello.txt", 64)
 
   const chunk = await fh.read()
 
@@ -324,5 +325,7 @@ const fixture = (name: string) => resolve(import.meta.dirname, "fixtures", name)
 
   console.log("PASS: ByteBuffer.slice()")
 }
+
+await remove(tmpDir)
 
 console.log("ALL IMP:FS FILEHANDLE TESTS PASSED")
