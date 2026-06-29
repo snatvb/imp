@@ -146,7 +146,7 @@ import clap from "imp:clap"
   const result = parser.parse(["--point", "10", "20"])
   assert(result.type === "ok", "type should be ok")
   if (result.type === "ok") {
-    const point = result.point as string[]
+    const point = result.point as unknown as string[]
     assert(point.length === 2, "point should have 2 values")
     assert(point[0] === "10", "point[0] should be 10")
     assert(point[1] === "20", "point[1] should be 20")

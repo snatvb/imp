@@ -1,6 +1,6 @@
 import { mkdir, symlink, link, writeFile, readFile, metadata, remove } from "imp:fs"
 
-const tmpDir = import.meta.dirname + ".tmp_symlink"
+const tmpDir = import.meta.dirname + "/.tmp_symlink"
 await mkdir(tmpDir, { recursive: true })
 
 const isWindows = process.platform === "win32"
