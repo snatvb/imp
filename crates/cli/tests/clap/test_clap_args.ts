@@ -4,9 +4,7 @@ import clap from "imp:clap"
 // POSITIVE: basic --long value
 // ============================================================
 {
-  const parser = new clap.Parser()
-    .name("test")
-    .arg({ name: "name", long: "name", action: "set" })
+  const parser = new clap.Parser().name("test").arg({ name: "name", long: "name", action: "set" })
 
   const result = parser.parse(["--name", "Alice"])
   assert(result.type === "ok", "type should be ok")
@@ -19,9 +17,7 @@ import clap from "imp:clap"
 // POSITIVE: short -x value
 // ============================================================
 {
-  const parser = new clap.Parser()
-    .name("test")
-    .arg({ name: "name", short: "n", long: "name", action: "set" })
+  const parser = new clap.Parser().name("test").arg({ name: "name", short: "n", long: "name", action: "set" })
 
   const result = parser.parse(["-n", "Bob"])
   assert(result.type === "ok", "type should be ok")
@@ -34,9 +30,7 @@ import clap from "imp:clap"
 // POSITIVE: combined short flags -abc (count mode)
 // ============================================================
 {
-  const parser = new clap.Parser()
-    .name("test")
-    .arg({ name: "verbose", short: "v", long: "verbose", action: "count" })
+  const parser = new clap.Parser().name("test").arg({ name: "verbose", short: "v", long: "verbose", action: "count" })
 
   const result = parser.parse(["-vvv"])
   assert(result.type === "ok", "type should be ok")
@@ -49,9 +43,7 @@ import clap from "imp:clap"
 // POSITIVE: boolean flag (action: "flag") -> true
 // ============================================================
 {
-  const parser = new clap.Parser()
-    .name("test")
-    .arg({ name: "debug", short: "d", long: "debug", action: "flag" })
+  const parser = new clap.Parser().name("test").arg({ name: "debug", short: "d", long: "debug", action: "flag" })
 
   const result = parser.parse(["--debug"])
   assert(result.type === "ok", "type should be ok")
@@ -64,9 +56,7 @@ import clap from "imp:clap"
 // POSITIVE: flag absent -> false (set_false default true, present false)
 // ============================================================
 {
-  const parser = new clap.Parser()
-    .name("test")
-    .arg({ name: "color", long: "color", action: "set_false" })
+  const parser = new clap.Parser().name("test").arg({ name: "color", long: "color", action: "set_false" })
 
   const resultPresent = parser.parse(["--color"])
   assert(resultPresent.type === "ok", "type should be ok")
@@ -85,9 +75,7 @@ import clap from "imp:clap"
 // POSITIVE: append action - multiple values accumulated
 // ============================================================
 {
-  const parser = new clap.Parser()
-    .name("test")
-    .arg({ name: "files", action: "append" })
+  const parser = new clap.Parser().name("test").arg({ name: "files", action: "append" })
 
   const result = parser.parse(["file1.txt", "file2.txt", "file3.txt"])
   assert(result.type === "ok", "type should be ok")
@@ -139,9 +127,7 @@ import clap from "imp:clap"
 // POSITIVE: num_args - multi-value args (--point 1 2)
 // ============================================================
 {
-  const parser = new clap.Parser()
-    .name("test")
-    .arg({ name: "point", long: "point", action: "set", num_args: 2 })
+  const parser = new clap.Parser().name("test").arg({ name: "point", long: "point", action: "set", num_args: 2 })
 
   const result = parser.parse(["--point", "10", "20"])
   assert(result.type === "ok", "type should be ok")
@@ -157,10 +143,7 @@ import clap from "imp:clap"
 // POSITIVE: version action - --version returns type "version"
 // ============================================================
 {
-  const parser = new clap.Parser()
-    .name("test")
-    .version("2.5.0")
-    .arg({ name: "name", long: "name", action: "set" })
+  const parser = new clap.Parser().name("test").version("2.5.0").arg({ name: "name", long: "name", action: "set" })
 
   const result = parser.parse(["--version"])
   assert(result.type === "version", "type should be version")
@@ -208,9 +191,7 @@ import clap from "imp:clap"
 // NEGATIVE: unknown flag -> error
 // ============================================================
 {
-  const parser = new clap.Parser()
-    .name("test")
-    .arg({ name: "name", long: "name", action: "set" })
+  const parser = new clap.Parser().name("test").arg({ name: "name", long: "name", action: "set" })
 
   const result = parser.parse(["--unknown"])
   assert(result.type === "error", "type should be error for unknown flag")
@@ -224,9 +205,7 @@ import clap from "imp:clap"
 // NEGATIVE: missing required arg -> error
 // ============================================================
 {
-  const parser = new clap.Parser()
-    .name("test")
-    .arg({ name: "name", long: "name", action: "set", required: true })
+  const parser = new clap.Parser().name("test").arg({ name: "name", long: "name", action: "set", required: true })
 
   const result = parser.parse([])
   assert(result.type === "error", "type should be error for missing required")
@@ -300,9 +279,7 @@ import clap from "imp:clap"
 // EDGE: parse(clap.args) - parsing runtime args always succeeds
 // ============================================================
 {
-  const parser = new clap.Parser()
-    .name("test")
-    .arg({ name: "name", long: "name", action: "set" })
+  const parser = new clap.Parser().name("test").arg({ name: "name", long: "name", action: "set" })
 
   const result = parser.parse(clap.args)
   assert(result.type === "ok", "parsing clap.args should always succeed")

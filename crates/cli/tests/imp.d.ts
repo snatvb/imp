@@ -268,6 +268,7 @@ declare module "imp:fs" {
   function walk(dir: JsString, options?: WalkOptions): WalkIterator
   function glob(dir: JsString, pattern: JsString, options?: WalkOptions): Promise<RsString[]>
   function globStream(dir: JsString, pattern: JsString, options?: WalkOptions): WalkIterator
+  function expandHome(path: JsString): string
 
   const _default: {
     open: typeof open
@@ -287,6 +288,7 @@ declare module "imp:fs" {
     walk: typeof walk
     glob: typeof glob
     globStream: typeof globStream
+    expandHome: typeof expandHome
   }
   export default _default
   export {
@@ -307,6 +309,7 @@ declare module "imp:fs" {
     walk,
     glob,
     globStream,
+    expandHome,
     FileHandle,
     WriteHandle,
     FsStats,

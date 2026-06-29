@@ -1,5 +1,6 @@
-import { run } from "imp:subprocess"
 import { join } from "path"
+
+import { run } from "imp:subprocess"
 
 const imp = process.argv[0] as string
 const testsDir = import.meta.dirname + "/.."
@@ -10,7 +11,6 @@ import "../smoke/test_meta"
 import "../smoke/test_path"
 import "../smoke/test_fs_promises"
 import "../smoke/test_imp_fs"
-
 // --- modules ---
 import "../time/index"
 import "../parsers/index"
@@ -22,13 +22,10 @@ import "../url/index"
 import "../rs_string/index"
 import "../subprocess/index.ts"
 import "../signal/test_signal"
-
 // --- clap (full) ---
 import "../clap/index"
-
 // --- fs (full) ---
 import "../fs/index"
-
 // --- import tests ---
 import "../test_text_import"
 import "../test_json_import"
@@ -36,7 +33,6 @@ import "../test_dynamic_import"
 import "../test_top_level_await"
 import "../test_import_failures"
 import "../test_import_types"
-
 // --- process (safe) ---
 import "../process/test_process"
 
@@ -58,7 +54,6 @@ import "../process/test_process"
 
 // --- network (slow, may fail if httpbin is down) ---
 import "../fetch/index"
-
 // --- stdin/inject ---
 import "../inquire/index"
 

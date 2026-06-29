@@ -6,5 +6,6 @@ import "./test_write"
 import "./test_bb_write"
 import "./test_chmod"
 import "./test_symlink"
+import "./test_expand_home"
 
 console.log("ALL FS TESTS PASSED")

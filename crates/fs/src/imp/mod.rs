@@ -1,4 +1,5 @@
 pub mod dir;
+pub mod expand_home;
 pub mod file_handle;
 pub mod fs_stats;
 pub mod glob;
@@ -22,6 +23,7 @@ js_core::impl_module!(ImpFsModule,
     },
     "readFile" => read::js_read_file,
     "writeFile" => write::js_write_file,
+    "expandHome" => expand_home::js_expand_home,
     "open" => file_handle::js_open,
     "openWrite" => write::js_open_write,
     "mkdir" => dir::js_mkdir,

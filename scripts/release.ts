@@ -112,8 +112,12 @@ console.log(`Releasing imp ${version}${dryRun ? " (dry-run)" : ""}\n`)
 await buildAll(TARGETS, dryRun)
 await packageAll(TARGETS, version, dryRun)
 const hashes = await computeHashes(TARGETS, version, dryRun)
-await updateFormula(version, hashes, config.brewDir)
-await updateManifest(version, hashes, config.scoopDir)
+if (!dryRun) {
+  await updateFormula(version, hashes, config.brewDir)
+  await updateManifest(version, hashes, config.scoopDir)
+} else {
+  console.log("  [dry-run] would update formula and manifest")
+}
 await pushBuckets(config.brewDir, config.scoopDir, dryRun)
 await createTag(version, dryRun)
 await createRelease(version, dryRun)

@@ -1,7 +1,7 @@
 import { join } from "path"
 
 import { loadFile } from "imp:env"
-import { readFile, writeFile, exists, mkdir, remove } from "imp:fs"
+import { readFile, writeFile, exists, mkdir, remove, expandHome } from "imp:fs"
 import { sha256 } from "imp:hash"
 import { run } from "imp:subprocess"
 
@@ -75,8 +75,8 @@ export async function loadConfig(): Promise<{ brewDir: string; scoopDir: string 
   }
   const env = await loadFile(envPath)
   return {
-    brewDir: String(env.BREW_DIR),
-    scoopDir: String(env.SCOOP_DIR),
+    brewDir: expandHome(String(env.BREW_DIR)),
+    scoopDir: expandHome(String(env.SCOOP_DIR)),
   }
 }
 
