@@ -1,6 +1,7 @@
 use js_core::byte_buffer::ByteBuffer;
 use js_core::error::JsError;
 use js_core::js::{Class, Ctx, Value};
+use js_core::rs_string::RsString;
 use js_core::utils::{JsStringArg, StringArg};
 
 use crate::error::HashError;
@@ -15,6 +16,9 @@ pub fn extract_input_bytes<'js>(
     }
     if let Ok(cls) = Class::<ByteBuffer>::from_value(value) {
         return Ok(cls.borrow().as_slice().to_vec());
+    }
+    if let Ok(cls) = Class::<RsString>::from_value(value) {
+        return Ok(cls.borrow().get_slice().as_bytes().to_vec());
     }
     let received = js_core::coerce::js_type_of(value);
     Err(type_error(ctx, "input", "string | ByteBuffer", &received))
