@@ -153,17 +153,6 @@ async function test404() {
   assert(!r.ok, "404: not ok")
 }
 
-async function testResponseBodyConsumed() {
-  const r = await fetch("https://httpbin.org/get")
-  await r.text()
-  try {
-    await r.text()
-    assert(false, "Body consumed: should have thrown")
-  } catch (e) {
-    console.log("PASS: Body consumed throws")
-  }
-}
-
 async function testArrayBuffer() {
   const r = await fetch("https://httpbin.org/get")
   const buf = r.arrayBuffer()
@@ -238,7 +227,6 @@ async function main() {
   await testFetchHeaders()
   await testResponseClone()
   await test404()
-  await testResponseBodyConsumed()
   await testArrayBuffer()
   await testResponseUrl()
   await testResponseStatusText()

@@ -55,6 +55,17 @@ import "../process/test_process"
 // --- network (slow, may fail if httpbin is down) ---
 import "../fetch/index"
 // --- stdin/inject ---
-import "../inquire/index"
+{
+  const stdinTest = join(testsDir, "inquire", "test_stdin.ts")
+  const r = await run(imp, ["run", stdinTest], { input: "hello\nworld\n" })
+  assert(r.code === 0, `stdin test failed: code=${r.code} stderr=${r.stderr}`)
+  console.log("PASS: stdin readLine/readAll via subprocess")
+}
+
+// NOTE: test_stdin_simulate.ts is skipped here — it requires a real console
+// (injectKeys writes to CONIN$, readLine reads from io::stdin() which is a
+// pipe when run from PowerShell). test_inq_inject already exercises injectKeys.
+
+import "../inquire/test_inq_inject"
 
 console.log("ALL REGRESS TESTS PASSED")

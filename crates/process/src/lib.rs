@@ -1,4 +1,5 @@
 use js::object::Accessor;
+#[allow(unused_imports)]
 use js_core::error::{JsError, SystemError};
 use rquickjs as js;
 
@@ -59,6 +60,11 @@ pub fn create<'a>(
     let env_obj = js::Object::new(ctx.clone())?;
     for (key, value) in std::env::vars() {
         env_obj.set(key.as_str(), value.as_str())?;
+    }
+    if std::env::var("USER").is_err()
+        && let Ok(username) = std::env::var("USERNAME")
+    {
+        env_obj.set("USER", username.as_str())?;
     }
     process.set("env", env_obj)?;
 
