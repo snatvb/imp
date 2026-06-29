@@ -2,10 +2,47 @@
 
 Everything that you need to create CLI easy! TypeScript or JavaScript → single native binary. No Node.js, no `node_modules`, no build step.
 
+## Installation
+
+### Quick install (Linux/macOS)
+
 ```bash
-cargo install --git https://github.com/snatvb/imp crates/cli
-imp run hello.ts
+curl -fsSL https://raw.githubusercontent.com/snatvb/imp/main/scripts/install.sh | bash
 ```
+
+This will:
+- Auto-detect your OS and architecture
+- Download the latest release to `~/.local/bin/imp`
+- Add `~/.local/bin` to your PATH if needed
+
+### Install specific version
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/snatvb/imp/main/scripts/install.sh | bash -s -- v0.1.0
+```
+
+### Homebrew (macOS/Linux)
+
+```bash
+brew install snatvb/imp/imp
+```
+
+### Scoop (Windows)
+
+```bash
+scoop bucket add imp https://github.com/snatvb/imp-bucket
+scoop install imp
+```
+
+### Cargo (from source)
+
+```bash
+cargo install imp-cli
+```
+
+### Manual download
+
+Download the latest binary from [GitHub Releases](https://github.com/snatvb/imp/releases).
 
 ## Why
 
@@ -275,15 +312,6 @@ imp init [path]             # scaffold imp.d.ts + tsconfig.json
 See [`examples/`](./examples/) — 7 real-world scripts: HTTP client,
 config format converter, parallel CSV stats, markdown renderer, interactive
 scaffolder, `tail -f` clone, and a concurrent file sorter.
-
-## Install
-
-```bash
-cargo install --git https://github.com/snatvb/imp crates/cli
-```
-
-This builds the `imp` binary and puts it in `~/.cargo/bin/`. Add that to
-your `PATH` if it isn't already.
 
 ## Building from source
 
