@@ -1,6 +1,6 @@
 import { open, writeFile, mkdir, remove } from "imp:fs"
 
-const tmpDir = import.meta.dirname + "/.tmp_largefile"
+const tmpDir = import.meta.dirname + "/.tmp/largefile"
 await mkdir(tmpDir, { recursive: true })
 
 const pattern = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
