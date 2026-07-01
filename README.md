@@ -24,7 +24,7 @@ curl -fsSL https://raw.githubusercontent.com/snatvb/imp/main/scripts/install.sh 
 ### Homebrew (macOS/Linux)
 
 ```bash
-brew tap snatvb/brew git@github.com:snatvb/brew.git
+brew tap snatvb/brew
 brew install snatvb/brew/imp
 ```
 
