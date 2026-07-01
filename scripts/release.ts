@@ -45,7 +45,7 @@ async function pushBuckets(brewDir: string, scoopDir: string, dryRun: boolean) {
   await sh("git", ["add", "."], { cwd: brewDir })
   await sh("git", ["commit", "-m", "Update imp formula"], { cwd: brewDir })
   await sh("git", ["push"], { cwd: brewDir })
-  console.log("  Pushed homebrew-imp")
+  console.log("  Pushed homebrew-brew")
 
   await sh("git", ["add", "."], { cwd: scoopDir })
   await sh("git", ["commit", "-m", "Update imp manifest"], { cwd: scoopDir })
